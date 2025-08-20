@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../state/holidayStore";
 import { CountdownTimer } from "../components/CountdownTimer";
+import * as Haptics from "expo-haptics";
 
 type TimerDetailScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -26,7 +27,7 @@ export function TimerDetailScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<TimerDetailScreenNavigationProp>();
   const route = useRoute<TimerDetailScreenRouteProp>();
-  const { timers, removeTimer, currentDestination } = useHolidayStore();
+  const { timers, removeTimer, currentDestination, settings } = useHolidayStore();
 
   const timer = timers.find((t) => t.id === route.params.timerId);
 
@@ -39,6 +40,10 @@ export function TimerDetailScreen() {
   }
 
   const handleDelete = () => {
+    if (settings.enableHaptics) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    
     Alert.alert(
       "Delete Timer",
       "Are you sure you want to delete this timer?",
@@ -48,6 +53,9 @@ export function TimerDetailScreen() {
           text: "Delete",
           style: "destructive",
           onPress: () => {
+            if (settings.enableHaptics) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
             removeTimer(timer.id);
             navigation.goBack();
           },

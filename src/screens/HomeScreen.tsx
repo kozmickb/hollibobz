@@ -14,6 +14,8 @@ import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../state/holidayStore";
 import { CountdownTimer } from "../components/CountdownTimer";
 import { WidgetPreview } from "../components/WidgetPreview";
+import { DailyFactCard } from "../components/DailyFactCard";
+import * as Haptics from "expo-haptics";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -23,9 +25,23 @@ type HomeScreenNavigationProp = NativeStackNavigationProp<
 export function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<HomeScreenNavigationProp>();
-  const { timers, currentDestination } = useHolidayStore();
+  const { timers, currentDestination, settings } = useHolidayStore();
 
   const mainTimer = timers.find((timer) => timer.type === "holiday");
+
+  const handleAddTimer = () => {
+    if (settings.enableHaptics) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    navigation.navigate("AddTimer");
+  };
+
+  const handleTimerPress = (timerId: string) => {
+    if (settings.enableHaptics) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    navigation.navigate("TimerDetail", { timerId });
+  };
 
   return (
     <ScrollView
@@ -70,7 +86,7 @@ export function HomeScreen() {
               Your Timers
             </Text>
             <Pressable
-              onPress={() => navigation.navigate("AddTimer")}
+              onPress={handleAddTimer}
               className="bg-blue-500 px-4 py-2 rounded-full flex-row items-center"
             >
               <Ionicons name="add" size={20} color="white" />
@@ -94,9 +110,7 @@ export function HomeScreen() {
               {timers.map((timer) => (
                 <Pressable
                   key={timer.id}
-                  onPress={() =>
-                    navigation.navigate("TimerDetail", { timerId: timer.id })
-                  }
+                  onPress={() => handleTimerPress(timer.id)}
                   className="bg-white rounded-xl p-4 shadow-sm"
                 >
                   <View className="flex-row justify-between items-center">
@@ -120,31 +134,21 @@ export function HomeScreen() {
             </View>
           )}
 
+          {/* Daily Fact Card */}
+          <DailyFactCard />
+
           {currentDestination && (
-            <View className="mt-8">
-              <Text className="text-xl font-bold text-slate-800 mb-4">
+            <View className="mt-2">
+              <Text className="text-xl font-bold text-slate-800 mb-4 px-6">
                 About {currentDestination.name}
               </Text>
               
-              {currentDestination.facts.length > 0 && (
-                <View className="bg-white rounded-xl p-4 mb-4">
-                  <Text className="text-lg font-semibold text-slate-800 mb-2">
-                    Interesting Facts
-                  </Text>
-                  {currentDestination.facts.slice(0, 3).map((fact, index) => (
-                    <Text key={index} className="text-slate-600 mb-2">
-                      • {fact}
-                    </Text>
-                  ))}
-                </View>
-              )}
-
               {currentDestination.thingsToDo.length > 0 && (
-                <View className="bg-white rounded-xl p-4">
+                <View className="bg-white rounded-xl p-4 mx-6 mb-4">
                   <Text className="text-lg font-semibold text-slate-800 mb-2">
                     Things to Do
                   </Text>
-                  {currentDestination.thingsToDo.slice(0, 3).map((activity, index) => (
+                  {currentDestination.thingsToDo.slice(0, 5).map((activity, index) => (
                     <Text key={index} className="text-slate-600 mb-2">
                       • {activity}
                     </Text>

@@ -15,6 +15,9 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore, Timer } from "../state/holidayStore";
 import { getDestinationInfo } from "../utils/destinationService";
+import { CelebrationModal } from "../components/CelebrationModal";
+import { DestinationInput } from "../components/DestinationInput";
+import * as Haptics from "expo-haptics";
 
 type AddTimerScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -31,7 +34,7 @@ const timerTypes: Array<{ value: Timer["type"]; label: string; icon: string }> =
 export function AddTimerScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<AddTimerScreenNavigationProp>();
-  const { addTimer, setDestination } = useHolidayStore();
+  const { addTimer, setDestination, settings } = useHolidayStore();
 
   const [name, setName] = useState("");
   const [destination, setDestinationName] = useState("");
@@ -39,6 +42,7 @@ export function AddTimerScreen() {
   const [selectedType, setSelectedType] = useState<Timer["type"]>("holiday");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -49,6 +53,11 @@ export function AddTimerScreen() {
     if (date <= new Date()) {
       Alert.alert("Error", "Please select a future date");
       return;
+    }
+
+    // Haptic feedback for button press
+    if (settings.enableHaptics) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
     setIsLoading(true);
@@ -69,13 +78,23 @@ export function AddTimerScreen() {
         }
       }
 
-      navigation.goBack();
+      // Show celebration animation if enabled
+      if (settings.enableAnimations) {
+        setShowCelebration(true);
+      } else {
+        navigation.goBack();
+      }
     } catch (error) {
       console.error("Error saving timer:", error);
       Alert.alert("Error", "Failed to save timer. Please try again.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCelebrationComplete = () => {
+    setShowCelebration(false);
+    navigation.goBack();
   };
 
   return (
@@ -102,12 +121,10 @@ export function AddTimerScreen() {
               <Text className="text-slate-600 font-medium mb-2">
                 Destination (Optional)
               </Text>
-              <TextInput
+              <DestinationInput
                 value={destination}
                 onChangeText={setDestinationName}
                 placeholder="e.g., Paris, France"
-                className="bg-slate-100 rounded-lg px-4 py-3 text-slate-800"
-                placeholderTextColor="#94a3b8"
               />
               <Text className="text-slate-400 text-sm mt-1">
                 We'll fetch photos and information about your destination
@@ -182,18 +199,46 @@ export function AddTimerScreen() {
         </View>
 
         {showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="datetime"
-            display="default"
-            onChange={(_, selectedDate) => {
-              setShowDatePicker(false);
-              if (selectedDate) {
-                setDate(selectedDate);
-              }
-            }}
-          />
+          <View className="absolute inset-0 bg-black/50 justify-center items-center z-50">
+            <View className="bg-white rounded-xl mx-6 p-4 shadow-lg">
+              <Text className="text-lg font-semibold text-slate-800 mb-4 text-center">
+                Select Date & Time
+              </Text>
+              <DateTimePicker
+                value={date}
+                mode="datetime"
+                display="spinner"
+                onChange={(_, selectedDate) => {
+                  if (selectedDate) {
+                    setDate(selectedDate);
+                  }
+                }}
+                style={{ backgroundColor: "white" }}
+              />
+              <View className="flex-row space-x-3 mt-4">
+                <Pressable
+                  onPress={() => setShowDatePicker(false)}
+                  className="flex-1 bg-slate-200 rounded-lg py-3 items-center"
+                >
+                  <Text className="text-slate-700 font-medium">Cancel</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setShowDatePicker(false)}
+                  className="flex-1 bg-blue-500 rounded-lg py-3 items-center"
+                >
+                  <Text className="text-white font-medium">Done</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
         )}
+
+        <CelebrationModal
+          visible={showCelebration}
+          onComplete={handleCelebrationComplete}
+          timerName={name}
+          destinationName={selectedType === "holiday" ? destination : undefined}
+        />
       </View>
     </ScrollView>
   );
