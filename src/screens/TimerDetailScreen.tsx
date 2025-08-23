@@ -15,6 +15,7 @@ import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../state/holidayStore";
 import { CountdownTimer } from "../components/CountdownTimer";
 import * as Haptics from "expo-haptics";
+import { format } from "date-fns";
 
 type TimerDetailScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -133,14 +134,14 @@ export function TimerDetailScreen() {
               <View className="flex-row justify-between">
                 <Text className="text-slate-600">Date:</Text>
                 <Text className="text-slate-800 font-medium">
-                  {timer.date.toLocaleDateString()}
+                  {format(new Date(timer.date), "MMM d, yyyy")}
                 </Text>
               </View>
               
               <View className="flex-row justify-between">
                 <Text className="text-slate-600">Time:</Text>
                 <Text className="text-slate-800 font-medium">
-                  {timer.date.toLocaleTimeString()}
+                  {format(new Date(timer.date), "h:mm a")}
                 </Text>
               </View>
             </View>

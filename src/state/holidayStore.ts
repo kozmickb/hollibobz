@@ -143,6 +143,20 @@ export const useHolidayStore = create<HolidayState>()(
     {
       name: "holiday-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      migrate: (state: any) => {
+        try {
+          const timers = Array.isArray(state?.timers)
+            ? state.timers.map((t: any) => ({
+                ...t,
+                date: t?.date instanceof Date ? t.date : new Date(t?.date),
+              }))
+            : [];
+          return { ...state, timers };
+        } catch {
+          return state as any;
+        }
+      },
       partialize: (state) => ({
         timers: state.timers,
         currentDestination: state.currentDestination,

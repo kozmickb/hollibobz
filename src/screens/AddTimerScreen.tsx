@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { format } from "date-fns";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore, Timer } from "../state/holidayStore";
@@ -139,7 +140,7 @@ export function AddTimerScreen() {
               className="bg-slate-100 rounded-lg px-4 py-3 flex-row items-center justify-between"
             >
               <Text className="text-slate-800">
-                {date.toLocaleDateString()} at {date.toLocaleTimeString()}
+                {format(date, "MMM d, yyyy 'at' h:mm a")}
               </Text>
               <Ionicons name="calendar" size={20} color="#64748b" />
             </Pressable>
