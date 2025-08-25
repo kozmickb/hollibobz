@@ -1,216 +1,78 @@
-import React from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  ImageBackground,
-  Alert,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import React, { useMemo } from "react";
+import { View, Text, Pressable, Alert } from "react-native";
+import { useRoute, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RouteProp } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { useHolidayStore } from "../state/holidayStore";
-import { CountdownTimer } from "../components/CountdownTimer";
-import * as Haptics from "expo-haptics";
-import { format } from "date-fns";
+import { useHolidayStore } from "../store/useHolidayStore";
 
-type TimerDetailScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "TimerDetail"
->;
-
-type TimerDetailScreenRouteProp = RouteProp<RootStackParamList, "TimerDetail">;
+type Nav = NativeStackNavigationProp<RootStackParamList, "TimerDetail">;
+type Rt = RouteProp<RootStackParamList, "TimerDetail">;
 
 export function TimerDetailScreen() {
-  const insets = useSafeAreaInsets();
-  const navigation = useNavigation<TimerDetailScreenNavigationProp>();
-  const route = useRoute<TimerDetailScreenRouteProp>();
-  const { timers, removeTimer, currentDestination, settings } = useHolidayStore();
+  const navigation = useNavigation<Nav>();
+  const route = useRoute<Rt>();
+  const { timerId } = route.params;
+  const timer = useHolidayStore((s) => s.timers.find(t => t.id === timerId));
+  const archive = useHolidayStore((s) => s.archiveTimer);
+  const hardDelete = useHolidayStore((s) => s.removeTimer);
 
-  const timer = timers.find((t) => t.id === route.params.timerId);
+  const daysLeft = useMemo(() => {
+    if (!timer) return null;
+    const now = new Date();
+    const target = new Date(timer.date);
+    const diff = target.getTime() - now.getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }, [timer]);
 
   if (!timer) {
     return (
-      <View className="flex-1 bg-slate-50 justify-center items-center">
-        <Text className="text-slate-600 text-lg">Timer not found</Text>
+      <View className="flex-1 items-center justify-center">
+        <Text>Timer not found</Text>
       </View>
     );
   }
 
-  const handleDelete = () => {
-    if (settings.enableHaptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    
-    Alert.alert(
-      "Delete Timer",
-      "Are you sure you want to delete this timer?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            if (settings.enableHaptics) {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            }
-            removeTimer(timer.id);
-            navigation.goBack();
-          },
-        },
-      ]
-    );
-  };
+  function onDeleteOrArchive() {
+    Alert.alert("Remove timer", "What would you like to do", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Archive", onPress: () => { archive(timer.id); navigation.goBack(); } },
+      { text: "Delete", style: "destructive", onPress: () => { hardDelete(timer.id); navigation.goBack(); } },
+    ]);
+  }
 
-  const isHolidayTimer = timer.type === "holiday";
-  const backgroundImage = isHolidayTimer && currentDestination?.images[0];
+  const seed = `Plan a ${daysLeft && daysLeft > 0 ? "trip" : "stay"} to ${timer.destination} around ${new Date(timer.date).toDateString()}. Create a day by day plan with family friendly options, realistic timings, and travel between sights.`;
 
   return (
-    <ScrollView className="flex-1 bg-slate-50">
-      <View style={{ paddingTop: insets.top }}>
-        {backgroundImage ? (
-          <ImageBackground
-            source={{ uri: backgroundImage }}
-            className="h-80 justify-end"
-            imageStyle={{ opacity: 0.8 }}
-          >
-            <View className="bg-black/40 p-6">
-              <Text className="text-white text-3xl font-bold mb-2">
-                {timer.name}
-              </Text>
-              <Text className="text-white/80 text-lg mb-4 capitalize">
-                {timer.type}
-              </Text>
-              <CountdownTimer targetDate={timer.date} />
-            </View>
-          </ImageBackground>
-        ) : (
-          <View className="h-80 bg-gradient-to-br from-blue-500 to-purple-600 justify-end p-6">
-            <View className="items-center mb-6">
-              <Ionicons
-                name={
-                  timer.type === "flight"
-                    ? "airplane"
-                    : timer.type === "excursion"
-                    ? "map"
-                    : "time"
-                }
-                size={64}
-                color="white"
-              />
-            </View>
-            <Text className="text-white text-3xl font-bold mb-2">
-              {timer.name}
-            </Text>
-            <Text className="text-white/80 text-lg mb-4 capitalize">
-              {timer.type}
-            </Text>
-            <CountdownTimer targetDate={timer.date} />
-          </View>
-        )}
+    <View className="flex-1 bg-white p-6">
+      <Text className="text-2xl font-bold">{timer.destination}</Text>
+      <Text className="text-slate-600 mt-1">{new Date(timer.date).toDateString()}</Text>
 
-        <View className="p-6">
-          <View className="bg-white rounded-xl p-6 mb-6">
-            <Text className="text-lg font-semibold text-slate-800 mb-4">
-              Timer Information
-            </Text>
-            
-            <View className="space-y-3">
-              <View className="flex-row justify-between">
-                <Text className="text-slate-600">Name:</Text>
-                <Text className="text-slate-800 font-medium">{timer.name}</Text>
-              </View>
-              
-              <View className="flex-row justify-between">
-                <Text className="text-slate-600">Type:</Text>
-                <Text className="text-slate-800 font-medium capitalize">
-                  {timer.type}
-                </Text>
-              </View>
-              
-              <View className="flex-row justify-between">
-                <Text className="text-slate-600">Date:</Text>
-                <Text className="text-slate-800 font-medium">
-                  {format(new Date(timer.date), "MMM d, yyyy")}
-                </Text>
-              </View>
-              
-              <View className="flex-row justify-between">
-                <Text className="text-slate-600">Time:</Text>
-                <Text className="text-slate-800 font-medium">
-                  {format(new Date(timer.date), "h:mm a")}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {isHolidayTimer && currentDestination && (
-            <>
-              {currentDestination.images.length > 1 && (
-                <View className="mb-6">
-                  <Text className="text-xl font-bold text-slate-800 mb-4">
-                    Gallery
-                  </Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View className="flex-row space-x-4">
-                      {currentDestination.images.slice(1).map((image, index) => (
-                        <View key={index} className="w-48 h-32 rounded-xl overflow-hidden">
-                          <ImageBackground
-                            source={{ uri: image }}
-                            className="w-full h-full"
-                            imageStyle={{ borderRadius: 12 }}
-                          />
-                        </View>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </View>
-              )}
-
-              {currentDestination.facts.length > 0 && (
-                <View className="bg-white rounded-xl p-6 mb-6">
-                  <Text className="text-lg font-semibold text-slate-800 mb-4">
-                    Interesting Facts
-                  </Text>
-                  {currentDestination.facts.map((fact, index) => (
-                    <View key={index} className="flex-row mb-3">
-                      <Text className="text-blue-500 mr-2">•</Text>
-                      <Text className="text-slate-600 flex-1">{fact}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {currentDestination.thingsToDo.length > 0 && (
-                <View className="bg-white rounded-xl p-6 mb-6">
-                  <Text className="text-lg font-semibold text-slate-800 mb-4">
-                    Things to Do
-                  </Text>
-                  {currentDestination.thingsToDo.map((activity, index) => (
-                    <View key={index} className="flex-row mb-3">
-                      <Text className="text-green-500 mr-2">•</Text>
-                      <Text className="text-slate-600 flex-1">{activity}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </>
-          )}
-
-          <Pressable
-            onPress={handleDelete}
-            className="bg-red-500 rounded-lg py-4 items-center"
-          >
-            <View className="flex-row items-center">
-              <Ionicons name="trash" size={20} color="white" />
-              <Text className="text-white font-semibold ml-2">Delete Timer</Text>
-            </View>
-          </Pressable>
+      {daysLeft !== null && (
+        <View className="mt-6">
+          <Text className="text-5xl font-extrabold">{daysLeft} days</Text>
+          <Text className="text-slate-600 mt-2">until your holiday</Text>
         </View>
+      )}
+
+      <View className="mt-6 gap-y-3">
+        <Pressable
+          onPress={() =>
+            navigation.navigate("HollyChat", {
+              seedQuery: seed,
+              context: { destination: timer.destination, dateISO: timer.date },
+              reset: false,
+            })
+          }
+          className="bg-emerald-600 rounded-lg py-4 items-center"
+        >
+          <Text className="text-white font-semibold">Ask Holly about {timer.destination}</Text>
+        </Pressable>
+
+        <Pressable onPress={onDeleteOrArchive} className="bg-red-600 rounded-lg py-4 items-center">
+          <Text className="text-white font-semibold">Archive or Delete</Text>
+        </Pressable>
       </View>
-    </ScrollView>
+    </View>
   );
 }

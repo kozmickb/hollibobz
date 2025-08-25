@@ -1,166 +1,63 @@
 import React from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  ImageBackground,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, Pressable, FlatList } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { useHolidayStore } from "../state/holidayStore";
-import { CountdownTimer } from "../components/CountdownTimer";
-import { WidgetPreview } from "../components/WidgetPreview";
-import { DailyFactCard } from "../components/DailyFactCard";
-import * as Haptics from "expo-haptics";
+import { useHolidayStore } from "../store/useHolidayStore";
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "Home"
->;
+type HomeNav = NativeStackNavigationProp<RootStackParamList, "Home">;
 
 export function HomeScreen() {
-  const insets = useSafeAreaInsets();
-  const navigation = useNavigation<HomeScreenNavigationProp>();
-  const { timers, currentDestination, settings } = useHolidayStore();
-
-  const mainTimer = timers.find((timer) => timer.type === "holiday");
-
-  const handleAddTimer = () => {
-    if (settings.enableHaptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation.navigate("AddTimer");
-  };
-
-  const handleTimerPress = (timerId: string) => {
-    if (settings.enableHaptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    navigation.navigate("TimerDetail", { timerId });
-  };
+  const navigation = useNavigation<HomeNav>();
+  const timers = useHolidayStore((s) => s.timers);
+  const archived = useHolidayStore((s) => s.archivedTimers);
+  const restore = useHolidayStore((s) => s.restoreTimer);
+  const purge = useHolidayStore((s) => s.purgeArchive);
 
   return (
-    <ScrollView
-      className="flex-1 bg-slate-50"
-      contentInsetAdjustmentBehavior="automatic"
-      automaticallyAdjustContentInsets={true}
-    >
-      <View style={{ paddingTop: insets.top }} className="flex-1">
-        {mainTimer && currentDestination ? (
-          <ImageBackground
-            source={{
-              uri:
-                currentDestination.images[0] ||
-                "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&h=600&fit=crop",
-            }}
-            className="h-80 justify-end"
-            imageStyle={{ opacity: 0.8 }}
-          >
-            <View className="bg-black/40 p-6">
-              <Text className="text-white text-3xl font-bold mb-2">
-                {currentDestination.name}
-              </Text>
-              <CountdownTimer targetDate={mainTimer.date} />
-            </View>
-          </ImageBackground>
-        ) : (
-          <View className="h-80 bg-gradient-to-br from-blue-500 to-purple-600 justify-center items-center">
-            <Ionicons name="airplane" size={64} color="white" />
-            <Text className="text-white text-2xl font-bold mt-4">
-              Plan Your Next Adventure
-            </Text>
-            <Text className="text-white/80 text-center mt-2 px-8">
-              Add your holiday destination and start the countdown to your dream
-              vacation
-            </Text>
-          </View>
-        )}
-
-        <View className="p-6">
-          <View className="flex-row justify-between items-center mb-6">
-            <Text className="text-2xl font-bold text-slate-800">
-              Your Timers
-            </Text>
-            <Pressable
-              onPress={handleAddTimer}
-              className="bg-blue-500 px-4 py-2 rounded-full flex-row items-center"
-            >
-              <Ionicons name="add" size={20} color="white" />
-              <Text className="text-white font-semibold ml-1">Add Timer</Text>
-            </Pressable>
-          </View>
-
-          {timers.length === 0 ? (
-            <View className="bg-white rounded-xl p-8 items-center">
-              <Ionicons name="time-outline" size={48} color="#94a3b8" />
-              <Text className="text-slate-600 text-lg font-medium mt-4">
-                No timers yet
-              </Text>
-              <Text className="text-slate-400 text-center mt-2">
-                Create your first countdown timer to start building excitement
-                for your holiday
-              </Text>
-            </View>
-          ) : (
-            <View className="space-y-4">
-              {timers.map((timer) => (
-                <Pressable
-                  key={timer.id}
-                  onPress={() => handleTimerPress(timer.id)}
-                  className="bg-white rounded-xl p-4 shadow-sm"
-                >
-                  <View className="flex-row justify-between items-center">
-                    <View className="flex-1">
-                      <Text className="text-lg font-semibold text-slate-800">
-                        {timer.name}
-                      </Text>
-                      <Text className="text-slate-500 capitalize">
-                        {timer.type}
-                      </Text>
-                    </View>
-                    <View className="items-end">
-                      <CountdownTimer
-                        targetDate={timer.date}
-                        compact={true}
-                      />
-                    </View>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-          )}
-
-          {/* Daily Fact Card */}
-          <DailyFactCard />
-
-          {currentDestination && (
-            <View className="mt-2">
-              <Text className="text-xl font-bold text-slate-800 mb-4 px-6">
-                About {currentDestination.name}
-              </Text>
-              
-              {currentDestination.thingsToDo.length > 0 && (
-                <View className="bg-white rounded-xl p-4 mx-6 mb-4">
-                  <Text className="text-lg font-semibold text-slate-800 mb-2">
-                    Things to Do
-                  </Text>
-                  {currentDestination.thingsToDo.slice(0, 5).map((activity, index) => (
-                    <Text key={index} className="text-slate-600 mb-2">
-                      • {activity}
-                    </Text>
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
-
-          {mainTimer && <WidgetPreview />}
-        </View>
+    <View className="flex-1 bg-white">
+      <View className="p-6 gap-y-3">
+        <Pressable onPress={() => navigation.navigate("AddTimer")} className="bg-indigo-600 rounded-lg py-4 items-center">
+          <Text className="text-white font-semibold">Add a timer</Text>
+        </Pressable>
+        <Pressable onPress={() => navigation.navigate("HollyChat")} className="bg-emerald-600 rounded-lg py-4 items-center">
+          <Text className="text-white font-semibold">Ask Holly Bobz</Text>
+        </Pressable>
       </View>
-    </ScrollView>
+
+      <FlatList
+        data={timers}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16 }}
+        ListHeaderComponent={<Text className="text-xl font-bold mb-3">Active timers</Text>}
+        ListEmptyComponent={<View className="px-2 py-4"><Text className="text-base">No timers yet</Text></View>}
+        renderItem={({ item }) => (
+          <Pressable onPress={() => navigation.navigate("TimerDetail", { timerId: item.id })} className="p-4 mb-3 bg-slate-100 rounded-lg">
+            <Text className="text-lg font-semibold">{item.destination}</Text>
+            <Text className="text-slate-600">{new Date(item.date).toDateString()}</Text>
+          </Pressable>
+        )}
+      />
+
+      {archived.length > 0 && (
+        <View className="px-4 pb-6">
+          <Text className="text-xl font-bold mb-3">Archived</Text>
+          {archived.map((a) => (
+            <View key={a.id} className="p-3 mb-2 bg-slate-50 rounded-lg">
+              <Text className="font-semibold">{a.destination}</Text>
+              <Text className="text-slate-600">{new Date(a.date).toDateString()}</Text>
+              <View className="flex-row gap-x-3 mt-2">
+                <Pressable onPress={() => restore(a.id)} className="bg-slate-800 px-3 py-2 rounded">
+                  <Text className="text-white">Restore</Text>
+                </Pressable>
+              </View>
+            </View>
+          ))}
+          <Pressable onPress={purge} className="bg-red-600 px-3 py-3 rounded items-center mt-2">
+            <Text className="text-white font-semibold">Empty archive</Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
   );
 }
