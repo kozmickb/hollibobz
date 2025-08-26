@@ -233,15 +233,11 @@ export function HomeScreen() {
                   >
                     Restore
                   </Button>
-                    variant="outline"
-                    size="sm"
-                  />
-                </View>
+                </Box>
               ))}
               
-              <View style={{ marginTop: 16 }}>
-                <ThemedButton
-                  title="Empty Archive"
+              <Box marginTop={16}>
+                <Button
                   onPress={async () => {
                     if (Platform.OS === 'web') {
                       setShowPurgeAlert(true);
@@ -258,12 +254,13 @@ export function HomeScreen() {
                       ]);
                     }
                   }}
-                  variant="destructive"
-                  size="sm"
-                />
-              </View>
-            </View>
-        </View>
+                  variant="secondary"
+                >
+                  Empty Archive
+                </Button>
+              </Box>
+            </Box>
+        </Box>
       )}
       </ScrollView>
 
@@ -308,6 +305,6 @@ export function HomeScreen() {
         ]}
         onClose={() => setShowPurgeAlert(false)}
       />
-    </View>
+    </Box>
   );
 }
