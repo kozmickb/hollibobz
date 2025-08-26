@@ -36,12 +36,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "eas": {
-        "projectId": "2772faea-2c1a-4f2e-bd84-98e871a79f32"
-      }
-    },
-    "updates": {
-      "url": "https://u.expo.dev/2772faea-2c1a-4f2e-bd84-98e871a79f32"
+      "eas": {}
     }
   }
 }
