@@ -2,7 +2,7 @@
   "expo": {
     "name": "TripTick",
     "slug": "triptick",
-    "owner": "your-expo-username",
+    "owner": "kozmickb",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/TT logo.png",
@@ -36,7 +36,12 @@
       "typedRoutes": true
     },
     "extra": {
-      "eas": {}
+      "eas": {
+        "projectId": "62ed6c16-c869-42cd-b91c-c82a9e410526"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/62ed6c16-c869-42cd-b91c-c82a9e410526"
     }
   }
 }
