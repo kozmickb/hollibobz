@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "TripTick",
+    "slug": "triptick",
+    "owner": "your-expo-username",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/TT logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FF6B6B"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "bundleIdentifier": "com.triptick.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.triptick.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FF6B6B"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2772faea-2c1a-4f2e-bd84-98e871a79f32"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2772faea-2c1a-4f2e-bd84-98e871a79f32"
+    }
+  }
+}
