@@ -12,5 +12,10 @@ export function useFonts() {
     'PlayfairDisplay-Bold': require('../../assets/fonts/PlayfairDisplay-Bold.ttf'),
   });
 
+  // Log font loading status for debugging
+  if (fontError) {
+    console.warn('Font loading error:', fontError);
+  }
+
   return { fontsLoaded, fontError };
 }
