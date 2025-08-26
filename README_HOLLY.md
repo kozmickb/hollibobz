@@ -1,4 +1,4 @@
-# Holiday Timers + Holly Bobz (Expo)
+# TripTick + Holly Bobz (Expo)
 
 ## Quickstart
 1. Install deps

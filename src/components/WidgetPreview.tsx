@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, Pressable, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useHolidayStore } from "../state/holidayStore";
+import { useHolidayStore } from "../store/useHolidayStore";
 
 export function WidgetPreview() {
   const { timers, currentDestination } = useHolidayStore();

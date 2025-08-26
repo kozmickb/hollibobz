@@ -1,10 +1,46 @@
-import React, { useMemo } from "react";
-import { View, Text, Pressable, Alert } from "react-native";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { View, Text, Alert, ScrollView, Pressable, Share, Platform } from "react-native";
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RouteProp } from "@react-navigation/native";
+import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../store/useHolidayStore";
+import { useThemeStore } from '../store/useThemeStore';
+import { ThemedButton } from "../components/ThemedButton";
+import { CountdownDisplay } from "../components/CountdownDisplay";
+import { BurgerMenuButton } from '../components/BurgerMenuButton';
+import { CustomAlert } from "../components/CustomAlert";
+import { QuestCard } from "../components/QuestCard";
+import { getQuestsForDestination, getQuestById } from "../features/quests/data";
+import { proximityTheme, getGradientColors } from "../utils/proximityTheme";
+import { ShareCard } from "../components/ShareCard";
+import ViewShot from "react-native-view-shot";
+
+import { Backdrop } from "../components/Backdrop";
+import { QuickFactRow } from "../components/QuickFactRow";
+import { FAQCard } from "../components/FAQCard";
+
+// New countdown components
+import { CountdownRing } from "../components/CountdownRing";
+import { MilestoneBanner } from "../components/MilestoneBanner";
+import { TeaserCard } from "../components/TeaserCard";
+
+import { buildDefaultMeta, DestinationMeta } from "../features/destination/meta";
+import { loadCachedMeta, saveCachedMeta, fetchPexelsBackdrop } from "../features/destination/backdrop";
+import { generateQuickFacts } from "../features/destination/quickFacts";
+import { clearLegacyCachedMeta } from "../features/destination/clearLegacyCache";
+import { 
+  daysUntil, 
+  progressToTrip, 
+  hitMilestone, 
+  getCachedTeaser, 
+  cacheTeaser, 
+  buildDailyTeaser, 
+  getMilestoneMessage,
+  Teaser 
+} from "../features/countdown/logic";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "TimerDetail">;
 type Rt = RouteProp<RootStackParamList, "TimerDetail">;
@@ -14,65 +50,673 @@ export function TimerDetailScreen() {
   const route = useRoute<Rt>();
   const { timerId } = route.params;
   const timer = useHolidayStore((s) => s.timers.find(t => t.id === timerId));
+  const { isDark } = useThemeStore();
   const archive = useHolidayStore((s) => s.archiveTimer);
   const hardDelete = useHolidayStore((s) => s.removeTimer);
+  const checkIn = useHolidayStore((s) => s.checkIn);
+  const awardXP = useHolidayStore((s) => s.awardXP);
+  const grantBadge = useHolidayStore((s) => s.grantBadge);
+  const completeQuest = useHolidayStore((s) => s.completeQuest);
+
+  const [meta, setMeta] = useState<DestinationMeta | null>(null);
+  const [teaser, setTeaser] = useState<Teaser | null>(null);
+  const [loadingQuickFacts, setLoadingQuickFacts] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+
+  // Meta/backdrop hydrate with AI-generated quick facts
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!timer) return;
+      const dest = timer.destination.trim();
+      
+      // One-time cleanup of legacy cache on first load
+      await clearLegacyCachedMeta();
+      
+      // hydrate from cache
+      const cached = await loadCachedMeta(dest);
+      let base = cached ?? buildDefaultMeta(dest);
+
+      // Show immediate data first if available
+      if (mounted) setMeta({ ...base });
+
+      // If we don't have cached quick facts or they're empty, generate them
+      if (!base.quickFacts || base.quickFacts.length === 0) {
+        console.log('Generating quick facts for', dest);
+        if (mounted) setLoadingQuickFacts(true);
+        
+        try {
+          const facts = await generateQuickFacts(dest);
+          if (mounted) {
+            base.quickFacts = facts;
+            setMeta({ ...base });
+            setLoadingQuickFacts(false);
+          }
+        } catch (error) {
+          console.log('Failed to generate quick facts:', error);
+          if (mounted) setLoadingQuickFacts(false);
+          // Keep empty array rather than show generic placeholders
+        }
+      }
+
+      // Try to ensure we have an imageUrl
+      if (!base.imageUrl) {
+        const img = await fetchPexelsBackdrop(dest);
+        if (img.imageUrl) {
+          base.imageUrl = img.imageUrl;
+          if (mounted) setMeta({ ...base });
+        }
+      }
+
+      base.cachedAtISO = new Date().toISOString();
+      await saveCachedMeta(dest, base);
+    })();
+    return () => { mounted = false; };
+  }, [timer?.destination]);
+
+  // Teaser hydrate per day
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!timer) return;
+      const dl = daysUntil(timer.date);
+      const cached = await getCachedTeaser(timer.id);
+      if (cached) { 
+        if (mounted) setTeaser(cached); 
+        return; 
+      }
+      const t = buildDailyTeaser(timer.id, timer.destination, dl);
+      await cacheTeaser(timer.id, t);
+      if (mounted) setTeaser(t);
+    })();
+    return () => { mounted = false; };
+  }, [timer?.id, timer?.date]);
 
   const daysLeft = useMemo(() => {
     if (!timer) return null;
-    const now = new Date();
-    const target = new Date(timer.date);
-    const diff = target.getTime() - now.getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return daysUntil(timer.date);
   }, [timer]);
 
+  const progressPercent = useMemo(() => {
+    if (!timer) return 0;
+    
+    // For very new timers (less than 5 minutes old), show a small visible progress
+    const now = new Date();
+    const created = new Date(timer.createdAt ?? now.toISOString());
+    const minutesSinceCreated = (now.getTime() - created.getTime()) / (1000 * 60);
+    
+    if (minutesSinceCreated < 5) {
+      // Show a minimum 5% progress for new timers to make animation visible
+      const calculatedProgress = progressToTrip(timer.createdAt ?? new Date().toISOString(), timer.date);
+      return Math.max(0.05, calculatedProgress);
+    }
+    
+    return progressToTrip(timer.createdAt ?? new Date().toISOString(), timer.date);
+  }, [timer]);
+
+  // Gamification: Check-in and milestone detection
+  useEffect(() => {
+    if (!timer || daysLeft === null) return;
+    
+    // Check-in if not already done today
+    checkIn(timer.id);
+    
+    // Award XP for daily check-in (only once per day)
+    const today = new Date().toDateString();
+    const lastCheckIn = new Date(timer.lastCheckIn).toDateString();
+    if (today !== lastCheckIn) {
+      awardXP(timer.id, 1);
+    }
+    
+    // Check for milestones and award XP + badges (only once per milestone)
+    const milestones = [100, 50, 30, 14, 7, 3, 1, 0];
+    if (milestones.includes(daysLeft) && !timer.badges.includes(`milestone-${daysLeft}`)) {
+      awardXP(timer.id, 5);
+      grantBadge(timer.id, `milestone-${daysLeft}`);
+    }
+  }, [timer?.id, daysLeft, checkIn, awardXP, grantBadge]);
+
+  const milestone = useMemo(() => {
+    if (daysLeft === null) return null;
+    return hitMilestone(daysLeft);
+  }, [daysLeft]);
+
+  // Quest handling
+  const quests = useMemo(() => {
+    if (!timer) return [];
+    return getQuestsForDestination(timer.destination).slice(0, 3); // Show 3 quests
+  }, [timer?.destination]);
+
+  const handleQuestPress = (questId: string) => {
+    // Find the quest from the processed quests array (with destination replaced)
+    const quest = quests.find(q => q.id === questId);
+    if (!quest || !timer) return;
+    
+    // Navigate to Holly with the quest's seed query
+    navigation.navigate('HollyChat', {
+      seedQuery: quest.seedQuery, // Pass seedQuery at top level (already has destination replaced)
+      context: {
+        destination: timer.destination,
+        dateISO: timer.date,
+        questId: questId, // Pass quest ID to Holly
+        questReward: quest.rewardXP, // Pass reward amount
+        timerId: timer.id, // Pass timer ID for quest completion
+      }
+    });
+    
+    // Don't mark as completed yet - wait for user to actually interact with Holly
+    console.log(`Quest ${questId} started: ${quest.title}`);
+  };
+
+  // Proximity theme
+  const theme = useMemo(() => {
+    if (daysLeft === null) return null;
+    return proximityTheme(daysLeft);
+  }, [daysLeft]);
+
+  const shareCardRef = useRef<ViewShot>(null);
+
+  // Early return after all hooks
   if (!timer) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <Text>Timer not found</Text>
+      <View style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: isDark ? '#1a1a1a' : '#F7F7F7',
+        paddingHorizontal: 20,
+      }}>
+        <Ionicons name="timer-outline" size={48} color="#999999" />
+        <Text style={{
+          fontSize: 18,
+          fontFamily: 'Poppins-Medium',
+          color: isDark ? '#CCCCCC' : '#666666',
+          textAlign: 'center',
+          marginTop: 16,
+        }}>
+          Timer not found
+        </Text>
       </View>
     );
   }
 
   function onDeleteOrArchive() {
-    Alert.alert("Remove timer", "What would you like to do", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Archive", onPress: () => { archive(timer.id); navigation.goBack(); } },
-      { text: "Delete", style: "destructive", onPress: () => { hardDelete(timer.id); navigation.goBack(); } },
-    ]);
+    if (Platform.OS === 'web') {
+      setShowDeleteAlert(true);
+    } else {
+      Alert.alert("Remove timer", "What would you like to do with this trip timer?", [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Archive", 
+          onPress: () => { 
+            archive(timer.id); 
+            navigation.goBack(); 
+          } 
+        },
+        { 
+          text: "Delete", 
+          style: "destructive", 
+          onPress: async () => { 
+            await hardDelete(timer.id); 
+            navigation.goBack();
+          } 
+        },
+      ]);
+    }
+  }
+
+  function tellMeMore(query: string) {
+    console.log('FAQ Tell me more tapped:', query);
+    navigation.navigate("HollyChat", {
+      seedQuery: query,
+      context: { destination: timer.destination, dateISO: timer.date, timerId: timer.id },
+      reset: false,
+    });
+  }
+
+  async function shareCountdown() {
+    if (!timer || daysLeft === null || !shareCardRef.current) return;
+    try {
+      // Capture the share card as PNG
+      const uri = await shareCardRef.current.capture();
+      
+      await Share.share({
+        url: uri,
+        message: daysLeft === 0 
+          ? `It's go day! I'm in ${timer.destination} today! 🎉`
+          : daysLeft === 1 
+          ? `Tomorrow's the day! 1 day until ${timer.destination}! ✈️`
+          : `${daysLeft} days until ${timer.destination}! Can't wait! ✈️`,
+      });
+    } catch (error) {
+      console.log('Error sharing:', error);
+    }
   }
 
   const seed = `Plan a ${daysLeft && daysLeft > 0 ? "trip" : "stay"} to ${timer.destination} around ${new Date(timer.date).toDateString()}. Create a day by day plan with family friendly options, realistic timings, and travel between sights.`;
 
-  return (
-    <View className="flex-1 bg-white p-6">
-      <Text className="text-2xl font-bold">{timer.destination}</Text>
-      <Text className="text-slate-600 mt-1">{new Date(timer.date).toDateString()}</Text>
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
 
+  const getGradientColorsForHeader = () => {
+    if (daysLeft === null) return ['#FF6B6B', '#FFD93D'];
+    return getGradientColors(daysLeft);
+  };
+
+  const dLabel = new Date(timer.date).toDateString();
+
+  return (
+    <View style={{ 
+      flex: 1, 
+      backgroundColor: theme?.background || (isDark ? '#1a1a1a' : '#F7F7F7') 
+    }}>
+      {/* Hero Section */}
+      <View style={{ position: 'relative', height: 300 }}>
+        {/* Backdrop with gradient overlay */}
+        <Backdrop destination={timer.destination} imageUrl={meta?.imageUrl} />
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.7)']}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
+        />
+        
+        {/* Navigation */}
+        <View style={{
+          position: 'absolute',
+          top: 60,
+          left: 20,
+          right: 20,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          zIndex: 10,
+        }}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: 12,
+              padding: 8,
+            }}
+          >
+            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          </Pressable>
+          <BurgerMenuButton />
+        </View>
+
+        {/* Countdown Ring - Bottom Left */}
+        {daysLeft !== null && (
+          <View style={{
+            position: 'absolute',
+            bottom: 20,
+            left: 20,
+            zIndex: 10,
+          }}>
+            <CountdownRing percent={progressPercent} daysLeft={daysLeft} />
+          </View>
+        )}
+
+        {/* Destination Info - Bottom Right */}
+        <View style={{
+          position: 'absolute',
+          bottom: 20,
+          right: 20,
+          zIndex: 10,
+          alignItems: 'flex-end',
+        }}>
+          <Text style={{
+            fontSize: 24,
+            fontFamily: 'Poppins-Bold',
+            color: '#FFFFFF',
+            textAlign: 'right',
+          }}>
+            {timer.destination}
+          </Text>
+          <Text style={{
+            color: '#FFFFFF',
+            fontSize: 16,
+            fontFamily: 'Poppins-Medium',
+            marginTop: 4,
+            textAlign: 'right',
+            opacity: 0.9,
+          }}>
+            {formatDate(timer.date)}
+          </Text>
+        </View>
+      </View>
+
+      {/* Progress Band */}
       {daysLeft !== null && (
-        <View className="mt-6">
-          <Text className="text-5xl font-extrabold">{daysLeft} days</Text>
-          <Text className="text-slate-600 mt-2">until your holiday</Text>
+        <View style={{
+          backgroundColor: theme?.primary || '#FF6B6B',
+          paddingHorizontal: 20,
+          paddingVertical: 12,
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="flame" size={16} color="#FFFFFF" />
+              <Text style={{
+                fontSize: 14,
+                fontFamily: 'Poppins-SemiBold',
+                color: '#FFFFFF',
+              }}>
+                Streak {timer.streak || 0}
+              </Text>
+            </View>
+            <View style={{ width: 1, height: 16, backgroundColor: 'rgba(255,255,255,0.3)' }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="star" size={16} color="#FFFFFF" />
+              <Text style={{
+                fontSize: 14,
+                fontFamily: 'Poppins-SemiBold',
+                color: '#FFFFFF',
+              }}>
+                XP {timer.xp || 0}
+              </Text>
+            </View>
+          </View>
+          <Text style={{
+            fontSize: 14,
+            fontFamily: 'Poppins-Medium',
+            color: '#FFFFFF',
+          }}>
+            {Math.round(progressPercent * 100)}% to go
+          </Text>
         </View>
       )}
 
-      <View className="mt-6 gap-y-3">
-        <Pressable
-          onPress={() =>
-            navigation.navigate("HollyChat", {
-              seedQuery: seed,
-              context: { destination: timer.destination, dateISO: timer.date },
-              reset: false,
-            })
-          }
-          className="bg-emerald-600 rounded-lg py-4 items-center"
-        >
-          <Text className="text-white font-semibold">Ask Holly about {timer.destination}</Text>
-        </Pressable>
+      {/* Content */}
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
+        {/* Countdown Display */}
+        {daysLeft !== null && (
+          <View style={{ 
+            alignItems: 'center', 
+            marginBottom: 24,
+            paddingVertical: 20,
+          }}>
+            <CountdownDisplay 
+              daysLeft={daysLeft} 
+              size="xl" 
+              showAnimation={true}
+            />
+          </View>
+        )}
+        
+        {/* Actions Section */}
+        <View style={{ marginBottom: 24, gap: 12 }}>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Pressable
+              onPress={() =>
+                navigation.navigate("HollyChat", {
+                  seedQuery: `Plan a trip to ${timer.destination} around ${dLabel}. Create a day by day plan with realistic timings and transit between sights.`,
+                  context: { destination: timer.destination, dateISO: timer.date, timerId: timer.id },
+                  reset: false,
+                })
+              }
+              style={{
+                flex: 1,
+                backgroundColor: theme?.primary || '#FF6B6B',
+                borderRadius: 12,
+                padding: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <Ionicons name="chatbubble" size={20} color="#FFFFFF" />
+              <Text style={{
+                fontSize: 14,
+                fontFamily: 'Poppins-SemiBold',
+                color: '#FFFFFF',
+              }}>
+                Ask Holly
+              </Text>
+            </Pressable>
+            
+            <Pressable
+              onPress={shareCountdown}
+              style={{
+                flex: 1,
+                backgroundColor: theme?.secondary || '#FF8A8A',
+                borderRadius: 12,
+                padding: 16,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <Ionicons name="share" size={20} color="#FFFFFF" />
+              <Text style={{
+                fontSize: 14,
+                fontFamily: 'Poppins-SemiBold',
+                color: '#FFFFFF',
+              }}>
+                Share
+              </Text>
+            </Pressable>
+          </View>
+          
+          <Pressable
+            onPress={onDeleteOrArchive}
+            style={{
+              backgroundColor: isDark ? '#374151' : '#F3F4F6',
+              borderRadius: 12,
+              padding: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+            }}
+          >
+            <Ionicons name="archive" size={20} color={isDark ? '#CCCCCC' : '#666666'} />
+            <Text style={{
+              fontSize: 14,
+              fontFamily: 'Poppins-SemiBold',
+              color: isDark ? '#CCCCCC' : '#666666',
+            }}>
+              Archive or Delete
+            </Text>
+          </Pressable>
+        </View>
 
-        <Pressable onPress={onDeleteOrArchive} className="bg-red-600 rounded-lg py-4 items-center">
-          <Text className="text-white font-semibold">Archive or Delete</Text>
-        </Pressable>
-      </View>
+        {/* Quick Facts - 2x2 Grid */}
+        {(meta?.quickFacts?.length || loadingQuickFacts) && (
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{
+              fontSize: 18,
+              fontFamily: 'Poppins-SemiBold',
+              color: isDark ? '#FFFFFF' : '#333333',
+              marginBottom: 12,
+            }}>
+              Quick Facts
+            </Text>
+            
+            {loadingQuickFacts ? (
+              <View style={{ alignItems: 'center', paddingVertical: 20 }}>
+                <Text style={{
+                  fontSize: 14,
+                  fontFamily: 'Poppins-Medium',
+                  color: isDark ? '#CCCCCC' : '#666666',
+                  textAlign: 'center',
+                }}>
+                  Getting destination info...
+                </Text>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {meta?.quickFacts?.slice(0, 4).map((q) => (
+                  <View key={q.label} style={{
+                    flex: 1,
+                    minWidth: '45%',
+                    backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
+                    borderRadius: 12,
+                    padding: 12,
+                    borderWidth: 1,
+                    borderColor: isDark ? '#374151' : '#E5E5E5',
+                  }}>
+                    <Text style={{
+                      fontSize: 12,
+                      fontFamily: 'Poppins-Medium',
+                      color: isDark ? '#94a3b8' : '#64748b',
+                      marginBottom: 4,
+                    }}>
+                      {q.label}
+                    </Text>
+                    <Text style={{
+                      fontSize: 14,
+                      fontFamily: 'Poppins-SemiBold',
+                      color: isDark ? '#FFFFFF' : '#333333',
+                    }}>
+                      {q.value}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Daily Teaser */}
+        {teaser && (
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{
+              fontSize: 18,
+              fontFamily: 'Poppins-SemiBold',
+              color: isDark ? '#FFFFFF' : '#333333',
+              marginBottom: 12,
+            }}>
+              Today's Travel Teaser
+            </Text>
+            <TeaserCard 
+              title={teaser.title}
+              body={teaser.body}
+              onMore={() => tellMeMore(teaser.seedQuery)}
+            />
+          </View>
+        )}
+
+        {/* FAQ Chips */}
+        {meta?.faqs?.length ? (
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{
+              fontSize: 18,
+              fontFamily: 'Poppins-SemiBold',
+              color: isDark ? '#FFFFFF' : '#333333',
+              marginBottom: 12,
+            }}>
+              Quick Questions
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {meta.faqs.slice(0, 6).map((f) => (
+                <Pressable
+                  key={f.id}
+                  onPress={() => tellMeMore(f.query)}
+                  style={{
+                    backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
+                    borderRadius: 20,
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderWidth: 1,
+                    borderColor: isDark ? '#374151' : '#E5E5E5',
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 14,
+                    fontFamily: 'Poppins-Medium',
+                    color: isDark ? '#FFFFFF' : '#333333',
+                  }}>
+                    {f.title}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {/* Quests */}
+        {quests.length > 0 && (
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{
+              fontSize: 18,
+              fontFamily: 'Poppins-SemiBold',
+              color: isDark ? '#FFFFFF' : '#333333',
+              marginBottom: 12,
+            }}>
+              Travel Quests
+            </Text>
+            {quests.map((quest) => (
+              <QuestCard
+                key={quest.id}
+                quest={quest}
+                isCompleted={timer.completedQuests?.includes(quest.id) || false}
+                onPress={() => handleQuestPress(quest.id)}
+              />
+            ))}
+          </View>
+        )}
+
+        {/* Hidden ShareCard for capturing */}
+        <View style={{ position: 'absolute', left: -1000, top: -1000 }}>
+          <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 0.9 }}>
+            <ShareCard
+              destination={timer.destination}
+              daysLeft={daysLeft || 0}
+              imageUrl={meta?.imageUrl}
+              size={400}
+            />
+          </ViewShot>
+        </View>
+
+        {/* Milestone banner */}
+        {milestone !== null && (
+          <MilestoneBanner label={getMilestoneMessage(milestone, timer.destination)} />
+        )}
+
+        {/* Bottom spacing */}
+        <View style={{ height: 40 }} />
+      </ScrollView>
+
+      {/* Custom Alert for Web */}
+      <CustomAlert
+        visible={showDeleteAlert}
+        title="Remove timer"
+        message="What would you like to do with this trip timer?"
+        buttons={[
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Archive", 
+            onPress: () => { 
+              archive(timer.id); 
+              navigation.goBack(); 
+            } 
+          },
+          { 
+            text: "Delete", 
+            style: "destructive", 
+            onPress: async () => { 
+              await hardDelete(timer.id); 
+              navigation.goBack();
+            } 
+          },
+        ]}
+        onClose={() => setShowDeleteAlert(false)}
+      />
     </View>
   );
 }

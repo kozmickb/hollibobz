@@ -1,5 +1,27 @@
-import { Destination } from "../state/holidayStore";
+// Note: Destination type removed as per simplified requirements
 import { getOpenAIChatResponse } from "../api/chat-service";
+
+/**
+ * Clean AI response text by removing hashtags, asterisks, and other formatting artifacts
+ * @param text - The raw AI response text
+ * @returns Cleaned text without formatting artifacts
+ */
+function cleanAIResponse(text: string): string {
+  if (!text) return text;
+  
+  return text
+    // Remove hashtags (words starting with #)
+    .replace(/#\w+/g, '')
+    // Remove asterisks used for emphasis/bold
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '')
+    // Remove underscores used for emphasis/italic
+    .replace(/_/g, '')
+    // Remove multiple spaces that might be left after cleaning
+    .replace(/\s+/g, ' ')
+    // Remove leading/trailing whitespace
+    .trim();
+}
 
 // Common destination name variations and corrections
 const destinationCorrections: Record<string, string> = {

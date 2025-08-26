@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   withSequence,
 } from "react-native-reanimated";
-import { useHolidayStore } from "../state/holidayStore";
+import { useHolidayStore } from "../store/useHolidayStore";
 import * as Haptics from "expo-haptics";
 
 export function DailyFactCard() {

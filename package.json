@@ -1,5 +1,5 @@
 {
-  "name": "template-app-53",
+  "name": "triptick",
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
@@ -71,13 +71,13 @@
     "expo-media-library": "~17.1.6",
     "expo-network": "~7.1.5",
     "expo-network-addons": "~0.7.2",
-    "expo-notifications": "~0.31.1",
+    "expo-notifications": "^0.31.4",
     "expo-secure-store": "^14.0.1",
     "expo-sensors": "~14.1.4",
     "expo-sharing": "~13.1.5",
     "expo-sms": "~13.1.4",
     "expo-speech": "~13.1.6",
-    "expo-splash-screen": "~0.30.8",
+    "expo-splash-screen": "^0.30.10",
     "expo-sqlite": "~15.2.9",
     "expo-status-bar": "~2.2.3",
     "expo-symbols": "~0.4.4",
@@ -91,6 +91,7 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.2",
+    "react-native-confetti-cannon": "^1.5.2",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-get-random-values": "~1.11.0",
     "react-native-ios-context-menu": "3.1.0",
@@ -111,7 +112,6 @@
     "tailwind-merge": "^3.2.0",
     "tailwindcss": "^3.4.17",
     "uuid": "^11.1.0",
-    "victory-native": "^41.16.2",
     "zeego": "^3.0.6",
     "zustand": "^5.0.4"
   },

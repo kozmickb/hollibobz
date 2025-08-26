@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text } from "react-native";
+import { FlipDigit } from "./FlipDigit";
 
 interface CountdownTimerProps {
   targetDate: Date;
@@ -57,30 +58,22 @@ export function CountdownTimer({ targetDate, compact = false }: CountdownTimerPr
   }
 
   return (
-    <View className="flex-row space-x-4">
-      <View className="items-center bg-white/20 rounded-lg px-3 py-2">
-        <Text className="text-3xl font-bold text-white">
-          {timeLeft.days.toString().padStart(2, "0")}
-        </Text>
-        <Text className="text-white/80 text-sm">Days</Text>
+    <View style={{ flexDirection: 'row', gap: 16 }}>
+      <View style={{ alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
+        <FlipDigit value={timeLeft.days.toString().padStart(2, "0")} size="lg" />
+        <Text style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: 14 }}>Days</Text>
       </View>
-      <View className="items-center bg-white/20 rounded-lg px-3 py-2">
-        <Text className="text-3xl font-bold text-white">
-          {timeLeft.hours.toString().padStart(2, "0")}
-        </Text>
-        <Text className="text-white/80 text-sm">Hours</Text>
+      <View style={{ alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
+        <FlipDigit value={timeLeft.hours.toString().padStart(2, "0")} size="lg" />
+        <Text style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: 14 }}>Hours</Text>
       </View>
-      <View className="items-center bg-white/20 rounded-lg px-3 py-2">
-        <Text className="text-3xl font-bold text-white">
-          {timeLeft.minutes.toString().padStart(2, "0")}
-        </Text>
-        <Text className="text-white/80 text-sm">Minutes</Text>
+      <View style={{ alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
+        <FlipDigit value={timeLeft.minutes.toString().padStart(2, "0")} size="lg" />
+        <Text style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: 14 }}>Minutes</Text>
       </View>
-      <View className="items-center bg-white/20 rounded-lg px-3 py-2">
-        <Text className="text-3xl font-bold text-white">
-          {timeLeft.seconds.toString().padStart(2, "0")}
-        </Text>
-        <Text className="text-white/80 text-sm">Seconds</Text>
+      <View style={{ alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
+        <FlipDigit value={timeLeft.seconds.toString().padStart(2, "0")} size="lg" />
+        <Text style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: 14 }}>Seconds</Text>
       </View>
     </View>
   );

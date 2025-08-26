@@ -1,246 +1,238 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  ScrollView,
-  Alert,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, TextInput, Alert, ScrollView, KeyboardAvoidingView, Platform, Pressable } from "react-native";
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from "@react-navigation/native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { format } from "date-fns";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { useHolidayStore, Timer } from "../state/holidayStore";
-import { getDestinationInfo } from "../utils/destinationService";
-import { CelebrationModal } from "../components/CelebrationModal";
-import { DestinationInput } from "../components/DestinationInput";
-import * as Haptics from "expo-haptics";
+import { useHolidayStore } from "../store/useHolidayStore";
+import { useThemeStore } from '../store/useThemeStore';
+import { ThemedButton } from "../components/ThemedButton";
+import { TripTickLogo } from "../components/TripTickLogo";
+import { DateTimeSelector } from "../components/DateTimeSelector";
 
-type AddTimerScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "AddTimer"
->;
-
-const timerTypes: Array<{ value: Timer["type"]; label: string; icon: string }> = [
-  { value: "holiday", label: "Holiday", icon: "sunny" },
-  { value: "flight", label: "Flight", icon: "airplane" },
-  { value: "excursion", label: "Excursion", icon: "map" },
-  { value: "custom", label: "Custom", icon: "time" },
-];
+type Nav = NativeStackNavigationProp<RootStackParamList, "AddTimer">;
 
 export function AddTimerScreen() {
-  const insets = useSafeAreaInsets();
-  const navigation = useNavigation<AddTimerScreenNavigationProp>();
-  const { addTimer, setDestination, settings } = useHolidayStore();
+  const navigation = useNavigation<Nav>();
+  const addTimer = useHolidayStore((s) => s.addTimer);
+  const { isDark } = useThemeStore();
+  const [destination, setDestination] = useState("");
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0); // Set to 9:00 AM
+    return tomorrow;
+  });
 
-  const [name, setName] = useState("");
-  const [destination, setDestinationName] = useState("");
-  const [date, setDate] = useState(new Date());
-  const [selectedType, setSelectedType] = useState<Timer["type"]>("holiday");
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-
-  const handleSave = async () => {
-    if (!name.trim()) {
-      Alert.alert("Error", "Please enter a timer name");
+  function onSave() {
+    if (!destination.trim()) {
+      Alert.alert("Missing Destination", "Please enter a destination for your trip");
       return;
     }
 
-    if (date <= new Date()) {
-      Alert.alert("Error", "Please select a future date");
+    // Check if date is in the future with warm messaging
+    const now = new Date();
+    if (selectedDate <= now) {
+      Alert.alert(
+        "Looking to the Future! ✨", 
+        "That date's in the past—let's plan for something to look forward to! Pick a future date for your exciting trip.",
+        [{ text: "Got it!", style: "default" }]
+      );
       return;
     }
 
-    // Haptic feedback for button press
-    if (settings.enableHaptics) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    setIsLoading(true);
-
-    try {
-      // Add the timer
-      addTimer({
-        name: name.trim(),
-        date,
-        type: selectedType,
-      });
-
-      // If it's a holiday timer and destination is provided, fetch destination info
-      if (selectedType === "holiday" && destination.trim()) {
-        const destinationInfo = await getDestinationInfo(destination.trim());
-        if (destinationInfo) {
-          setDestination(destinationInfo);
-        }
-      }
-
-      // Show celebration animation if enabled
-      if (settings.enableAnimations) {
-        setShowCelebration(true);
-      } else {
-        navigation.goBack();
-      }
-    } catch (error) {
-      console.error("Error saving timer:", error);
-      Alert.alert("Error", "Failed to save timer. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCelebrationComplete = () => {
-    setShowCelebration(false);
+    const iso = selectedDate.toISOString();
+    addTimer({ destination: destination.trim(), date: iso });
     navigation.goBack();
-  };
+  }
+
+
 
   return (
-    <ScrollView className="flex-1 bg-slate-50">
-      <View style={{ paddingTop: insets.top }} className="p-6">
-        <View className="bg-white rounded-xl p-6 mb-6">
-          <Text className="text-lg font-semibold text-slate-800 mb-4">
-            Timer Details
-          </Text>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView style={{ flex: 1, backgroundColor: isDark ? '#1a1a1a' : '#F7F7F7' }}>
+        {/* Static Header Banner */}
+        <View style={{
+          backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
+          paddingTop: 60,
+          paddingBottom: 16,
+          paddingHorizontal: 20,
+          borderBottomWidth: 1,
+          borderBottomColor: isDark ? '#444444' : '#E5E5E5',
+        }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TripTickLogo size="lg" />
+              <Text
+                style={{
+                  color: isDark ? '#FFFFFF' : '#333333',
+                  fontSize: 20,
+                  fontFamily: 'Poppins-SemiBold',
+                }}
+              >
+                TripTick
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              style={{
+                backgroundColor: isDark ? '#444444' : '#F0F0F0',
+                borderRadius: 12,
+                padding: 8,
+              }}
+            >
+              <Ionicons name="close" size={20} color={isDark ? '#FFFFFF' : '#333333'} />
+            </Pressable>
+          </View>
+        </View>
 
-          <View className="mb-4">
-            <Text className="text-slate-600 font-medium mb-2">Timer Name</Text>
+        {/* Hero Section */}
+        <LinearGradient
+          colors={['#FF6B6B', '#FFD93D']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{
+            paddingVertical: 24,
+            paddingHorizontal: 20,
+            alignItems: 'center',
+          }}
+        >
+          <Text
+            style={{
+              color: '#FFFFFF',
+              fontSize: 20,
+              fontFamily: 'Poppins-SemiBold',
+              textAlign: 'center',
+              marginBottom: 8,
+            }}
+          >
+            Add Trip Timer
+          </Text>
+          
+          <Text
+            style={{
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: 14,
+              fontFamily: 'Poppins-Medium',
+              textAlign: 'center',
+            }}
+          >
+            Create a countdown to your next adventure
+          </Text>
+        </LinearGradient>
+
+        {/* Form */}
+        <View
+          style={{
+            backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
+            marginHorizontal: 20,
+            marginTop: -20,
+            borderRadius: 20,
+            padding: 24,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: isDark ? 0.3 : 0.1,
+            shadowRadius: 8,
+            elevation: 8,
+          }}
+        >
+          <View style={{ marginBottom: 24 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontFamily: 'Poppins-SemiBold',
+                color: isDark ? '#FFFFFF' : '#333333',
+                marginBottom: 8,
+              }}
+            >
+              ✈️ Destination
+            </Text>
             <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g., Paris Vacation, Flight to Tokyo"
-              className="bg-slate-100 rounded-lg px-4 py-3 text-slate-800"
-              placeholderTextColor="#94a3b8"
+              value={destination}
+              onChangeText={setDestination}
+              placeholder="e.g., Paris, Tenerife, New York"
+              placeholderTextColor="#999999"
+              style={{
+                borderWidth: 2,
+                borderColor: isDark ? '#555555' : '#E5E5E5',
+                borderRadius: 16,
+                paddingHorizontal: 16,
+                paddingVertical: 16,
+                fontSize: 16,
+                fontFamily: 'Poppins-Regular',
+                color: isDark ? '#FFFFFF' : '#333333',
+                backgroundColor: isDark ? '#2a2a2a' : '#F7F7F7',
+              }}
             />
           </View>
 
-          {selectedType === "holiday" && (
-            <View className="mb-4">
-              <Text className="text-slate-600 font-medium mb-2">
-                Destination (Optional)
-              </Text>
-              <DestinationInput
-                value={destination}
-                onChangeText={setDestinationName}
-                placeholder="e.g., Paris, France"
-              />
-              <Text className="text-slate-400 text-sm mt-1">
-                We'll fetch photos and information about your destination
-              </Text>
-            </View>
-          )}
-
-          <View className="mb-4">
-            <Text className="text-slate-600 font-medium mb-2">Date & Time</Text>
-            <Pressable
-              onPress={() => setShowDatePicker(true)}
-              className="bg-slate-100 rounded-lg px-4 py-3 flex-row items-center justify-between"
-            >
-              <Text className="text-slate-800">
-                {format(date, "MMM d, yyyy 'at' h:mm a")}
-              </Text>
-              <Ionicons name="calendar" size={20} color="#64748b" />
-            </Pressable>
+          <View style={{ marginBottom: 32 }}>
+            <DateTimeSelector
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+              minimumDate={new Date()}
+              label="Date & Time"
+              showTime={true}
+            />
           </View>
 
-          <View className="mb-6">
-            <Text className="text-slate-600 font-medium mb-3">Timer Type</Text>
-            <View className="flex-row flex-wrap gap-3">
-              {timerTypes.map((type) => (
-                <Pressable
-                  key={type.value}
-                  onPress={() => setSelectedType(type.value)}
-                  className={`flex-row items-center px-4 py-3 rounded-lg border-2 ${
-                    selectedType === type.value
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-slate-200 bg-white"
-                  }`}
-                >
-                  <Ionicons
-                    name={type.icon as any}
-                    size={20}
-                    color={selectedType === type.value ? "#3b82f6" : "#64748b"}
-                  />
-                  <Text
-                    className={`ml-2 font-medium ${
-                      selectedType === type.value
-                        ? "text-blue-600"
-                        : "text-slate-600"
-                    }`}
-                  >
-                    {type.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+          <View style={{ gap: 12 }}>
+            <ThemedButton
+              title="🎉 Create Timer"
+              onPress={onSave}
+              variant="primary"
+              gradient={true}
+              size="lg"
+            />
+            
+            <ThemedButton
+              title="Cancel"
+              onPress={() => navigation.goBack()}
+              variant="outline"
+              size="base"
+            />
           </View>
         </View>
 
-        <View className="flex-row space-x-4">
-          <Pressable
-            onPress={() => navigation.goBack()}
-            className="flex-1 bg-slate-200 rounded-lg py-4 items-center"
+        {/* Tips */}
+        <View
+          style={{
+            backgroundColor: '#4ECDC4',
+            marginHorizontal: 20,
+            marginTop: 20,
+            marginBottom: 40,
+            borderRadius: 16,
+            padding: 20,
+          }}
+        >
+          <Text
+            style={{
+              color: '#FFFFFF',
+              fontSize: 16,
+              fontFamily: 'Poppins-SemiBold',
+              marginBottom: 8,
+            }}
           >
-            <Text className="text-slate-700 font-semibold">Cancel</Text>
-          </Pressable>
-          <Pressable
-            onPress={handleSave}
-            disabled={isLoading}
-            className={`flex-1 rounded-lg py-4 items-center ${
-              isLoading ? "bg-blue-300" : "bg-blue-500"
-            }`}
+            💡 Pro Tips
+          </Text>
+          <Text
+            style={{
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: 14,
+              fontFamily: 'Poppins-Regular',
+              lineHeight: 20,
+            }}
           >
-            <Text className="text-white font-semibold">
-              {isLoading ? "Saving..." : "Save Timer"}
-            </Text>
-          </Pressable>
+            • Use the timer to build excitement for your trip{'\n'}
+            • Ask Holly Bobz for travel planning advice{'\n'}
+            • Set specific dates and times for your departure
+          </Text>
         </View>
-
-        {showDatePicker && (
-          <View className="absolute inset-0 bg-black/50 justify-center items-center z-50">
-            <View className="bg-white rounded-xl mx-6 p-4 shadow-lg">
-              <Text className="text-lg font-semibold text-slate-800 mb-4 text-center">
-                Select Date & Time
-              </Text>
-              <DateTimePicker
-                value={date}
-                mode="datetime"
-                display="spinner"
-                onChange={(_, selectedDate) => {
-                  if (selectedDate) {
-                    setDate(selectedDate);
-                  }
-                }}
-                style={{ backgroundColor: "white" }}
-              />
-              <View className="flex-row space-x-3 mt-4">
-                <Pressable
-                  onPress={() => setShowDatePicker(false)}
-                  className="flex-1 bg-slate-200 rounded-lg py-3 items-center"
-                >
-                  <Text className="text-slate-700 font-medium">Cancel</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setShowDatePicker(false)}
-                  className="flex-1 bg-blue-500 rounded-lg py-3 items-center"
-                >
-                  <Text className="text-white font-medium">Done</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        )}
-
-        <CelebrationModal
-          visible={showCelebration}
-          onComplete={handleCelebrationComplete}
-          timerName={name}
-          destinationName={selectedType === "holiday" ? destination : undefined}
-        />
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

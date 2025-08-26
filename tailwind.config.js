@@ -11,11 +11,49 @@ module.exports = {
   theme: {
     // NOTE to AI: You can extend the theme with custom colors or styles here.
     extend: {
-      // For example, you can add a primary or secondary color here.
-      // colors: {
-      //   primary: "#INSERT_VALID_HEX_CODE",
-      //   secondary: "#INSERT_VALID_HEX_CODE",
-      // },
+      colors: {
+        // Holiday Excitement Theme
+        primary: {
+          DEFAULT: '#FF6B6B',
+          dark: '#E55555',
+          light: '#FF8A8A',
+        },
+        secondary: {
+          DEFAULT: '#4ECDC4', 
+          dark: '#3FB8B1',
+          light: '#6FD5CE',
+        },
+        accent: {
+          DEFAULT: '#FFD93D',
+          dark: '#E6C235', 
+          light: '#FFE066',
+        },
+        holiday: {
+          coral: '#FF6B6B',
+          turquoise: '#4ECDC4',
+          sunshine: '#FFD93D',
+          success: '#45B69C',
+          ocean: '#42A5F5',
+        },
+        neutral: {
+          50: '#F7F7F7',
+          100: '#E5E5E5',
+          200: '#CCCCCC',
+          300: '#999999',
+          400: '#666666', 
+          500: '#333333',
+        }
+      },
+      fontFamily: {
+        'poppins': ['Poppins-Regular'],
+        'poppins-medium': ['Poppins-Medium'],
+        'poppins-semibold': ['Poppins-SemiBold'],
+        'poppins-bold': ['Poppins-Bold'],
+        'playfair': ['PlayfairDisplay-Regular'],
+        'playfair-medium': ['PlayfairDisplay-Medium'],
+        'playfair-semibold': ['PlayfairDisplay-SemiBold'],
+        'playfair-bold': ['PlayfairDisplay-Bold'],
+      },
       fontSize: {
         xs: "10px",
         sm: "12px",
