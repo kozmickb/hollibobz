@@ -19,13 +19,7 @@
       "bundleIdentifier": "com.triptick.app",
       "supportsTablet": true
     },
-    "android": {
-      "package": "com.triptick.app",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FF6B6B"
-      }
-    },
+    // Android configuration removed - iOS only
     "web": {
       "favicon": "./assets/favicon.png"
     },

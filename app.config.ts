@@ -30,13 +30,7 @@ const config: ExpoConfig = {
     bundleIdentifier: BUNDLE_ID, 
     supportsTablet: true
   },
-  android: { 
-    package: ANDROID_PACKAGE,
-    adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#FF6B6B'
-    }
-  },
+  // Android configuration removed - iOS only
   web: {
     favicon: './assets/favicon.png'
   },
