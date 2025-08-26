@@ -481,7 +481,7 @@ export function TimerDetailScreen() {
         {daysLeft !== null && (
           <Box 
             alignItems="center" 
-            marginBottom={24}
+            marginBottom={6}
             paddingVertical={20}
           >
             <CountdownDisplay 
@@ -493,7 +493,7 @@ export function TimerDetailScreen() {
         )}
         
         {/* Actions Section */}
-        <Box marginBottom={24} gap={12}>
+        <Box marginBottom={6} gap={12}>
           <Box flexDirection="row" gap={12}>
             <Button
               onPress={() =>
@@ -549,7 +549,7 @@ export function TimerDetailScreen() {
 
         {/* Quick Facts - 2x2 Grid */}
         {(meta?.quickFacts?.length || loadingQuickFacts) && (
-          <Box marginBottom={24}>
+          <Box marginBottom={6}>
             <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={12}>
               Quick Facts
             </RestyleText>
@@ -587,7 +587,7 @@ export function TimerDetailScreen() {
 
         {/* Daily Teaser */}
         {teaser && (
-          <Box marginBottom={24}>
+          <Box marginBottom={6}>
             <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={12}>
               Today's Travel Teaser
             </RestyleText>
@@ -601,7 +601,7 @@ export function TimerDetailScreen() {
 
         {/* FAQ Chips */}
         {meta?.faqs?.length ? (
-          <Box marginBottom={24}>
+          <Box marginBottom={6}>
             <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={12}>
               Quick Questions
             </RestyleText>
@@ -630,7 +630,7 @@ export function TimerDetailScreen() {
 
         {/* Quests */}
         {quests.length > 0 && (
-          <Box marginBottom={24}>
+          <Box marginBottom={6}>
             <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={12}>
               Travel Quests
             </RestyleText>

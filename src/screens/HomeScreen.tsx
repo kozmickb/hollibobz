@@ -81,7 +81,7 @@ export function HomeScreen() {
         <HeroBackground type="wave" height={200} />
         
         {/* Compact top bar */}
-        <Box flexDirection="row" justifyContent="space-between" alignItems="center" marginBottom={24}>
+        <Box flexDirection="row" justifyContent="space-between" alignItems="center" marginBottom={6}>
           <Box flexDirection="row" alignItems="center" gap={8}>
             <TripTickLogo size="lg" />
             <RestyleText variant="2xl" color="text" fontWeight="bold">
@@ -93,7 +93,7 @@ export function HomeScreen() {
 
         {/* Hero content */}
         <Box position="relative" zIndex={1}>
-          <RestyleText variant="lg" color="text" marginBottom={8}>
+          <RestyleText variant="lg" color="text" marginBottom={2}>
             {getGreeting()}
           </RestyleText>
           <RestyleText variant="sm" color="textMuted">
@@ -145,7 +145,7 @@ export function HomeScreen() {
 
         {/* Active timers */}
         <Box paddingHorizontal={20}>
-          <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={16}>
+          <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={4}>
             Your Trips
           </RestyleText>
 
@@ -155,16 +155,16 @@ export function HomeScreen() {
               borderRadius="xl"
               padding={40}
               alignItems="center"
-              marginBottom={20}
+              marginBottom={5}
               borderWidth={2}
               borderColor="textMuted"
               borderStyle="dashed"
             >
               <Ionicons name="airplane-outline" size={64} color={TripTickPalette.textMuted} />
-              <RestyleText variant="lg" color="text" textAlign="center" marginTop={16} marginBottom={8}>
+              <RestyleText variant="lg" color="text" textAlign="center" marginTop={4} marginBottom={2}>
                 No trips yet
               </RestyleText>
-              <RestyleText variant="md" color="textMuted" textAlign="center" marginBottom={24}>
+              <RestyleText variant="md" color="textMuted" textAlign="center" marginBottom={6}>
                 Add your first and let the countdown begin.
               </RestyleText>
               <Button
@@ -175,7 +175,7 @@ export function HomeScreen() {
               </Button>
             </Box>
           ) : (
-            <Box gap={16} marginBottom={20}>
+            <Box gap={4} marginBottom={5}>
               {sortedTimers.map((timer) => (
                 <Box
                   key={timer.id}
