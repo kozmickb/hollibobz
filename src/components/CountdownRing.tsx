@@ -22,10 +22,14 @@ try {
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-type Props = { percent: number; daysLeft: number };
+type Props = { 
+  percent: number; 
+  daysLeft: number; 
+  showLabel?: boolean;
+};
 
-export function CountdownRing({ percent, daysLeft }: Props) {
-  const { isDark } = useThemeStore();
+export function CountdownRing({ percent, daysLeft, showLabel = false }: Props) {
+  const { isDark, reduceMotion } = useThemeStore();
   const { settings } = useHolidayStore();
   const size = 180;
   const stroke = 12;
@@ -41,6 +45,8 @@ export function CountdownRing({ percent, daysLeft }: Props) {
   const lastPulsedDayRef = useRef<number | null>(null);
   const sweptInRef = useRef(false);
   const lastProgressRef = useRef(0);
+  const lastMilestoneRef = useRef<number | null>(null);
+  const ringThickness = useRef(new Animated.Value(stroke)).current;
 
   // Memoize progress value and days left integer
   const progressValue = useMemo(() => Math.max(0, Math.min(1, percent)), [percent]);
@@ -51,15 +57,21 @@ export function CountdownRing({ percent, daysLeft }: Props) {
     progress.setValue(0);
     sweptInRef.current = false;
     
-    Animated.timing(progress, {
-      toValue: progressValue,
-      duration: 1500,
-      easing: Easing.out(Easing.exp),
-      useNativeDriver: false,
-    }).start(() => {
+    if (!reduceMotion) {
+      Animated.timing(progress, {
+        toValue: progressValue,
+        duration: 1500,
+        easing: Easing.out(Easing.exp),
+        useNativeDriver: false,
+      }).start(() => {
+        sweptInRef.current = true;
+      });
+    } else {
+      // Skip animation, set directly
+      progress.setValue(progressValue);
       sweptInRef.current = true;
-    });
-  }, [progressValue, progress]);
+    }
+  }, [progressValue, progress, reduceMotion]);
 
   // Particle effects when plane rotates to new progress
   useEffect(() => {
@@ -105,6 +117,40 @@ export function CountdownRing({ percent, daysLeft }: Props) {
       }
     }
   }, [daysLeftInt, pulse, milestoneCircles, settings.reduceMotion]);
+
+  // Milestone detection and ring thickness pulse
+  useEffect(() => {
+    const milestones = [30, 14, 7, 3, 1];
+    const currentMilestone = milestones.find(m => daysLeftInt <= m);
+    
+    if (sweptInRef.current && 
+        currentMilestone !== undefined && 
+        lastMilestoneRef.current !== currentMilestone &&
+        lastMilestoneRef.current !== null) {
+      
+      lastMilestoneRef.current = currentMilestone;
+      
+      // Ring thickness pulse animation
+      if (!settings.reduceMotion) {
+        Animated.sequence([
+          Animated.timing(ringThickness, { 
+            toValue: stroke + 4, 
+            duration: 180, 
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: false 
+          }),
+          Animated.timing(ringThickness, { 
+            toValue: stroke, 
+            duration: 180, 
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: false 
+          }),
+        ]).start();
+      }
+    } else if (lastMilestoneRef.current === null && currentMilestone !== undefined) {
+      lastMilestoneRef.current = currentMilestone;
+    }
+  }, [daysLeftInt, ringThickness, settings.reduceMotion]);
 
   // Weekly arcs animation
   useEffect(() => {
@@ -167,6 +213,47 @@ export function CountdownRing({ percent, daysLeft }: Props) {
           fill="none"
         />
         
+        {/* Weekly tick marks */}
+        {Array.from({ length: 52 }, (_, i) => {
+          const angle = (i * 360 / 52) * (Math.PI / 180);
+          const x1 = size / 2 + Math.cos(angle) * (radius - stroke / 2);
+          const y1 = size / 2 + Math.sin(angle) * (radius - stroke / 2);
+          const x2 = size / 2 + Math.cos(angle) * (radius + stroke / 2);
+          const y2 = size / 2 + Math.sin(angle) * (radius + stroke / 2);
+          
+          return (
+            <line
+              key={`tick-${i}`}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke={isDark ? "#4B5563" : "#CBD5E1"}
+              strokeWidth={1}
+              opacity={0.6}
+            />
+          );
+        })}
+        
+        {/* Milestone dots */}
+        {[30, 14, 7, 3, 1].map((milestone, index) => {
+          const milestoneProgress = Math.max(0, Math.min(1, (100 - milestone) / 100));
+          const angle = (milestoneProgress * 360 - 90) * (Math.PI / 180);
+          const x = size / 2 + Math.cos(angle) * (radius + stroke / 2 + 4);
+          const y = size / 2 + Math.sin(angle) * (radius + stroke / 2 + 4);
+          
+          return (
+            <circle
+              key={`milestone-${milestone}`}
+              cx={x}
+              cy={y}
+              r={3}
+              fill={ringColor}
+              opacity={0.8}
+            />
+          );
+        })}
+        
         {/* Weekly arcs behind main arc */}
         {Array.from({ length: 8 }, (_, i) => {
           const arcProgress = Math.min(1, (i + 1) / 8);
@@ -197,7 +284,7 @@ export function CountdownRing({ percent, daysLeft }: Props) {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          strokeWidth={stroke}
+          strokeWidth={ringThickness}
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
@@ -305,13 +392,25 @@ export function CountdownRing({ percent, daysLeft }: Props) {
         }}>
           {daysLeft}
         </Text>
-        <Text style={{
-          fontSize: 14,
-          fontFamily: 'Poppins-Medium',
-          color: isDark ? '#94a3b8' : '#64748b',
-        }}>
-          {daysLeft === 0 ? "It's go day! 🎉" : daysLeft === 1 ? "day" : "days"}
-        </Text>
+        {showLabel ? (
+          <Text style={{
+            fontSize: 12,
+            fontFamily: 'Poppins-Medium',
+            color: isDark ? '#94a3b8' : '#64748b',
+            textAlign: 'center',
+            marginTop: 2,
+          }}>
+            {daysLeft === 0 ? "It's go day! 🎉" : `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} to go`}
+          </Text>
+        ) : (
+          <Text style={{
+            fontSize: 14,
+            fontFamily: 'Poppins-Medium',
+            color: isDark ? '#94a3b8' : '#64748b',
+          }}>
+            {daysLeft === 0 ? "It's go day! 🎉" : daysLeft === 1 ? "day" : "days"}
+          </Text>
+        )}
       </View>
 
       {/* Confetti celebration for trip day */}

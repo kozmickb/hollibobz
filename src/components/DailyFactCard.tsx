@@ -6,16 +6,20 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withSequence,
+  interpolate,
+  Extrapolate,
 } from "react-native-reanimated";
-import { useHolidayStore } from "../store/useHolidayStore";
+import { useHolidayStore } from "../state/holidayStore";
 import * as Haptics from "expo-haptics";
 
 export function DailyFactCard() {
-  const { getTodaysFact, markFactAsViewed, currentDestination } = useHolidayStore();
+  const { getTodaysFact, markFactAsViewed, currentDestination, saveFact } = useHolidayStore();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const flipRotation = useSharedValue(0);
   
   const todaysFact = getTodaysFact();
   
@@ -31,10 +35,24 @@ export function DailyFactCard() {
       withTiming(1, { duration: 100 })
     );
     
+    // Flip animation
+    flipRotation.value = withTiming(isExpanded ? 0 : 180, { duration: 300 });
+    
     setIsExpanded(!isExpanded);
     if (!isExpanded) {
       markFactAsViewed(todaysFact.fact);
     }
+  };
+
+  const handleSaveFact = () => {
+    if (!currentDestination || !todaysFact) return;
+    
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    saveFact(currentDestination.name, todaysFact.fact);
+    
+    // Show toast
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
   };
 
   const handleShare = async () => {
@@ -51,6 +69,20 @@ export function DailyFactCard() {
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: opacity.value,
+  }));
+
+  const frontAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { rotateY: `${flipRotation.value}deg` },
+    ],
+    backfaceVisibility: 'hidden' as const,
+  }));
+
+  const backAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { rotateY: `${flipRotation.value - 180}deg` },
+    ],
+    backfaceVisibility: 'hidden' as const,
   }));
 
   return (
@@ -70,57 +102,137 @@ export function DailyFactCard() {
       </View>
       
       <Animated.View style={animatedStyle}>
-        <Pressable
-          onPress={handleFactPress}
-          className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-5 shadow-lg"
-        >
-          <View className="flex-row items-start">
-            <View className="bg-white/20 rounded-full p-2 mr-3">
-              <Ionicons name="bulb" size={20} color="white" />
-            </View>
-            
-            <View className="flex-1">
-              <Text className="text-white font-semibold text-base mb-2">
-                About {currentDestination.name}
-              </Text>
-              
-              <Text 
-                className="text-white/90 text-sm leading-5"
-                numberOfLines={isExpanded ? undefined : 2}
-              >
-                {todaysFact.fact}
-              </Text>
-              
-              {!isExpanded && todaysFact.fact.length > 100 && (
-                <Text className="text-white/70 text-xs mt-1">
-                  Tap to read more...
-                </Text>
-              )}
-            </View>
-          </View>
-          
-          {isExpanded && (
-            <View className="flex-row justify-between items-center mt-4 pt-4 border-t border-white/20">
-              <Pressable
-                onPress={handleShare}
-                className="flex-row items-center bg-white/20 rounded-full px-4 py-2"
-              >
-                <Ionicons name="share" size={16} color="white" />
-                <Text className="text-white text-sm font-medium ml-2">
-                  Share
-                </Text>
-              </Pressable>
-              
-              <View className="flex-row items-center">
-                <Ionicons name="calendar" size={14} color="white" />
-                <Text className="text-white/80 text-xs ml-1">
-                  Fact of the day
-                </Text>
+        <View style={{ position: 'relative', height: 120 }}>
+          {/* Front of card */}
+          <Animated.View style={[frontAnimatedStyle, { position: 'absolute', width: '100%' }]}>
+            <Pressable
+              onPress={handleFactPress}
+              style={{
+                backgroundColor: '#3B82F6',
+                borderRadius: 16,
+                padding: 20,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 3,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: 8, marginRight: 12 }}>
+                  <Ionicons name="bulb" size={20} color="white" />
+                </View>
+                
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: 'white', fontWeight: '600', fontSize: 16, marginBottom: 8 }}>
+                    About {currentDestination.name}
+                  </Text>
+                  
+                  <Text 
+                    style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14, lineHeight: 20 }}
+                    numberOfLines={2}
+                  >
+                    {todaysFact.fact}
+                  </Text>
+                  
+                  {todaysFact.fact.length > 100 && (
+                    <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 }}>
+                      Tap to read more...
+                    </Text>
+                  )}
+                </View>
               </View>
-            </View>
-          )}
-        </Pressable>
+            </Pressable>
+          </Animated.View>
+
+          {/* Back of card */}
+          <Animated.View style={[backAnimatedStyle, { position: 'absolute', width: '100%' }]}>
+            <Pressable
+              onPress={handleFactPress}
+              style={{
+                backgroundColor: '#8B5CF6',
+                borderRadius: 16,
+                padding: 20,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                elevation: 3,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, padding: 8, marginRight: 12 }}>
+                  <Ionicons name="bulb" size={20} color="white" />
+                </View>
+                
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <Text style={{ color: 'white', fontWeight: '600', fontSize: 16, flex: 1 }}>
+                      About {currentDestination.name}
+                    </Text>
+                    <Text style={{ fontSize: 20 }}>🌍</Text>
+                  </View>
+                  
+                  <Text 
+                    style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14, lineHeight: 20 }}
+                  >
+                    {todaysFact.fact}
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)' }}>
+                <Pressable
+                  onPress={handleShare}
+                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 }}
+                >
+                  <Ionicons name="share" size={16} color="white" />
+                  <Text style={{ color: 'white', fontSize: 14, fontWeight: '500', marginLeft: 8 }}>
+                    Share
+                  </Text>
+                </Pressable>
+                
+                <Pressable
+                  onPress={handleSaveFact}
+                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 }}
+                >
+                  <Ionicons name="bookmark" size={16} color="white" />
+                  <Text style={{ color: 'white', fontSize: 14, fontWeight: '500', marginLeft: 8 }}>
+                    Save
+                  </Text>
+                </Pressable>
+              </View>
+            </Pressable>
+          </Animated.View>
+        </View>
       </Animated.View>
+
+      {/* Toast notification */}
+      {showToast && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            bottom: 20,
+            left: 20,
+            right: 20,
+            backgroundColor: '#10B981',
+            borderRadius: 12,
+            padding: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 3,
+          }}
+        >
+          <Ionicons name="checkmark-circle" size={20} color="white" />
+          <Text style={{ color: 'white', fontSize: 14, fontWeight: '500', marginLeft: 8 }}>
+            Saved to your Trip file
+          </Text>
+        </Animated.View>
+      )}
     </View>
   );
 }

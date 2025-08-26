@@ -215,6 +215,8 @@ export function TimerDetailScreen() {
   }, [daysLeft]);
 
   const shareCardRef = useRef<ViewShot>(null);
+  const heroShareRef = useRef<ViewShot>(null);
+  const [showShareError, setShowShareError] = useState(false);
 
   // Early return after all hooks
   if (!timer) {
@@ -275,21 +277,18 @@ export function TimerDetailScreen() {
   }
 
   async function shareCountdown() {
-    if (!timer || daysLeft === null || !shareCardRef.current) return;
+    if (!timer || daysLeft === null || !heroShareRef.current) return;
     try {
-      // Capture the share card as PNG
-      const uri = await shareCardRef.current.capture();
+      // Capture the hero section as PNG
+      const uri = await heroShareRef.current.capture();
       
       await Share.share({
         url: uri,
-        message: daysLeft === 0 
-          ? `It's go day! I'm in ${timer.destination} today! 🎉`
-          : daysLeft === 1 
-          ? `Tomorrow's the day! 1 day until ${timer.destination}! ✈️`
-          : `${daysLeft} days until ${timer.destination}! Can't wait! ✈️`,
+        message: `Counting down to ${timer.destination}! #TripTick`,
       });
     } catch (error) {
       console.log('Error sharing:', error);
+      setShowShareError(true);
     }
   }
 
@@ -317,84 +316,115 @@ export function TimerDetailScreen() {
       backgroundColor: theme?.background || (isDark ? '#1a1a1a' : '#F7F7F7') 
     }}>
       {/* Hero Section */}
-      <View style={{ position: 'relative', height: 300 }}>
-        {/* Backdrop with gradient overlay */}
-        <Backdrop destination={timer.destination} imageUrl={meta?.imageUrl} />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.7)']}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-          }}
-        />
-        
-        {/* Navigation */}
-        <View style={{
-          position: 'absolute',
-          top: 60,
-          left: 20,
-          right: 20,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          zIndex: 10,
-        }}>
-          <Pressable
-            onPress={() => navigation.goBack()}
+      <ViewShot ref={heroShareRef} options={{ format: 'png', quality: 0.9, width: 1080, height: 1920 }}>
+        <View style={{ position: 'relative', height: 300 }}>
+          {/* Backdrop with gradient overlay */}
+          <Backdrop destination={timer.destination} imageUrl={meta?.imageUrl} />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.7)']}
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: 12,
-              padding: 8,
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
             }}
-          >
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-          </Pressable>
-          <BurgerMenuButton />
-        </View>
+          />
+          
+          {/* Navigation */}
+          <View style={{
+            position: 'absolute',
+            top: 60,
+            left: 20,
+            right: 20,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            zIndex: 10,
+          }}>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: 12,
+                padding: 8,
+              }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </Pressable>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pressable
+                onPress={shareCountdown}
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: 12,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="share-social-outline" size={24} color="#FFFFFF" />
+              </Pressable>
+              <BurgerMenuButton />
+            </View>
+          </View>
 
-        {/* Countdown Ring - Bottom Left */}
-        {daysLeft !== null && (
+          {/* Countdown Ring - Bottom Left */}
+          {daysLeft !== null && (
+            <View style={{
+              position: 'absolute',
+              bottom: 20,
+              left: 20,
+              zIndex: 10,
+            }}>
+              <CountdownRing percent={progressPercent} daysLeft={daysLeft} showLabel={true} />
+            </View>
+          )}
+
+          {/* Destination Info - Bottom Right */}
           <View style={{
             position: 'absolute',
             bottom: 20,
-            left: 20,
+            right: 20,
             zIndex: 10,
+            alignItems: 'flex-end',
           }}>
-            <CountdownRing percent={progressPercent} daysLeft={daysLeft} />
+            <Text style={{
+              fontSize: 24,
+              fontFamily: 'Poppins-Bold',
+              color: '#FFFFFF',
+              textAlign: 'right',
+            }}>
+              {timer.destination}
+            </Text>
+            <Text style={{
+              color: '#FFFFFF',
+              fontSize: 16,
+              fontFamily: 'Poppins-Medium',
+              marginTop: 4,
+              textAlign: 'right',
+              opacity: 0.9,
+            }}>
+              {formatDate(timer.date)}
+            </Text>
           </View>
-        )}
 
-        {/* Destination Info - Bottom Right */}
-        <View style={{
-          position: 'absolute',
-          bottom: 20,
-          right: 20,
-          zIndex: 10,
-          alignItems: 'flex-end',
-        }}>
-          <Text style={{
-            fontSize: 24,
-            fontFamily: 'Poppins-Bold',
-            color: '#FFFFFF',
-            textAlign: 'right',
+          {/* Watermark - Bottom Right */}
+          <View style={{
+            position: 'absolute',
+            bottom: 8,
+            right: 8,
+            zIndex: 5,
           }}>
-            {timer.destination}
-          </Text>
-          <Text style={{
-            color: '#FFFFFF',
-            fontSize: 16,
-            fontFamily: 'Poppins-Medium',
-            marginTop: 4,
-            textAlign: 'right',
-            opacity: 0.9,
-          }}>
-            {formatDate(timer.date)}
-          </Text>
+            <Text style={{
+              fontSize: 10,
+              fontFamily: 'Poppins-Regular',
+              color: 'rgba(255, 255, 255, 0.6)',
+              textAlign: 'right',
+            }}>
+              Made with TripTick
+            </Text>
+          </View>
         </View>
-      </View>
+      </ViewShot>
 
       {/* Progress Band */}
       {daysLeft !== null && (
@@ -716,6 +746,17 @@ export function TimerDetailScreen() {
           },
         ]}
         onClose={() => setShowDeleteAlert(false)}
+      />
+
+      {/* Share Error Alert */}
+      <CustomAlert
+        visible={showShareError}
+        title="Share Failed"
+        message="Sorry, we couldn't create your share image. Please try again."
+        buttons={[
+          { text: "OK", onPress: () => setShowShareError(false) }
+        ]}
+        onClose={() => setShowShareError(false)}
       />
     </View>
   );

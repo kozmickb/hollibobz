@@ -1,0 +1,57 @@
+import { ExpoConfig } from '@expo/config';
+
+const NAME = process.env.APP_NAME ?? 'TripTick';
+const SLUG = process.env.SLUG ?? 'triptick';
+const OWNER = process.env.OWNER ?? '<your-expo-username>';
+const PROJECT_ID = process.env.PROJECT_ID ?? '<REPLACE_WITH_REAL_PROJECT_ID>'; // run: npx eas init
+const BUNDLE_ID = process.env.IOS_BUNDLE_ID ?? 'com.triptick.app';
+const ANDROID_PACKAGE = process.env.ANDROID_PACKAGE ?? 'com.triptick.app';
+
+const updatesUrl = PROJECT_ID && PROJECT_ID.startsWith('0000') === false
+  ? `https://u.expo.dev/${PROJECT_ID}`
+  : undefined;
+
+const config: ExpoConfig = {
+  name: NAME,
+  slug: SLUG,
+  owner: OWNER,
+  scheme: 'triptick',
+  version: '1.0.0',
+  orientation: 'portrait',
+  icon: './assets/TT logo.png',
+  userInterfaceStyle: 'light',
+  splash: {
+    image: './assets/splash.png',
+    resizeMode: 'contain',
+    backgroundColor: '#FF6B6B'
+  },
+  assetBundlePatterns: [
+    '**/*'
+  ],
+  ios: { 
+    bundleIdentifier: BUNDLE_ID, 
+    supportsTablet: true
+  },
+  android: { 
+    package: ANDROID_PACKAGE,
+    adaptiveIcon: {
+      foregroundImage: './assets/adaptive-icon.png',
+      backgroundColor: '#FF6B6B'
+    }
+  },
+  web: {
+    favicon: './assets/favicon.png'
+  },
+  plugins: [
+    'expo-font'
+  ],
+  experiments: {
+    typedRoutes: true
+  },
+  extra: {
+    eas: { projectId: PROJECT_ID },
+  },
+  updates: updatesUrl ? { url: updatesUrl } : undefined,
+};
+
+export default config;

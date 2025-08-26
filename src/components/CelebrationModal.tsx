@@ -10,6 +10,8 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { useThemeStore } from "../store/useThemeStore";
+import { textStyles, accessibilityProps } from "../utils/accessibility";
 
 interface CelebrationModalProps {
   visible: boolean;
@@ -19,29 +21,37 @@ interface CelebrationModalProps {
 }
 
 const ConfettiPiece = ({ delay = 0 }: { delay?: number }) => {
+  const { reduceMotion } = useThemeStore();
   const translateY = useSharedValue(-100);
   const translateX = useSharedValue(0);
   const rotate = useSharedValue(0);
   const opacity = useSharedValue(1);
 
   useEffect(() => {
-    translateY.value = withDelay(
-      delay,
-      withTiming(600, { duration: 2000, easing: Easing.out(Easing.quad) })
-    );
-    translateX.value = withDelay(
-      delay,
-      withTiming((Math.random() - 0.5) * 200, { duration: 2000 })
-    );
-    rotate.value = withDelay(
-      delay,
-      withRepeat(withTiming(360, { duration: 1000 }), 2, false)
-    );
-    opacity.value = withDelay(
-      delay + 1500,
-      withTiming(0, { duration: 500 })
-    );
-  }, []);
+    if (!reduceMotion) {
+      translateY.value = withDelay(
+        delay,
+        withTiming(600, { duration: 2000, easing: Easing.out(Easing.quad) })
+      );
+      translateX.value = withDelay(
+        delay,
+        withTiming((Math.random() - 0.5) * 200, { duration: 2000 })
+      );
+      rotate.value = withDelay(
+        delay,
+        withRepeat(withTiming(360, { duration: 1000 }), 2, false)
+      );
+      opacity.value = withDelay(
+        delay + 1500,
+        withTiming(0, { duration: 500 })
+      );
+    } else {
+      // Skip animations, set final state immediately
+      translateY.value = 600;
+      translateX.value = (Math.random() - 0.5) * 200;
+      opacity.value = 0;
+    }
+  }, [reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -68,6 +78,7 @@ export function CelebrationModal({
   timerName,
   destinationName,
 }: CelebrationModalProps) {
+  const { reduceMotion } = useThemeStore();
   const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
   const textScale = useSharedValue(0);
@@ -78,43 +89,60 @@ export function CelebrationModal({
       // Trigger haptic feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
-      // Start animations
-      opacity.value = withTiming(1, { duration: 300 });
-      scale.value = withSequence(
-        withTiming(1.2, { duration: 400, easing: Easing.out(Easing.back(1.7)) }),
-        withTiming(1, { duration: 200 })
-      );
-      
-      textScale.value = withDelay(
-        200,
-        withTiming(1, { duration: 500, easing: Easing.out(Easing.back(1.5)) })
-      );
+      if (!reduceMotion) {
+        // Start animations
+        opacity.value = withTiming(1, { duration: 300 });
+        scale.value = withSequence(
+          withTiming(1.2, { duration: 400, easing: Easing.out(Easing.back(1.7)) }),
+          withTiming(1, { duration: 200 })
+        );
+        
+        textScale.value = withDelay(
+          200,
+          withTiming(1, { duration: 500, easing: Easing.out(Easing.back(1.5)) })
+        );
 
-      // Pulsing animation for the emoji
-      pulseScale.value = withRepeat(
-        withSequence(
-          withTiming(1.2, { duration: 500 }),
-          withTiming(1, { duration: 500 })
-        ),
-        3,
-        false
-      );
+        // Pulsing animation for the emoji
+        pulseScale.value = withRepeat(
+          withSequence(
+            withTiming(1.2, { duration: 500 }),
+            withTiming(1, { duration: 500 })
+          ),
+          3,
+          false
+        );
 
-      // Auto-close after animation
-      const timer = setTimeout(() => {
-        opacity.value = withTiming(0, { duration: 300 });
-        scale.value = withTiming(0, { duration: 300 });
-        setTimeout(onComplete, 300);
-      }, 3500);
+        // Auto-close after animation
+        const timer = setTimeout(() => {
+          opacity.value = withTiming(0, { duration: 300 });
+          scale.value = withTiming(0, { duration: 300 });
+          setTimeout(onComplete, 300);
+        }, 3500);
 
-      return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
+      } else {
+        // Skip animations, set final state immediately
+        opacity.value = 1;
+        scale.value = 1;
+        textScale.value = 1;
+        pulseScale.value = 1;
+        
+        // Auto-close after shorter delay
+        const timer = setTimeout(() => {
+          opacity.value = 0;
+          scale.value = 0;
+          setTimeout(onComplete, 100);
+        }, 2000);
+
+        return () => clearTimeout(timer);
+      }
     } else {
       scale.value = 0;
       opacity.value = 0;
       textScale.value = 0;
       pulseScale.value = 1;
     }
-  }, [visible]);
+  }, [visible, reduceMotion]);
 
   const containerStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -149,23 +177,23 @@ export function CelebrationModal({
             </Animated.View>
             
             <Animated.View style={textStyle} className="items-center">
-              <Text className="text-2xl font-bold text-slate-800 mb-2 text-center">
+              <Text style={[textStyles.h2, { textAlign: 'center', marginBottom: 8 }]} {...accessibilityProps.text}>
                 Timer Created!
               </Text>
               
-              <Text className="text-lg text-slate-600 text-center mb-2">
+              <Text style={[textStyles.body, { textAlign: 'center', marginBottom: 8 }]} {...accessibilityProps.text}>
                 {timerName}
               </Text>
               
               {destinationName && (
-                <Text className="text-base text-blue-600 text-center font-medium">
+                <Text style={[textStyles.label, { textAlign: 'center', color: '#2563EB' }]} {...accessibilityProps.text}>
                   Get ready for {destinationName}!
                 </Text>
               )}
               
-              <View className="flex-row items-center mt-4 bg-blue-50 rounded-full px-4 py-2">
-                <Text className="text-2xl mr-2">✈️</Text>
-                <Text className="text-blue-700 font-medium">
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, backgroundColor: '#EFF6FF', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 }}>
+                <Text style={{ fontSize: 24, marginRight: 8 }}>✈️</Text>
+                <Text style={[textStyles.label, { color: '#1D4ED8' }]} {...accessibilityProps.text}>
                   The countdown begins!
                 </Text>
               </View>

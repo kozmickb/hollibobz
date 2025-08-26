@@ -12,6 +12,8 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useThemeStore } from '../store/useThemeStore';
+import { textStyles, gradientTextStyles, accessibilityProps, hitSlop, pressableArea } from '../utils/accessibility';
 
 interface TimerCardProps {
   destination: string;
@@ -25,6 +27,7 @@ interface TimerCardProps {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function TimerCard({ destination, date, daysLeft, createdAt, onPress, style }: TimerCardProps) {
+  const { reduceMotion } = useThemeStore();
   const scale = useSharedValue(1);
   const shimmer = useSharedValue(0);
   const pulseScale = useSharedValue(1);
@@ -32,22 +35,26 @@ export function TimerCard({ destination, date, daysLeft, createdAt, onPress, sty
 
   // Shimmer animation for excitement
   useEffect(() => {
-    shimmer.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
-  }, []);
+    if (!reduceMotion) {
+      shimmer.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
+    }
+  }, [reduceMotion]);
 
   // Pulse animation for urgent timers (less than 7 days)
   useEffect(() => {
-    if (daysLeft <= 7 && daysLeft > 0) {
+    if (daysLeft <= 7 && daysLeft > 0 && !reduceMotion) {
       pulseScale.value = withRepeat(
         withSpring(1.05, { damping: 8, stiffness: 100 }),
         -1,
         true
       );
     }
-  }, [daysLeft]);
+  }, [daysLeft, reduceMotion]);
 
   // Gentle countdown pulse animation every minute
   useEffect(() => {
+    if (reduceMotion) return;
+    
     const interval = setInterval(() => {
       if (daysLeft > 0) {
         scale.value = withSequence(
@@ -58,14 +65,18 @@ export function TimerCard({ destination, date, daysLeft, createdAt, onPress, sty
     }, 60000); // Every minute
 
     return () => clearInterval(interval);
-  }, [daysLeft]);
+  }, [daysLeft, reduceMotion]);
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.98);
+    if (!reduceMotion) {
+      scale.value = withSpring(0.98);
+    }
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1);
+    if (!reduceMotion) {
+      scale.value = withSpring(1);
+    }
   };
 
   const handlePress = () => {
@@ -139,6 +150,8 @@ export function TimerCard({ destination, date, daysLeft, createdAt, onPress, sty
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={handlePress}
+      hitSlop={hitSlop}
+      {...accessibilityProps.button}
     >
       <View style={{ borderRadius: 20, overflow: 'hidden' }}>
         <LinearGradient
@@ -170,38 +183,21 @@ export function TimerCard({ destination, date, daysLeft, createdAt, onPress, sty
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <View style={{ flex: 1 }}>
               <Text
-                style={{
-                  color: '#FFFFFF',
-                  fontSize: 20,
-                  fontFamily: 'Poppins-Bold',
-                  marginBottom: 4,
-                  textShadowColor: 'rgba(0, 0, 0, 0.3)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 2,
-                }}
+                style={[gradientTextStyles.h3, { fontSize: 20, marginBottom: 4 }]}
                 numberOfLines={2}
+                {...accessibilityProps.text}
               >
                 {destination}
               </Text>
               <Text
-                style={{
-                  color: 'rgba(255, 255, 255, 0.95)',
-                  fontSize: 14,
-                  fontFamily: 'Poppins-Medium',
-                  marginBottom: 8,
-                  textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 1,
-                }}
+                style={[gradientTextStyles.bodySmall, { fontSize: 14, marginBottom: 8 }]}
+                {...accessibilityProps.text}
               >
                 Departs in {getDaysText()}
               </Text>
               <Text
-                style={{
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  fontSize: 12,
-                  fontFamily: 'Poppins-Regular',
-                }}
+                style={[gradientTextStyles.caption, { fontSize: 12 }]}
+                {...accessibilityProps.text}
               >
                 {formatDate(date)}
               </Text>
@@ -218,28 +214,14 @@ export function TimerCard({ destination, date, daysLeft, createdAt, onPress, sty
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 }}>
             <View>
               <Text
-                style={{
-                  color: '#FFFFFF',
-                  fontSize: 32,
-                  fontFamily: 'Poppins-Bold',
-                  lineHeight: 36,
-                  textShadowColor: 'rgba(0, 0, 0, 0.3)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 2,
-                }}
+                style={[gradientTextStyles.h1, { fontSize: 32, lineHeight: 36 }]}
+                {...accessibilityProps.text}
               >
                 {Math.abs(daysLeft)}
               </Text>
               <Text
-                style={{
-                  color: 'rgba(255, 255, 255, 0.95)',
-                  fontSize: 14,
-                  fontFamily: 'Poppins-Medium',
-                  marginTop: -4,
-                  textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 1,
-                }}
+                style={[gradientTextStyles.bodySmall, { fontSize: 14, marginTop: -4 }]}
+                {...accessibilityProps.text}
               >
                 {getDaysText()}
               </Text>

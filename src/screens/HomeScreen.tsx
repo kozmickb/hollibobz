@@ -13,6 +13,7 @@ import { BurgerMenuButton } from '../components/BurgerMenuButton';
 import { TripTickLogo } from '../components/TripTickLogo';
 import { CustomAlert } from "../components/CustomAlert";
 import { CountdownDisplay } from "../components/CountdownDisplay";
+import { textStyles, gradientTextStyles, accessibilityProps, hitSlop } from "../utils/accessibility";
 
 
 // Try to import confetti with fallback
@@ -107,11 +108,8 @@ export function HomeScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TripTickLogo size="lg" />
             <Text
-              style={{
-                color: '#FFFFFF',
-                fontSize: 24,
-                fontFamily: 'Poppins-Bold',
-              }}
+              style={[gradientTextStyles.h2, { fontSize: 24 }]}
+              {...accessibilityProps.text}
             >
               TripTick
             </Text>
@@ -122,21 +120,14 @@ export function HomeScreen() {
         {/* Hero content */}
         <View style={{ position: 'relative', zIndex: 1 }}>
           <Text
-            style={{
-              color: '#FFFFFF',
-              fontSize: 16,
-              fontFamily: 'Poppins-Medium',
-              marginBottom: 8,
-            }}
+            style={[gradientTextStyles.body, { fontSize: 16, marginBottom: 8 }]}
+            {...accessibilityProps.text}
           >
             {getGreeting()}
           </Text>
           <Text
-            style={{
-              color: 'rgba(255, 255, 255, 0.9)',
-              fontSize: 14,
-              fontFamily: 'Poppins-Regular',
-            }}
+            style={[gradientTextStyles.bodySmall, { fontSize: 14 }]}
+            {...accessibilityProps.text}
           >
             Count down to your next escape
           </Text>
@@ -207,25 +198,14 @@ export function HomeScreen() {
             >
               <Ionicons name="airplane-outline" size={64} color={isDark ? '#666666' : '#999999'} />
               <Text
-                style={{
-                  fontSize: 20,
-                  fontFamily: 'Poppins-SemiBold',
-                  color: isDark ? '#FFFFFF' : '#333333',
-                  textAlign: 'center',
-                  marginTop: 16,
-                  marginBottom: 8,
-                }}
+                style={[textStyles.h3, { textAlign: 'center', marginTop: 16, marginBottom: 8 }]}
+                {...accessibilityProps.text}
               >
                 No trips yet
               </Text>
               <Text
-                style={{
-                  fontSize: 16,
-                  fontFamily: 'Poppins-Regular',
-                  color: isDark ? '#CCCCCC' : '#666666',
-                  textAlign: 'center',
-                  marginBottom: 24,
-                }}
+                style={[textStyles.body, { textAlign: 'center', marginBottom: 24 }]}
+                {...accessibilityProps.text}
               >
                 Add your first and let the countdown begin.
               </Text>
@@ -257,12 +237,8 @@ export function HomeScreen() {
         {archived.length > 0 && (
           <View style={{ paddingHorizontal: 20, paddingBottom: 40 }}>
             <Text
-              style={{
-                fontSize: 16,
-                fontFamily: 'Poppins-SemiBold',
-                color: isDark ? '#CCCCCC' : '#666666',
-                marginBottom: 12,
-              }}
+              style={[textStyles.label, { marginBottom: 12 }]}
+              {...accessibilityProps.text}
             >
               Archived Trips
             </Text>
@@ -284,22 +260,14 @@ export function HomeScreen() {
                   }}
                 >
                   <Text
-                    style={{
-                      fontSize: 16,
-                      fontFamily: 'Poppins-SemiBold',
-                      color: isDark ? '#FFFFFF' : '#333333',
-                      marginBottom: 4,
-                    }}
+                    style={[textStyles.h3, { marginBottom: 4 }]}
+                    {...accessibilityProps.text}
                   >
                     {timer.destination}
                   </Text>
                   <Text
-                    style={{
-                      fontSize: 14,
-                      fontFamily: 'Poppins-Regular',
-                      color: isDark ? '#CCCCCC' : '#666666',
-                      marginBottom: 8,
-                    }}
+                    style={[textStyles.bodySmall, { marginBottom: 8 }]}
+                    {...accessibilityProps.text}
                   >
                     {new Date(timer.date).toLocaleDateString('en-GB')}
                   </Text>

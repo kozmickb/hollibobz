@@ -23,6 +23,12 @@ export interface DailyFact {
   shown: boolean;
 }
 
+export interface SavedFact {
+  destination: string;
+  fact: string;
+  savedAt: string;
+}
+
 export interface AppSettings {
   enableAnimations: boolean;
   enableHaptics: boolean;
@@ -35,6 +41,7 @@ interface HolidayState {
   currentDestination: Destination | null;
   dailyFacts: DailyFact[];
   viewedFacts: string[];
+  savedFacts: SavedFact[];
   settings: AppSettings;
   addTimer: (timer: Omit<Timer, "id">) => void;
   removeTimer: (id: string) => void;
@@ -43,6 +50,8 @@ interface HolidayState {
   clearDestination: () => void;
   getTodaysFact: () => DailyFact | null;
   markFactAsViewed: (fact: string) => void;
+  saveFact: (destination: string, fact: string) => void;
+  removeSavedFact: (savedAt: string) => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
   resetViewedFacts: () => void;
 }
@@ -54,6 +63,7 @@ export const useHolidayStore = create<HolidayState>()(
       currentDestination: null,
       dailyFacts: [],
       viewedFacts: [],
+      savedFacts: [],
       settings: {
         enableAnimations: true,
         enableHaptics: true,
@@ -130,6 +140,23 @@ export const useHolidayStore = create<HolidayState>()(
         }));
       },
       
+      saveFact: (destination, fact) => {
+        const savedFact: SavedFact = {
+          destination,
+          fact,
+          savedAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          savedFacts: [...state.savedFacts, savedFact],
+        }));
+      },
+      
+      removeSavedFact: (savedAt) => {
+        set((state) => ({
+          savedFacts: state.savedFacts.filter(sf => sf.savedAt !== savedAt),
+        }));
+      },
+      
       updateSettings: (newSettings) => {
         set((state) => ({
           settings: { ...state.settings, ...newSettings },
@@ -160,6 +187,7 @@ export const useHolidayStore = create<HolidayState>()(
       partialize: (state) => ({
         timers: state.timers,
         currentDestination: state.currentDestination,
+        savedFacts: state.savedFacts,
       }),
     }
   )

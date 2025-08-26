@@ -4,6 +4,7 @@ import { HomeScreen } from "../screens/HomeScreen";
 import { AddTimerScreen } from "../screens/AddTimerScreen";
 import { TimerDetailScreen } from "../screens/TimerDetailScreen";
 import { HollyChatScreen } from "../screens/HollyChatScreen";
+import { SavedFactsScreen } from "../screens/SavedFactsScreen";
 
 export type HollyChatParams = {
   seedQuery?: string;
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   AddTimer: undefined;
   TimerDetail: { timerId: string };
   HollyChat: HollyChatParams | undefined;
+  SavedFacts: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -33,6 +35,7 @@ export function AppNavigator() {
       <Stack.Screen name="AddTimer" component={AddTimerScreen} options={{ title: "Add Timer", presentation: "modal" }} />
       <Stack.Screen name="TimerDetail" component={TimerDetailScreen} options={{ title: "Timer Details" }} />
       <Stack.Screen name="HollyChat" component={HollyChatScreen} options={{ title: "Chat with Holly Bobz" }} />
+      <Stack.Screen name="SavedFacts" component={SavedFactsScreen} options={{ title: "Saved Facts" }} />
     </Stack.Navigator>
   );
 }

@@ -7,8 +7,10 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 type ThemeState = {
   mode: ThemeMode;
   isDark: boolean;
+  reduceMotion: boolean;
   setMode: (mode: ThemeMode) => void;
   toggleTheme: () => void;
+  setReduceMotion: (reduceMotion: boolean) => void;
   _hydrate: () => Promise<void>;
 };
 
@@ -34,6 +36,7 @@ const calculateIsDark = (mode: ThemeMode): boolean => {
 export const useThemeStore = create<ThemeState>((set, get) => ({
   mode: 'system',
   isDark: getSystemTheme(),
+  reduceMotion: false,
   
   setMode: (mode) => {
     const isDark = calculateIsDark(mode);
@@ -47,6 +50,11 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     get().setMode(newMode);
   },
   
+  setReduceMotion: (reduceMotion) => {
+    set({ reduceMotion });
+    AsyncStorage.setItem('reduce_motion_preference', JSON.stringify(reduceMotion)).catch(() => {});
+  },
+  
   _hydrate: async () => {
     try {
       const savedMode = await AsyncStorage.getItem(THEME_STORAGE_KEY);
@@ -54,6 +62,12 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
         const mode = savedMode as ThemeMode;
         const isDark = calculateIsDark(mode);
         set({ mode, isDark });
+      }
+      
+      const savedReduceMotion = await AsyncStorage.getItem('reduce_motion_preference');
+      if (savedReduceMotion !== null) {
+        const reduceMotion = JSON.parse(savedReduceMotion);
+        set({ reduceMotion });
       }
     } catch {
       // ignore

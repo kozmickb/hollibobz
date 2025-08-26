@@ -9,6 +9,8 @@ import Animated, {
   interpolateColor,
 } from 'react-native-reanimated';
 import { FlipDigit } from './FlipDigit';
+import { useThemeStore } from '../store/useThemeStore';
+import { textStyles, accessibilityProps } from '../utils/accessibility';
 
 interface CountdownDisplayProps {
   daysLeft: number;
@@ -21,11 +23,12 @@ export function CountdownDisplay({
   size = 'lg', 
   showAnimation = true 
 }: CountdownDisplayProps) {
+  const { reduceMotion } = useThemeStore();
   const scale = useSharedValue(1);
   const colorAnimation = useSharedValue(0);
 
   useEffect(() => {
-    if (showAnimation) {
+    if (showAnimation && !reduceMotion) {
       // Pulse animation on mount
       scale.value = withSequence(
         withSpring(1.2, { damping: 8 }),
@@ -41,7 +44,7 @@ export function CountdownDisplay({
         colorAnimation.value = withTiming(0, { duration: 1000 });
       }
     }
-  }, [daysLeft, showAnimation]);
+  }, [daysLeft, showAnimation, reduceMotion]);
 
   const getSizeStyles = () => {
     switch (size) {
@@ -138,26 +141,30 @@ export function CountdownDisplay({
       />
       
       <Text
-        style={{
-          fontSize: sizeStyles.labelSize,
-          fontFamily: 'Poppins-Medium',
-          color: '#666666',
-          textAlign: 'center',
-          marginTop: sizeStyles.spacing,
-        }}
+        style={[
+          textStyles.bodySmall,
+          {
+            fontSize: sizeStyles.labelSize,
+            textAlign: 'center',
+            marginTop: sizeStyles.spacing,
+          }
+        ]}
+        {...accessibilityProps.text}
       >
         {getDaysText()}
       </Text>
 
       {size === 'xl' && (
         <Text
-          style={{
-            fontSize: 16,
-            fontFamily: 'Poppins-Medium',
-            color: '#999999',
-            textAlign: 'center',
-            marginTop: sizeStyles.spacing * 2,
-          }}
+          style={[
+            textStyles.caption,
+            {
+              fontSize: 16,
+              textAlign: 'center',
+              marginTop: sizeStyles.spacing * 2,
+            }
+          ]}
+          {...accessibilityProps.text}
         >
           {getMotivationalText()}
         </Text>

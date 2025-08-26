@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useThemeStore } from '../store/useThemeStore';
 import { ThemeButton } from './ThemeButton';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { textStyles, accessibilityProps, hitSlop } from '../utils/accessibility';
 
 interface BurgerMenuProps {
   visible: boolean;
@@ -14,7 +15,7 @@ interface BurgerMenuProps {
 
 export function BurgerMenu({ visible, onClose }: BurgerMenuProps) {
   const navigation = useNavigation();
-  const { isDark } = useThemeStore();
+  const { isDark, reduceMotion, setReduceMotion } = useThemeStore();
 
   const menuItems: Array<{
     icon: any;
@@ -39,6 +40,12 @@ export function BurgerMenu({ visible, onClose }: BurgerMenuProps) {
       label: 'Holly Chat',
       screen: 'HollyChat',
       description: 'AI travel assistant'
+    },
+    {
+      icon: 'bookmark-outline',
+      label: 'Saved Facts',
+      screen: 'SavedFacts',
+      description: 'Your collection of facts'
     }
   ];
 
@@ -111,6 +118,7 @@ export function BurgerMenu({ visible, onClose }: BurgerMenuProps) {
             <Pressable
               key={item.screen}
               onPress={() => handleNavigate(item.screen)}
+              hitSlop={hitSlop}
               style={{
                 backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
                 borderRadius: 20,
@@ -138,19 +146,10 @@ export function BurgerMenu({ visible, onClose }: BurgerMenuProps) {
               </View>
               
               <View style={{ flex: 1 }}>
-                <Text style={{
-                  fontSize: 18,
-                  fontFamily: 'Poppins-SemiBold',
-                  color: isDark ? '#FFFFFF' : '#333333',
-                  marginBottom: 4,
-                }}>
+                <Text style={[textStyles.h3, { marginBottom: 4 }]}>
                   {item.label}
                 </Text>
-                <Text style={{
-                  fontSize: 14,
-                  fontFamily: 'Poppins-Regular',
-                  color: isDark ? '#CCCCCC' : '#666666',
-                }}>
+                <Text style={[textStyles.bodySmall]}>
                   {item.description}
                 </Text>
               </View>
@@ -170,39 +169,69 @@ export function BurgerMenu({ visible, onClose }: BurgerMenuProps) {
           borderTopColor: isDark ? '#333333' : '#E5E5E5',
           padding: 24,
         }}>
-          <Text style={{
-            fontSize: 16,
-            fontFamily: 'Poppins-SemiBold',
-            color: isDark ? '#FFFFFF' : '#333333',
-            marginBottom: 16,
-          }}>
+          <Text style={[textStyles.label, { marginBottom: 16 }]}>
             Settings
           </Text>
           
-          <View style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}>
-            <View>
-              <Text style={{
-                fontSize: 16,
-                fontFamily: 'Poppins-Medium',
-                color: isDark ? '#FFFFFF' : '#333333',
-                marginBottom: 2,
-              }}>
-                Theme
-              </Text>
-              <Text style={{
-                fontSize: 14,
-                fontFamily: 'Poppins-Regular',
-                color: isDark ? '#CCCCCC' : '#666666',
-              }}>
-                Tap to cycle through themes
-              </Text>
+          <View style={{ gap: 16 }}>
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <View>
+                <Text style={[textStyles.label, { marginBottom: 2 }]}>
+                  Theme
+                </Text>
+                <Text style={[textStyles.bodySmall]}>
+                  Tap to cycle through themes
+                </Text>
+              </View>
+              
+              <ThemeButton />
             </View>
-            
-            <ThemeButton />
+
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <View>
+                <Text style={[textStyles.label, { marginBottom: 2 }]}>
+                  Reduce Motion
+                </Text>
+                <Text style={[textStyles.bodySmall]}>
+                  Disable animations for accessibility
+                </Text>
+              </View>
+              
+              <Pressable
+                onPress={() => setReduceMotion(!reduceMotion)}
+                hitSlop={hitSlop}
+                style={{
+                  backgroundColor: reduceMotion ? '#10B981' : '#E5E7EB',
+                  borderRadius: 20,
+                  width: 44,
+                  height: 24,
+                  justifyContent: 'center',
+                  alignItems: reduceMotion ? 'flex-end' : 'flex-start',
+                  paddingHorizontal: 2,
+                }}
+                {...accessibilityProps.button}
+              >
+                <View style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 10,
+                  backgroundColor: '#FFFFFF',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 2,
+                  elevation: 2,
+                }} />
+              </Pressable>
+            </View>
           </View>
         </View>
       </SafeAreaView>
