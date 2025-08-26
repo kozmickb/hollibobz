@@ -45,7 +45,7 @@ export function SavedFactsScreen() {
       {/* Header */}
       <View style={{ 
         backgroundColor: '#FFFFFF', 
-        paddingTop: 60, 
+        paddingTop: 12, 
         paddingBottom: 20, 
         paddingHorizontal: 20,
         borderBottomWidth: 1,
@@ -99,7 +99,7 @@ export function SavedFactsScreen() {
           <View style={{ 
             alignItems: 'center', 
             justifyContent: 'center', 
-            paddingVertical: 60,
+            paddingVertical: 12,
           }}>
             <Ionicons name="bookmark-outline" size={64} color="#CCCCCC" />
             <Text style={{ 

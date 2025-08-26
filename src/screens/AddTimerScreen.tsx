@@ -58,7 +58,7 @@ export function AddTimerScreen() {
         {/* Static Header Banner */}
         <View style={{
           backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
-          paddingTop: 60,
+          paddingTop: 12,
           paddingBottom: 16,
           paddingHorizontal: 20,
           borderBottomWidth: 1,

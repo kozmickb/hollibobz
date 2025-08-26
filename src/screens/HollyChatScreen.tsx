@@ -614,7 +614,7 @@ export function HollyChatScreen() {
       {/* Static Header Banner */}
       <View style={{
         backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
-        paddingTop: Platform.OS === 'ios' ? 60 : 16,
+        paddingTop: Platform.OS === 'ios' ? 12 : 4,
         paddingBottom: 16,
         paddingHorizontal: 20,
         borderBottomWidth: 1,

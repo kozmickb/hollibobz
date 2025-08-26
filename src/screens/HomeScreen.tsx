@@ -77,7 +77,7 @@ export function HomeScreen() {
   return (
     <Box flex={1} backgroundColor="bg">
       {/* Hero Section with TripTick Background */}
-      <Box position="relative" paddingTop={60} paddingBottom={40} paddingHorizontal={20}>
+              <Box position="relative" paddingTop={12} paddingBottom={10} paddingHorizontal={5}>
         <HeroBackground type="wave" height={200} />
         
         {/* Compact top bar */}
