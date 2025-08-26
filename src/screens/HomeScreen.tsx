@@ -6,14 +6,16 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../store/useHolidayStore";
-import { ThemedButton } from "../components/ThemedButton";
-import { TimerCard } from "../components/TimerCard";
 import { useThemeStore } from '../store/useThemeStore';
 import { BurgerMenuButton } from '../components/BurgerMenuButton';
 import { TripTickLogo } from '../components/TripTickLogo';
 import { CustomAlert } from "../components/CustomAlert";
 import { CountdownDisplay } from "../components/CountdownDisplay";
-import { textStyles, gradientTextStyles, accessibilityProps, hitSlop } from "../utils/accessibility";
+import { HeroBackground } from "../components/HeroBackground";
+import { Box } from "../components/ui/Box";
+import { Text as RestyleText } from "../components/ui/Text";
+import { Button } from "../components/ui/Button";
+import { TripTickPalette } from "../theme/tokens";
 
 
 // Try to import confetti with fallback
@@ -32,7 +34,7 @@ export function HomeScreen() {
   const archived = useHolidayStore((s) => s.archivedTimers);
   const restore = useHolidayStore((s) => s.restoreTimer);
   const purge = useHolidayStore((s) => s.purgeArchive);
-  const { isDark } = useThemeStore();
+  const { colorScheme } = useThemeStore();
   const [showConfetti, setShowConfetti] = useState(false);
   const [prevTimerCount, setPrevTimerCount] = useState(timers.length);
   const [showPurgeAlert, setShowPurgeAlert] = useState(false);
@@ -73,208 +75,164 @@ export function HomeScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: isDark ? '#1a1a1a' : '#F7F7F7' }}>
-      {/* Hero Section with Gradient */}
-      <LinearGradient
-        colors={['#FF6B6B', '#FFD93D']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{
-          paddingTop: 60,
-          paddingBottom: 40,
-          paddingHorizontal: 20,
-          position: 'relative',
-        }}
-      >
-        {/* Vignette overlay for better contrast */}
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.3)']}
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 80,
-          }}
-        />
+    <Box flex={1} backgroundColor="bg">
+      {/* Hero Section with TripTick Background */}
+      <Box position="relative" paddingTop={60} paddingBottom={40} paddingHorizontal={20}>
+        <HeroBackground type="wave" height={200} />
         
         {/* Compact top bar */}
-        <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          marginBottom: 24,
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Box flexDirection="row" justifyContent="space-between" alignItems="center" marginBottom={24}>
+          <Box flexDirection="row" alignItems="center" gap={8}>
             <TripTickLogo size="lg" />
-            <Text
-              style={[gradientTextStyles.h2, { fontSize: 24 }]}
-              {...accessibilityProps.text}
-            >
+            <RestyleText variant="2xl" color="text" fontWeight="bold">
               TripTick
-            </Text>
-          </View>
+            </RestyleText>
+          </Box>
           <BurgerMenuButton />
-        </View>
+        </Box>
 
         {/* Hero content */}
-        <View style={{ position: 'relative', zIndex: 1 }}>
-          <Text
-            style={[gradientTextStyles.body, { fontSize: 16, marginBottom: 8 }]}
-            {...accessibilityProps.text}
-          >
+        <Box position="relative" zIndex={1}>
+          <RestyleText variant="lg" color="text" marginBottom={8}>
             {getGreeting()}
-          </Text>
-          <Text
-            style={[gradientTextStyles.bodySmall, { fontSize: 14 }]}
-            {...accessibilityProps.text}
-          >
+          </RestyleText>
+          <RestyleText variant="sm" color="textMuted">
             Count down to your next escape
-          </Text>
-        </View>
-      </LinearGradient>
+          </RestyleText>
+        </Box>
+      </Box>
+        
+
 
       <ScrollView style={{ flex: 1 }}>
         {/* Countdown Display for next trip */}
         {sortedTimers.length > 0 && (
-          <View style={{ 
-            alignItems: 'center', 
-            paddingVertical: 20,
-            backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
-            margin: 20,
-            borderRadius: 16,
-          }}>
+          <Box 
+            alignItems="center" 
+            paddingVertical={20}
+            backgroundColor="surface"
+            margin={20}
+            borderRadius="lg"
+            shadowColor="scrim"
+            shadowOffset={{ width: 0, height: 2 }}
+            shadowOpacity={0.1}
+            shadowRadius={8}
+            elevation={3}
+          >
             <CountdownDisplay 
               daysLeft={getTimerDaysLeft(sortedTimers[0].date)} 
               size="lg" 
               showAnimation={true}
             />
-          </View>
+          </Box>
         )}
         
         {/* Action buttons */}
-        <View style={{ padding: 20, gap: 12 }}>
-          <ThemedButton
-            title="✈️ Add New Timer"
+        <Box padding={20} gap={12}>
+          <Button
             onPress={() => navigation.navigate("AddTimer")}
             variant="primary"
-            gradient={true}
-            size="lg"
-          />
-          <ThemedButton
-            title="🤖 Ask Holly Bobz"
+          >
+            ✈️ Add New Timer
+          </Button>
+          <Button
             onPress={() => navigation.navigate("HollyChat")}
             variant="secondary"
-            gradient={true}
-            size="base"
-          />
-      </View>
+          >
+            🤖 Ask Holly Bobz
+          </Button>
+        </Box>
 
         {/* Active timers */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <Text
-            style={{
-              fontSize: 18,
-              fontFamily: 'Poppins-SemiBold',
-              color: isDark ? '#FFFFFF' : '#333333',
-              marginBottom: 16,
-            }}
-          >
+        <Box paddingHorizontal={20}>
+          <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={16}>
             Your Trips
-          </Text>
+          </RestyleText>
 
           {sortedTimers.length === 0 ? (
-            <View
-              style={{
-                backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
-                borderRadius: 20,
-                padding: 40,
-                alignItems: 'center',
-                marginBottom: 20,
-                borderWidth: 2,
-                borderColor: isDark ? '#374151' : '#E5E5E5',
-                borderStyle: 'dashed',
-              }}
+            <Box
+              backgroundColor="surface"
+              borderRadius="xl"
+              padding={40}
+              alignItems="center"
+              marginBottom={20}
+              borderWidth={2}
+              borderColor="textMuted"
+              borderStyle="dashed"
             >
-              <Ionicons name="airplane-outline" size={64} color={isDark ? '#666666' : '#999999'} />
-              <Text
-                style={[textStyles.h3, { textAlign: 'center', marginTop: 16, marginBottom: 8 }]}
-                {...accessibilityProps.text}
-              >
+              <Ionicons name="airplane-outline" size={64} color={TripTickPalette.textMuted} />
+              <RestyleText variant="lg" color="text" textAlign="center" marginTop={16} marginBottom={8}>
                 No trips yet
-              </Text>
-              <Text
-                style={[textStyles.body, { textAlign: 'center', marginBottom: 24 }]}
-                {...accessibilityProps.text}
-              >
+              </RestyleText>
+              <RestyleText variant="md" color="textMuted" textAlign="center" marginBottom={24}>
                 Add your first and let the countdown begin.
-              </Text>
-              <ThemedButton
-                title="✈️ Add Your First Trip"
+              </RestyleText>
+              <Button
                 onPress={() => navigation.navigate("AddTimer")}
                 variant="primary"
-                gradient={true}
-                size="lg"
-              />
-            </View>
+              >
+                ✈️ Add Your First Trip
+              </Button>
+            </Box>
           ) : (
-            <View style={{ gap: 16, marginBottom: 20 }}>
+            <Box gap={16} marginBottom={20}>
               {sortedTimers.map((timer) => (
-                <TimerCard
+                <Box
                   key={timer.id}
-                  destination={timer.destination}
-                  date={timer.date}
-                  daysLeft={getTimerDaysLeft(timer.date)}
-                  createdAt={timer.createdAt}
-                  onPress={() => navigation.navigate("TimerDetail", { timerId: timer.id })}
-                />
+                  backgroundColor="surface"
+                  borderRadius="lg"
+                  padding={16}
+                  borderWidth={1}
+                  borderColor="textMuted"
+                  onTouchEnd={() => navigation.navigate("TimerDetail", { timerId: timer.id })}
+                >
+                  <RestyleText variant="lg" color="text" fontWeight="semibold" marginBottom={4}>
+                    {timer.destination}
+                  </RestyleText>
+                  <RestyleText variant="sm" color="textMuted" marginBottom={8}>
+                    {new Date(timer.date).toLocaleDateString('en-GB')}
+                  </RestyleText>
+                  <RestyleText variant="md" color="primary">
+                    {getTimerDaysLeft(timer.date)} days to go
+                  </RestyleText>
+                </Box>
               ))}
-            </View>
+            </Box>
           )}
-        </View>
+        </Box>
 
         {/* Archived section */}
         {archived.length > 0 && (
-          <View style={{ paddingHorizontal: 20, paddingBottom: 40 }}>
-            <Text
-              style={[textStyles.label, { marginBottom: 12 }]}
-              {...accessibilityProps.text}
-            >
+          <Box paddingHorizontal={20} paddingBottom={40}>
+            <RestyleText variant="md" color="textMuted" marginBottom={12}>
               Archived Trips
-            </Text>
+            </RestyleText>
             
-            <View
-              style={{
-                backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
-                borderRadius: 16,
-                padding: 16,
-              }}
+            <Box
+              backgroundColor="surface"
+              borderRadius="lg"
+              padding={16}
             >
               {archived.map((timer, index) => (
-                <View
+                <Box
                   key={timer.id}
-                  style={{
-                    paddingVertical: 12,
-                    borderBottomWidth: index < archived.length - 1 ? 1 : 0,
-                    borderBottomColor: isDark ? '#444444' : '#E5E5E5',
-                  }}
+                  paddingVertical={12}
+                  borderBottomWidth={index < archived.length - 1 ? 1 : 0}
+                  borderBottomColor="textMuted"
                 >
-                  <Text
-                    style={[textStyles.h3, { marginBottom: 4 }]}
-                    {...accessibilityProps.text}
-                  >
+                  <RestyleText variant="lg" color="text" fontWeight="semibold" marginBottom={4}>
                     {timer.destination}
-                  </Text>
-                  <Text
-                    style={[textStyles.bodySmall, { marginBottom: 8 }]}
-                    {...accessibilityProps.text}
-                  >
+                  </RestyleText>
+                  <RestyleText variant="sm" color="textMuted" marginBottom={8}>
                     {new Date(timer.date).toLocaleDateString('en-GB')}
-                  </Text>
+                  </RestyleText>
                   
-                  <ThemedButton
-                    title="Restore"
+                  <Button
                     onPress={() => restore(timer.id)}
+                    variant="ghost"
+                  >
+                    Restore
+                  </Button>
                     variant="outline"
                     size="sm"
                   />
