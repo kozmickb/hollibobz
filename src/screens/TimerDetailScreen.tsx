@@ -8,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../store/useHolidayStore";
 import { useThemeStore } from '../store/useThemeStore';
-import { ThemedButton } from "../components/ThemedButton";
 import { CountdownDisplay } from "../components/CountdownDisplay";
 import { BurgerMenuButton } from '../components/BurgerMenuButton';
 import { CustomAlert } from "../components/CustomAlert";
@@ -26,6 +25,13 @@ import { FAQCard } from "../components/FAQCard";
 import { CountdownRing } from "../components/CountdownRing";
 import { MilestoneBanner } from "../components/MilestoneBanner";
 import { TeaserCard } from "../components/TeaserCard";
+
+// TripTick UI components
+import { Box } from "../components/ui/Box";
+import { Text as RestyleText } from "../components/ui/Text";
+import { Button } from "../components/ui/Button";
+import { HeroBackground } from "../components/HeroBackground";
+import { TripTickPalette } from "../theme/tokens";
 
 import { buildDefaultMeta, DestinationMeta } from "../features/destination/meta";
 import { loadCachedMeta, saveCachedMeta, fetchPexelsBackdrop } from "../features/destination/backdrop";
@@ -50,7 +56,7 @@ export function TimerDetailScreen() {
   const route = useRoute<Rt>();
   const { timerId } = route.params;
   const timer = useHolidayStore((s) => s.timers.find(t => t.id === timerId));
-  const { isDark } = useThemeStore();
+  const { colorScheme } = useThemeStore();
   const archive = useHolidayStore((s) => s.archiveTimer);
   const hardDelete = useHolidayStore((s) => s.removeTimer);
   const checkIn = useHolidayStore((s) => s.checkIn);
@@ -311,17 +317,17 @@ export function TimerDetailScreen() {
   const dLabel = new Date(timer.date).toDateString();
 
   return (
-    <View style={{ 
-      flex: 1, 
-      backgroundColor: theme?.background || (isDark ? '#1a1a1a' : '#F7F7F7') 
-    }}>
+    <Box flex={1} backgroundColor="bg">
       {/* Hero Section */}
       <ViewShot ref={heroShareRef} options={{ format: 'png', quality: 0.9, width: 1080, height: 1920 }}>
-        <View style={{ position: 'relative', height: 300 }}>
+        <Box position="relative" height={300}>
+          {/* HeroBackground with TripTick styling */}
+          <HeroBackground type="peaks" height={300} />
+          
           {/* Backdrop with gradient overlay */}
           <Backdrop destination={timer.destination} imageUrl={meta?.imageUrl} />
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.7)']}
+            colors={['transparent', TripTickPalette.scrim]}
             style={{
               position: 'absolute',
               top: 0,
@@ -332,16 +338,16 @@ export function TimerDetailScreen() {
           />
           
           {/* Navigation */}
-          <View style={{
-            position: 'absolute',
-            top: 60,
-            left: 20,
-            right: 20,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            zIndex: 10,
-          }}>
+          <Box
+            position="absolute"
+            top={60}
+            left={20}
+            right={20}
+            flexDirection="row"
+            justifyContent="space-between"
+            alignItems="center"
+            zIndex={10}
+          >
             <Pressable
               onPress={() => navigation.goBack()}
               style={{
@@ -352,7 +358,7 @@ export function TimerDetailScreen() {
             >
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </Pressable>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Box flexDirection="row" gap={8}>
               <Pressable
                 onPress={shareCountdown}
                 style={{
@@ -364,132 +370,132 @@ export function TimerDetailScreen() {
                 <Ionicons name="share-social-outline" size={24} color="#FFFFFF" />
               </Pressable>
               <BurgerMenuButton />
-            </View>
-          </View>
+            </Box>
+          </Box>
 
           {/* Countdown Ring - Bottom Left */}
           {daysLeft !== null && (
-            <View style={{
-              position: 'absolute',
-              bottom: 20,
-              left: 20,
-              zIndex: 10,
-            }}>
+            <Box
+              position="absolute"
+              bottom={20}
+              left={20}
+              zIndex={10}
+            >
               <CountdownRing percent={progressPercent} daysLeft={daysLeft} showLabel={true} />
-            </View>
+            </Box>
           )}
 
           {/* Destination Info - Bottom Right */}
-          <View style={{
-            position: 'absolute',
-            bottom: 20,
-            right: 20,
-            zIndex: 10,
-            alignItems: 'flex-end',
-          }}>
-            <Text style={{
-              fontSize: 24,
-              fontFamily: 'Poppins-Bold',
-              color: '#FFFFFF',
-              textAlign: 'right',
-            }}>
+          <Box
+            position="absolute"
+            bottom={20}
+            right={20}
+            zIndex={10}
+            alignItems="flex-end"
+          >
+            <RestyleText
+              variant="2xl"
+              color="text"
+              fontWeight="bold"
+              textAlign="right"
+            >
               {timer.destination}
-            </Text>
-            <Text style={{
-              color: '#FFFFFF',
-              fontSize: 16,
-              fontFamily: 'Poppins-Medium',
-              marginTop: 4,
-              textAlign: 'right',
-              opacity: 0.9,
-            }}>
+            </RestyleText>
+            <RestyleText
+              variant="md"
+              color="text"
+              fontWeight="medium"
+              marginTop={4}
+              textAlign="right"
+              opacity={0.9}
+            >
               {formatDate(timer.date)}
-            </Text>
-          </View>
+            </RestyleText>
+          </Box>
 
           {/* Watermark - Bottom Right */}
-          <View style={{
-            position: 'absolute',
-            bottom: 8,
-            right: 8,
-            zIndex: 5,
-          }}>
-            <Text style={{
-              fontSize: 10,
-              fontFamily: 'Poppins-Regular',
-              color: 'rgba(255, 255, 255, 0.6)',
-              textAlign: 'right',
-            }}>
+          <Box
+            position="absolute"
+            bottom={8}
+            right={8}
+            zIndex={5}
+          >
+            <RestyleText
+              variant="xs"
+              color="text"
+              opacity={0.6}
+              textAlign="right"
+            >
               Made with TripTick
-            </Text>
-          </View>
-        </View>
+            </RestyleText>
+          </Box>
+        </Box>
       </ViewShot>
 
       {/* Progress Band */}
       {daysLeft !== null && (
-        <View style={{
-          backgroundColor: theme?.primary || '#FF6B6B',
-          paddingHorizontal: 20,
-          paddingVertical: 12,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <Box
+          backgroundColor="primary"
+          paddingHorizontal={20}
+          paddingVertical={12}
+          flexDirection="row"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <Box flexDirection="row" alignItems="center" gap={16}>
+            <Box flexDirection="row" alignItems="center" gap={6}>
               <Ionicons name="flame" size={16} color="#FFFFFF" />
-              <Text style={{
-                fontSize: 14,
-                fontFamily: 'Poppins-SemiBold',
-                color: '#FFFFFF',
-              }}>
-                Streak {timer.streak || 0}
-              </Text>
-            </View>
-            <View style={{ width: 1, height: 16, backgroundColor: 'rgba(255,255,255,0.3)' }} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Ionicons name="star" size={16} color="#FFFFFF" />
-              <Text style={{
-                fontSize: 14,
-                fontFamily: 'Poppins-SemiBold',
-                color: '#FFFFFF',
-              }}>
-                XP {timer.xp || 0}
-              </Text>
-            </View>
-          </View>
-          <Text style={{
-            fontSize: 14,
-            fontFamily: 'Poppins-Medium',
-            color: '#FFFFFF',
-          }}>
-            {Math.round(progressPercent * 100)}% to go
-          </Text>
-        </View>
-      )}
+                             <RestyleText
+                 variant="sm"
+                 color="text"
+                 fontWeight="semibold"
+               >
+                 Streak {timer.streak || 0}
+               </RestyleText>
+             </Box>
+             <Box width={1} height={16} backgroundColor="rgba(255,255,255,0.3)" />
+             <Box flexDirection="row" alignItems="center" gap={6}>
+               <Ionicons name="star" size={16} color="#FFFFFF" />
+               <RestyleText
+                 variant="sm"
+                 color="text"
+                 fontWeight="semibold"
+               >
+                 XP {timer.xp || 0}
+               </RestyleText>
+             </Box>
+           </Box>
+           <RestyleText
+             variant="sm"
+             color="text"
+             fontWeight="medium"
+           >
+             {Math.round(progressPercent * 100)}% to go
+           </RestyleText>
+         </Box>
+       )}
 
       {/* Content */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>
         {/* Countdown Display */}
         {daysLeft !== null && (
-          <View style={{ 
-            alignItems: 'center', 
-            marginBottom: 24,
-            paddingVertical: 20,
-          }}>
+          <Box 
+            alignItems="center" 
+            marginBottom={24}
+            paddingVertical={20}
+          >
             <CountdownDisplay 
               daysLeft={daysLeft} 
               size="xl" 
               showAnimation={true}
             />
-          </View>
+          </Box>
         )}
         
         {/* Actions Section */}
-        <View style={{ marginBottom: 24, gap: 12 }}>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <Pressable
+        <Box marginBottom={24} gap={12}>
+          <Box flexDirection="row" gap={12}>
+            <Button
               onPress={() =>
                 navigation.navigate("HollyChat", {
                   seedQuery: `Plan a trip to ${timer.destination} around ${dLabel}. Create a day by day plan with realistic timings and transit between sights.`,
@@ -497,50 +503,30 @@ export function TimerDetailScreen() {
                   reset: false,
                 })
               }
-              style={{
-                flex: 1,
-                backgroundColor: theme?.primary || '#FF6B6B',
-                borderRadius: 12,
-                padding: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
+              variant="primary"
+              style={{ flex: 1 }}
             >
-              <Ionicons name="chatbubble" size={20} color="#FFFFFF" />
-              <Text style={{
-                fontSize: 14,
-                fontFamily: 'Poppins-SemiBold',
-                color: '#FFFFFF',
-              }}>
-                Ask Holly
-              </Text>
-            </Pressable>
+              <Box flexDirection="row" alignItems="center" justifyContent="center" gap={8}>
+                <Ionicons name="chatbubble" size={20} color="#FFFFFF" />
+                <RestyleText variant="sm" color="text" fontWeight="semibold">
+                  Ask Holly
+                </RestyleText>
+              </Box>
+            </Button>
             
-            <Pressable
+            <Button
               onPress={shareCountdown}
-              style={{
-                flex: 1,
-                backgroundColor: theme?.secondary || '#FF8A8A',
-                borderRadius: 12,
-                padding: 16,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-              }}
+              variant="secondary"
+              style={{ flex: 1 }}
             >
-              <Ionicons name="share" size={20} color="#FFFFFF" />
-              <Text style={{
-                fontSize: 14,
-                fontFamily: 'Poppins-SemiBold',
-                color: '#FFFFFF',
-              }}>
-                Share
-              </Text>
-            </Pressable>
-          </View>
+              <Box flexDirection="row" alignItems="center" justifyContent="center" gap={8}>
+                <Ionicons name="share" size={20} color="#FFFFFF" />
+                <RestyleText variant="sm" color="text" fontWeight="semibold">
+                  Share
+                </RestyleText>
+              </Box>
+            </Button>
+          </Box>
           
           <Pressable
             onPress={onDeleteOrArchive}
