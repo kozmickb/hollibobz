@@ -6,9 +6,15 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { View, Text, ActivityIndicator } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
+import { ApplicationProvider } from '@ui-kitten/components';
+import * as eva from '@eva-design/eva';
+import { PaperProvider } from 'react-native-paper';
+import { ThemeProvider } from '@shopify/restyle';
 import { AppNavigator } from "./src/navigation/AppNavigator";
 import { useFonts } from "./src/hooks/useFonts";
 import { TripTickLogo } from "./src/components/TripTickLogo";
+import { useThemeStore } from "./src/store/useThemeStore";
+import { TripTickPalette } from "./src/theme/tokens";
 
 /*
 IMPORTANT NOTICE: DO NOT REMOVE
@@ -36,6 +42,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const { fontsLoaded, fontError } = useFonts();
+  const { colorScheme, restyleTheme, kittenTheme, paperTheme } = useThemeStore();
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded || fontError) {
@@ -53,7 +60,7 @@ export default function App() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <LinearGradient
-          colors={['#FF6B6B', '#FFD93D']}
+          colors={[TripTickPalette.sunriseC, TripTickPalette.sunriseY]}
           style={{ 
             flex: 1, 
             width: '100%', 
@@ -91,13 +98,19 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <SafeAreaProvider>
-        <NavigationContainer>
-          <AppNavigator />
-          <StatusBar style="auto" />
-        </NavigationContainer>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ApplicationProvider {...eva} theme={kittenTheme}>
+      <PaperProvider theme={paperTheme}>
+        <ThemeProvider theme={restyleTheme}>
+          <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+            <SafeAreaProvider>
+              <NavigationContainer>
+                <AppNavigator />
+                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+              </NavigationContainer>
+            </SafeAreaProvider>
+          </GestureHandlerRootView>
+        </ThemeProvider>
+      </PaperProvider>
+    </ApplicationProvider>
   );
 }

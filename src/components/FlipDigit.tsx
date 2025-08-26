@@ -1,139 +1,105 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSequence,
   interpolate,
   runOnJS,
 } from 'react-native-reanimated';
-import { useHolidayStore } from '../store/useHolidayStore';
-
-interface AnimatedColor {
-  value: Animated.SharedValue<number>;
-  inputRange: number[];
-  outputRange: string[];
-}
+import { useThemeStore } from '../store/useThemeStore';
+import { TripTickPalette } from '../theme/tokens';
 
 interface FlipDigitProps {
-  value: string | number;
-  size?: 'sm' | 'lg' | 'xl';
+  value: number;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   color?: string;
-  animatedColor?: AnimatedColor;
 }
 
-const AnimatedText = Animated.createAnimatedComponent(Text);
+const getSizeStyles = (size: string) => {
+  switch (size) {
+    case 'sm':
+      return { fontSize: 16, lineHeight: 20, width: 20 };
+    case 'md':
+      return { fontSize: 24, lineHeight: 28, width: 28 };
+    case 'lg':
+      return { fontSize: 32, lineHeight: 36, width: 36 };
+    case 'xl':
+      return { fontSize: 48, lineHeight: 52, width: 52 };
+    default:
+      return { fontSize: 24, lineHeight: 28, width: 28 };
+  }
+};
 
-export function FlipDigit({ value, size = 'lg', color = '#FFFFFF', animatedColor }: FlipDigitProps) {
-  const settings = useHolidayStore((s) => s.settings);
-  const prevValue = useRef(value);
-  const flipProgress = useSharedValue(0);
-  const fadeProgress = useSharedValue(1);
-
-  const getSizeStyles = () => {
-    switch (size) {
-      case 'sm':
-        return {
-          fontSize: 24,
-          lineHeight: 28,
-          height: 32,
-        };
-      case 'lg':
-        return {
-          fontSize: 48,
-          lineHeight: 56,
-          height: 64,
-        };
-      case 'xl':
-        return {
-          fontSize: 72,
-          lineHeight: 84,
-          height: 96,
-        };
-      default:
-        return {
-          fontSize: 48,
-          lineHeight: 56,
-          height: 64,
-        };
-    }
-  };
-
-  const sizeStyles = getSizeStyles();
+export const FlipDigit: React.FC<FlipDigitProps> = ({
+  value,
+  size = 'md',
+  color = TripTickPalette.textOnNavy,
+}) => {
+  const { reduceMotion } = useThemeStore();
+  const flipValue = useSharedValue(0);
+  const sizeStyles = getSizeStyles(size);
 
   useEffect(() => {
-    if (prevValue.current !== value) {
-      if (settings.reduceMotion) {
-        // Reduced motion: simple fade transition
-        fadeProgress.value = withSequence(
-          withTiming(0, { duration: 150 }),
-          withTiming(1, { duration: 150 })
-        );
-      } else {
-        // Full animation: flip effect
-        flipProgress.value = withSequence(
-          withTiming(1, { duration: 200 }),
-          withTiming(0, { duration: 200 })
-        );
-      }
-      prevValue.current = value;
-    }
-  }, [value, settings.reduceMotion]);
-
-  const flipStyle = useAnimatedStyle(() => {
-    let baseStyle: any = {};
-    
-    if (settings.reduceMotion) {
-      baseStyle.opacity = fadeProgress.value;
+    if (reduceMotion) {
+      // Simple fade transition for reduced motion
+      flipValue.value = withTiming(1, { duration: 300 });
     } else {
-      const rotateX = interpolate(flipProgress.value, [0, 0.5, 1], [0, 90, 0]);
-      const scaleY = interpolate(flipProgress.value, [0, 0.5, 1], [1, 0.1, 1]);
-      const opacity = interpolate(flipProgress.value, [0, 0.5, 1], [1, 0, 1]);
+      // Flip animation
+      flipValue.value = withTiming(1, { duration: 180 }, () => {
+        flipValue.value = withTiming(0, { duration: 180 });
+      });
+    }
+  }, [value, reduceMotion]);
 
-      baseStyle = {
-        transform: [
-          { perspective: 1000 },
-          { rotateX: `${rotateX}deg` },
-          { scaleY },
-        ],
-        opacity,
+  const animatedStyle = useAnimatedStyle(() => {
+    if (reduceMotion) {
+      return {
+        opacity: interpolate(flipValue.value, [0, 1], [0.5, 1]),
       };
     }
 
-    // Add animated color if provided
-    if (animatedColor) {
-      baseStyle.color = interpolate(
-        animatedColor.value.value,
-        animatedColor.inputRange,
-        animatedColor.outputRange as any
-      );
-    }
+    const rotateX = interpolate(flipValue.value, [0, 0.5, 1], [0, 90, 0]);
+    const scale = interpolate(flipValue.value, [0, 0.5, 1], [1, 0.8, 1]);
 
-    return baseStyle;
+    return {
+      transform: [
+        { perspective: 1000 },
+        { rotateX: `${rotateX}deg` },
+        { scale },
+      ],
+    };
   });
 
   return (
-    <View style={{ 
-      height: sizeStyles.height, 
-      justifyContent: 'center',
-      alignItems: 'center',
-      overflow: 'hidden',
-    }}>
-      <AnimatedText
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.View
         style={[
           {
-            fontSize: sizeStyles.fontSize,
-            lineHeight: sizeStyles.lineHeight,
-            fontFamily: 'Poppins-Bold',
-            textAlign: 'center',
-            color: color,
+            ...sizeStyles,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: TripTickPalette.surface,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: TripTickPalette.navy500,
+            overflow: 'hidden',
           },
-          flipStyle,
+          animatedStyle,
         ]}
       >
-        {value}
-      </AnimatedText>
+        <Text
+          style={{
+            fontSize: sizeStyles.fontSize,
+            lineHeight: sizeStyles.lineHeight,
+            fontWeight: '600',
+            color,
+            textAlign: 'center',
+          }}
+        >
+          {value}
+        </Text>
+      </Animated.View>
     </View>
   );
-}
+};

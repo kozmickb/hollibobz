@@ -1,89 +1,62 @@
-import { create } from "zustand";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Appearance, ColorSchemeName } from "react-native";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { theme, lightTheme } from '../theme/theme';
+import { darkKittenTheme, lightKittenTheme } from '../theme/uiKittenMapping';
+import { darkPaperTheme, lightPaperTheme } from '../theme/paperTheme';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
-
-type ThemeState = {
-  mode: ThemeMode;
-  isDark: boolean;
+interface ThemeState {
+  colorScheme: 'dark' | 'light';
   reduceMotion: boolean;
-  setMode: (mode: ThemeMode) => void;
-  toggleTheme: () => void;
-  setReduceMotion: (reduceMotion: boolean) => void;
-  _hydrate: () => Promise<void>;
-};
+  restyleTheme: typeof theme;
+  kittenTheme: typeof darkKittenTheme;
+  paperTheme: typeof darkPaperTheme;
+  setColorScheme: (scheme: 'dark' | 'light') => void;
+  setReduceMotion: (reduce: boolean) => void;
+  toggleColorScheme: () => void;
+  toggleReduceMotion: () => void;
+}
 
-const THEME_STORAGE_KEY = "theme_preference";
-
-const getSystemTheme = (): boolean => {
-  return Appearance.getColorScheme() === 'dark';
-};
-
-const calculateIsDark = (mode: ThemeMode): boolean => {
-  switch (mode) {
-    case 'dark':
-      return true;
-    case 'light':
-      return false;
-    case 'system':
-      return getSystemTheme();
-    default:
-      return false;
-  }
-};
-
-export const useThemeStore = create<ThemeState>((set, get) => ({
-  mode: 'system',
-  isDark: getSystemTheme(),
-  reduceMotion: false,
-  
-  setMode: (mode) => {
-    const isDark = calculateIsDark(mode);
-    set({ mode, isDark });
-    AsyncStorage.setItem(THEME_STORAGE_KEY, mode).catch(() => {});
-  },
-  
-  toggleTheme: () => {
-    const { mode } = get();
-    const newMode = mode === 'light' ? 'dark' : 'light';
-    get().setMode(newMode);
-  },
-  
-  setReduceMotion: (reduceMotion) => {
-    set({ reduceMotion });
-    AsyncStorage.setItem('reduce_motion_preference', JSON.stringify(reduceMotion)).catch(() => {});
-  },
-  
-  _hydrate: async () => {
-    try {
-      const savedMode = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-      if (savedMode && ['light', 'dark', 'system'].includes(savedMode)) {
-        const mode = savedMode as ThemeMode;
-        const isDark = calculateIsDark(mode);
-        set({ mode, isDark });
-      }
+export const useThemeStore = create<ThemeState>()(
+  persist(
+    (set, get) => ({
+      colorScheme: 'dark',
+      reduceMotion: false,
+      restyleTheme: theme,
+      kittenTheme: darkKittenTheme,
+      paperTheme: darkPaperTheme,
       
-      const savedReduceMotion = await AsyncStorage.getItem('reduce_motion_preference');
-      if (savedReduceMotion !== null) {
-        const reduceMotion = JSON.parse(savedReduceMotion);
-        set({ reduceMotion });
-      }
-    } catch {
-      // ignore
+      setColorScheme: (scheme: 'dark' | 'light') => {
+        const restyleTheme = scheme === 'dark' ? theme : lightTheme;
+        const kittenTheme = scheme === 'dark' ? darkKittenTheme : lightKittenTheme;
+        const paperTheme = scheme === 'dark' ? darkPaperTheme : lightPaperTheme;
+        
+        set({
+          colorScheme: scheme,
+          restyleTheme,
+          kittenTheme,
+          paperTheme,
+        });
+      },
+      
+      setReduceMotion: (reduce: boolean) => {
+        set({ reduceMotion: reduce });
+      },
+      
+      toggleColorScheme: () => {
+        const current = get().colorScheme;
+        const newScheme = current === 'dark' ? 'light' : 'dark';
+        get().setColorScheme(newScheme);
+      },
+      
+      toggleReduceMotion: () => {
+        const current = get().reduceMotion;
+        set({ reduceMotion: !current });
+      },
+    }),
+    {
+      name: 'triptick-theme-storage',
+      storage: createJSONStorage(() => AsyncStorage),
     }
-  },
-}));
-
-// Listen for system theme changes
-Appearance.addChangeListener(({ colorScheme }) => {
-  const { mode } = useThemeStore.getState();
-  if (mode === 'system') {
-    useThemeStore.setState({ isDark: colorScheme === 'dark' });
-  }
-});
-
-// Initialize on startup
-(async () => {
-  await useThemeStore.getState()._hydrate();
-})();
+  )
+);
