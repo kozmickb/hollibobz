@@ -541,141 +541,99 @@ export function TimerDetailScreen() {
             }}
           >
             <Ionicons name="archive" size={20} color={isDark ? '#CCCCCC' : '#666666'} />
-            <Text style={{
-              fontSize: 14,
-              fontFamily: 'Poppins-SemiBold',
-              color: isDark ? '#CCCCCC' : '#666666',
-            }}>
+            <RestyleText variant="sm" color="textMuted" fontWeight="semibold">
               Archive or Delete
-            </Text>
+            </RestyleText>
           </Pressable>
-        </View>
+        </Box>
 
         {/* Quick Facts - 2x2 Grid */}
         {(meta?.quickFacts?.length || loadingQuickFacts) && (
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{
-              fontSize: 18,
-              fontFamily: 'Poppins-SemiBold',
-              color: isDark ? '#FFFFFF' : '#333333',
-              marginBottom: 12,
-            }}>
+          <Box marginBottom={24}>
+            <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={12}>
               Quick Facts
-            </Text>
+            </RestyleText>
             
             {loadingQuickFacts ? (
-              <View style={{ alignItems: 'center', paddingVertical: 20 }}>
-                <Text style={{
-                  fontSize: 14,
-                  fontFamily: 'Poppins-Medium',
-                  color: isDark ? '#CCCCCC' : '#666666',
-                  textAlign: 'center',
-                }}>
+              <Box alignItems="center" paddingVertical={20}>
+                <RestyleText variant="md" color="textMuted" textAlign="center">
                   Getting destination info...
-                </Text>
-              </View>
+                </RestyleText>
+              </Box>
             ) : (
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              <Box flexDirection="row" flexWrap="wrap" gap={8}>
                 {meta?.quickFacts?.slice(0, 4).map((q) => (
-                  <View key={q.label} style={{
-                    flex: 1,
-                    minWidth: '45%',
-                    backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
-                    borderRadius: 12,
-                    padding: 12,
-                    borderWidth: 1,
-                    borderColor: isDark ? '#374151' : '#E5E5E5',
-                  }}>
-                    <Text style={{
-                      fontSize: 12,
-                      fontFamily: 'Poppins-Medium',
-                      color: isDark ? '#94a3b8' : '#64748b',
-                      marginBottom: 4,
-                    }}>
+                  <Box key={q.label} 
+                    flex={1}
+                    minWidth="45%"
+                    backgroundColor="surface"
+                    borderRadius="lg"
+                    padding={12}
+                    borderWidth={1}
+                    borderColor="textMuted"
+                  >
+                    <RestyleText variant="xs" color="textMuted" fontWeight="medium" marginBottom={4}>
                       {q.label}
-                    </Text>
-                    <Text style={{
-                      fontSize: 14,
-                      fontFamily: 'Poppins-SemiBold',
-                      color: isDark ? '#FFFFFF' : '#333333',
-                    }}>
+                    </RestyleText>
+                    <RestyleText variant="sm" color="text" fontWeight="semibold">
                       {q.value}
-                    </Text>
-                  </View>
+                    </RestyleText>
+                  </Box>
                 ))}
-              </View>
+              </Box>
             )}
-          </View>
+          </Box>
         )}
 
         {/* Daily Teaser */}
         {teaser && (
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{
-              fontSize: 18,
-              fontFamily: 'Poppins-SemiBold',
-              color: isDark ? '#FFFFFF' : '#333333',
-              marginBottom: 12,
-            }}>
+          <Box marginBottom={24}>
+            <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={12}>
               Today's Travel Teaser
-            </Text>
+            </RestyleText>
             <TeaserCard 
               title={teaser.title}
               body={teaser.body}
               onMore={() => tellMeMore(teaser.seedQuery)}
             />
-          </View>
+          </Box>
         )}
 
         {/* FAQ Chips */}
         {meta?.faqs?.length ? (
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{
-              fontSize: 18,
-              fontFamily: 'Poppins-SemiBold',
-              color: isDark ? '#FFFFFF' : '#333333',
-              marginBottom: 12,
-            }}>
+          <Box marginBottom={24}>
+            <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={12}>
               Quick Questions
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            </RestyleText>
+            <Box flexDirection="row" flexWrap="wrap" gap={8}>
               {meta.faqs.slice(0, 6).map((f) => (
                 <Pressable
                   key={f.id}
                   onPress={() => tellMeMore(f.query)}
                   style={{
-                    backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',
+                    backgroundColor: colorScheme === 'dark' ? TripTickPalette.surface : '#FFFFFF',
                     borderRadius: 20,
                     paddingHorizontal: 16,
                     paddingVertical: 8,
                     borderWidth: 1,
-                    borderColor: isDark ? '#374151' : '#E5E5E5',
+                    borderColor: TripTickPalette.navy500,
                   }}
                 >
-                  <Text style={{
-                    fontSize: 14,
-                    fontFamily: 'Poppins-Medium',
-                    color: isDark ? '#FFFFFF' : '#333333',
-                  }}>
+                  <RestyleText variant="sm" color="text" fontWeight="medium">
                     {f.title}
-                  </Text>
+                  </RestyleText>
                 </Pressable>
               ))}
-            </View>
-          </View>
+            </Box>
+          </Box>
         ) : null}
 
         {/* Quests */}
         {quests.length > 0 && (
-          <View style={{ marginBottom: 24 }}>
-            <Text style={{
-              fontSize: 18,
-              fontFamily: 'Poppins-SemiBold',
-              color: isDark ? '#FFFFFF' : '#333333',
-              marginBottom: 12,
-            }}>
+          <Box marginBottom={24}>
+            <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={12}>
               Travel Quests
-            </Text>
+            </RestyleText>
             {quests.map((quest) => (
               <QuestCard
                 key={quest.id}
@@ -684,11 +642,11 @@ export function TimerDetailScreen() {
                 onPress={() => handleQuestPress(quest.id)}
               />
             ))}
-          </View>
+          </Box>
         )}
 
         {/* Hidden ShareCard for capturing */}
-        <View style={{ position: 'absolute', left: -1000, top: -1000 }}>
+        <Box position="absolute" left={-1000} top={-1000}>
           <ViewShot ref={shareCardRef} options={{ format: 'png', quality: 0.9 }}>
             <ShareCard
               destination={timer.destination}
@@ -697,7 +655,7 @@ export function TimerDetailScreen() {
               size={400}
             />
           </ViewShot>
-        </View>
+        </Box>
 
         {/* Milestone banner */}
         {milestone !== null && (
@@ -705,7 +663,7 @@ export function TimerDetailScreen() {
         )}
 
         {/* Bottom spacing */}
-        <View style={{ height: 40 }} />
+        <Box height={40} />
       </ScrollView>
 
       {/* Custom Alert for Web */}
@@ -744,6 +702,6 @@ export function TimerDetailScreen() {
         ]}
         onClose={() => setShowShareError(false)}
       />
-    </View>
+    </Box>
   );
 }
