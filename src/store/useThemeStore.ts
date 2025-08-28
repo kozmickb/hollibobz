@@ -11,6 +11,7 @@ interface ThemeState {
   restyleTheme: typeof theme;
   kittenTheme: typeof darkKittenTheme;
   paperTheme: typeof darkPaperTheme;
+  isDark: boolean;
   setColorScheme: (scheme: 'dark' | 'light') => void;
   setReduceMotion: (reduce: boolean) => void;
   toggleColorScheme: () => void;
@@ -19,41 +20,46 @@ interface ThemeState {
 
 export const useThemeStore = create<ThemeState>()(
   persist(
-    (set, get) => ({
-      colorScheme: 'dark',
-      reduceMotion: false,
-      restyleTheme: theme,
-      kittenTheme: darkKittenTheme,
-      paperTheme: darkPaperTheme,
-      
-      setColorScheme: (scheme: 'dark' | 'light') => {
-        const restyleTheme = scheme === 'dark' ? theme : lightTheme;
-        const kittenTheme = scheme === 'dark' ? darkKittenTheme : lightKittenTheme;
-        const paperTheme = scheme === 'dark' ? darkPaperTheme : lightPaperTheme;
+    (set, get) => {
+      const initialColorScheme = 'dark';
+      return {
+        colorScheme: initialColorScheme,
+        reduceMotion: false,
+        restyleTheme: theme,
+        kittenTheme: darkKittenTheme,
+        paperTheme: darkPaperTheme,
+        isDark: initialColorScheme === 'dark',
         
-        set({
-          colorScheme: scheme,
-          restyleTheme,
-          kittenTheme,
-          paperTheme,
-        });
-      },
-      
-      setReduceMotion: (reduce: boolean) => {
-        set({ reduceMotion: reduce });
-      },
-      
-      toggleColorScheme: () => {
-        const current = get().colorScheme;
-        const newScheme = current === 'dark' ? 'light' : 'dark';
-        get().setColorScheme(newScheme);
-      },
-      
-      toggleReduceMotion: () => {
-        const current = get().reduceMotion;
-        set({ reduceMotion: !current });
-      },
-    }),
+        setColorScheme: (scheme: 'dark' | 'light') => {
+          const restyleTheme = scheme === 'dark' ? theme : lightTheme;
+          const kittenTheme = scheme === 'dark' ? darkKittenTheme : lightKittenTheme;
+          const paperTheme = scheme === 'dark' ? darkPaperTheme : lightPaperTheme;
+          
+          set({
+            colorScheme: scheme,
+            isDark: scheme === 'dark',
+            restyleTheme,
+            kittenTheme,
+            paperTheme,
+          });
+        },
+        
+        setReduceMotion: (reduce: boolean) => {
+          set({ reduceMotion: reduce });
+        },
+        
+        toggleColorScheme: () => {
+          const current = get().colorScheme;
+          const newScheme = current === 'dark' ? 'light' : 'dark';
+          get().setColorScheme(newScheme);
+        },
+        
+        toggleReduceMotion: () => {
+          const current = get().reduceMotion;
+          set({ reduceMotion: !current });
+        },
+      };
+    },
     {
       name: 'triptick-theme-storage',
       storage: createJSONStorage(() => AsyncStorage),

@@ -4,10 +4,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RouteProp } from "@react-navigation/native";
-import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../store/useHolidayStore";
-import { useThemeStore } from '../store/useThemeStore';
+import { useThemeStore } from "../store/useThemeStore";
+import { Ionicons } from '@expo/vector-icons';
 import { CountdownDisplay } from "../components/CountdownDisplay";
 import { BurgerMenuButton } from '../components/BurgerMenuButton';
 import { CustomAlert } from "../components/CustomAlert";
@@ -56,7 +56,7 @@ export function TimerDetailScreen() {
   const route = useRoute<Rt>();
   const { timerId } = route.params;
   const timer = useHolidayStore((s) => s.timers.find(t => t.id === timerId));
-  const { colorScheme } = useThemeStore();
+  const { colorScheme, isDark } = useThemeStore();
   const archive = useHolidayStore((s) => s.archiveTimer);
   const hardDelete = useHolidayStore((s) => s.removeTimer);
   const checkIn = useHolidayStore((s) => s.checkIn);
@@ -146,7 +146,7 @@ export function TimerDetailScreen() {
   const progressPercent = useMemo(() => {
     if (!timer) return 0;
     
-    // For very new timers (less than 5 minutes old), show a small visible progress
+    // For very new timers (less than 5 minutes old), show a minimum 5% progress for new timers to make animation visible
     const now = new Date();
     const created = new Date(timer.createdAt ?? now.toISOString());
     const minutesSinceCreated = (now.getTime() - created.getTime()) / (1000 * 60);
@@ -249,6 +249,8 @@ export function TimerDetailScreen() {
   }
 
   function onDeleteOrArchive() {
+    if (!timer) return;
+    
     if (Platform.OS === 'web') {
       setShowDeleteAlert(true);
     } else {
@@ -274,16 +276,18 @@ export function TimerDetailScreen() {
   }
 
   function tellMeMore(query: string) {
+    if (!timer) return;
+    
     console.log('FAQ Tell me more tapped:', query);
     navigation.navigate("HollyChat", {
       seedQuery: query,
-      context: { destination: timer.destination, dateISO: timer.date, timerId: timer.id },
+      context: { destination: timer.destination, dateISO: timer.date },
       reset: false,
     });
   }
 
   async function shareCountdown() {
-    if (!timer || daysLeft === null || !heroShareRef.current) return;
+    if (!timer || daysLeft === null || !heroShareRef.current?.capture) return;
     try {
       // Capture the hero section as PNG
       const uri = await heroShareRef.current.capture();
@@ -298,7 +302,9 @@ export function TimerDetailScreen() {
     }
   }
 
-  const seed = `Plan a ${daysLeft && daysLeft > 0 ? "trip" : "stay"} to ${timer.destination} around ${new Date(timer.date).toDateString()}. Create a day by day plan with family friendly options, realistic timings, and travel between sights.`;
+  const dLabel = timer ? new Date(timer.date).toDateString() : '';
+
+  const seed = `Plan a ${daysLeft && daysLeft > 0 ? "trip" : "stay"} to ${timer?.destination || 'destination'} around ${dLabel}. Create a day by day plan with family friendly options, realistic timings, and travel between sights.`;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
@@ -313,8 +319,6 @@ export function TimerDetailScreen() {
     if (daysLeft === null) return ['#FF6B6B', '#FFD93D'];
     return getGradientColors(daysLeft);
   };
-
-  const dLabel = new Date(timer.date).toDateString();
 
   return (
     <Box flex={1} backgroundColor="bg">
@@ -445,35 +449,35 @@ export function TimerDetailScreen() {
           <Box flexDirection="row" alignItems="center" gap={16}>
             <Box flexDirection="row" alignItems="center" gap={6}>
               <Ionicons name="flame" size={16} color="#FFFFFF" />
-                             <RestyleText
-                 variant="sm"
-                 color="text"
-                 fontWeight="semibold"
-               >
-                 Streak {timer.streak || 0}
-               </RestyleText>
-             </Box>
-             <Box width={1} height={16} backgroundColor="rgba(255,255,255,0.3)" />
-             <Box flexDirection="row" alignItems="center" gap={6}>
-               <Ionicons name="star" size={16} color="#FFFFFF" />
-               <RestyleText
-                 variant="sm"
-                 color="text"
-                 fontWeight="semibold"
-               >
-                 XP {timer.xp || 0}
-               </RestyleText>
-             </Box>
-           </Box>
-           <RestyleText
-             variant="sm"
-             color="text"
-             fontWeight="medium"
-           >
-             {Math.round(progressPercent * 100)}% to go
-           </RestyleText>
-         </Box>
-       )}
+              <RestyleText
+                variant="sm"
+                color="text"
+                fontWeight="semibold"
+              >
+                Streak {timer.streak || 0}
+              </RestyleText>
+            </Box>
+            <Box width={1} height={16} backgroundColor="whiteOverlay" />
+            <Box flexDirection="row" alignItems="center" gap={6}>
+              <Ionicons name="star" size={16} color="#FFFFFF" />
+              <RestyleText
+                variant="sm"
+                color="text"
+                fontWeight="semibold"
+              >
+                XP {timer.xp || 0}
+              </RestyleText>
+            </Box>
+          </Box>
+          <RestyleText
+            variant="sm"
+            color="text"
+            fontWeight="medium"
+          >
+            {Math.round(progressPercent * 100)}% to go
+          </RestyleText>
+        </Box>
+      )}
 
       {/* Content */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20 }}>

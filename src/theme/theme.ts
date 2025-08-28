@@ -6,30 +6,39 @@ const palette = TripTickPalette;
 const theme = createTheme({
   colors: {
     // Backgrounds
-    bg: palette.navy900,
-    surface: palette.surface,
+    bg: palette.darkBg,
+    surface: palette.darkCard,
     surfaceAlt: palette.surfaceAlt,
     
     // Text
     text: palette.textOnNavy,
     textMuted: palette.textMuted,
     
-    // Primary colors
-    primary: palette.sunriseC,
-    primaryAlt: palette.sunriseY,
+    // Primary colors (Orange gradient)
+    primary: palette.orange500,
+    primaryAlt: palette.orange400,
+    
+    // Secondary colors (Teal gradient)
+    secondary: palette.teal500,
+    secondaryAlt: palette.teal400,
+    
+    // Accent colors
+    accent: palette.yellow400,
+    accentAlt: palette.purple400,
     
     // Status colors
     success: palette.teal600,
-    warning: '#FFC857',
-    danger: '#FF6B6B',
+    warning: palette.yellow500,
+    danger: palette.pink500,
     
-    // Ring colors
+    // Ring colors (gradient inspired)
     ringLow: palette.navy600,
-    ringMid: palette.sunriseO,
-    ringHigh: palette.sunriseY,
+    ringMid: palette.orange500,
+    ringHigh: palette.teal400,
     
     // Utility
     scrim: palette.scrim,
+    whiteOverlay: palette.whiteOverlay,
     transparent: 'transparent',
   },
   
@@ -50,6 +59,11 @@ const theme = createTheme({
     13: 52,
     14: 56,
     15: 60,
+    16: 64,
+    17: 68,
+    18: 72,
+    19: 76,
+    20: 80,
   },
   
   borderRadii: {
@@ -129,11 +143,12 @@ const lightTheme = createTheme({
   ...theme,
   colors: {
     ...theme.colors,
-    bg: '#FFFFFF',
-    surface: '#F8FAFC',
-    surfaceAlt: '#F1F5F9',
+    bg: palette.lightBg,
+    surface: palette.lightCard,
+    surfaceAlt: '#F8FAFC',
     text: palette.navy900,
     textMuted: palette.navy500,
+    whiteOverlay: palette.whiteOverlay,
   },
 });
 

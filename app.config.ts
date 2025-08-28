@@ -44,6 +44,15 @@ const config: ExpoConfig = {
     eas: { projectId: "62ed6c16-c869-42cd-b91c-c82a9e410526" },
   },
   updates: { url: updatesUrl },
+  // Environment variables for AI providers
+  env: {
+    EXPO_PUBLIC_VIBECODE_PROJECT_ID: process.env.EXPO_PUBLIC_VIBECODE_PROJECT_ID || "62ed6c16-c869-42cd-b91c-c82a9e410526",
+    EXPO_PUBLIC_VIBECODE_DEEPSEEK_API_KEY: process.env.EXPO_PUBLIC_VIBECODE_DEEPSEEK_API_KEY || "sk-835d9533a57b4db29062e1551e233c49",
+    EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY: process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY || "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",
+    EXPO_PUBLIC_VIBECODE_ANTHROPIC_API_KEY: process.env.EXPO_PUBLIC_VIBECODE_ANTHROPIC_API_KEY || "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",
+    EXPO_PUBLIC_VIBECODE_XAI_API_KEY: process.env.EXPO_PUBLIC_VIBECODE_XAI_API_KEY || "xai-0ATBihUeEg2m3oOKS4bIFiC49BgKSGvKg2RbE9CNgH9sSgdjPDsO6DHdQ7VStjb0yl34ht78Tt8wYIvf",
+    EXPO_PUBLIC_PEXELS_API_KEY: process.env.EXPO_PUBLIC_PEXELS_API_KEY || "your_pexels_api_key_here",
+  },
 };
 
 export default config;

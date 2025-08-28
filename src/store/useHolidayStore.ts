@@ -7,6 +7,10 @@ type Timer = {
   destination: string;
   date: string;      // ISO string
   createdAt: string; // ISO
+  // Travel details
+  adults: number;
+  children: number;
+  duration: number;  // Number of days
   // Gamification fields
   streak: number;
   xp: number;
@@ -15,7 +19,13 @@ type Timer = {
   lastCheckIn: string; // ISO string
 };
 
-type AddInput = { destination: string; date: string };
+type AddInput = { 
+  destination: string; 
+  date: string; 
+  adults: number; 
+  children: number; 
+  duration: number; 
+};
 
 type Badge = {
   id: string;
@@ -39,6 +49,7 @@ type State = {
     reduceMotion: boolean;
   };
   addTimer: (input: AddInput) => void;
+  updateTimer: (id: string, updates: Partial<Pick<Timer, 'destination' | 'date'>>) => Promise<void>;
   archiveTimer: (id: string) => void;
   restoreTimer: (id: string) => void;
   removeTimer: (id: string) => Promise<void>; // hard delete - now async
@@ -69,6 +80,9 @@ export const useHolidayStore = create<State>((set, get) => ({
       id: makeId(),
       destination: input.destination.trim(),
       date: input.date,
+      adults: input.adults,
+      children: input.children,
+      duration: input.duration,
       createdAt: new Date().toISOString(),
       // Initialize gamification fields
       streak: 0,
@@ -88,21 +102,61 @@ export const useHolidayStore = create<State>((set, get) => ({
         console.error('Failed to schedule notifications:', error);
       });
   },
-  archiveTimer: (id) =>
+  updateTimer: async (id, updates) => {
+    try {
+      console.log(`Updating timer: ${id}`, updates);
+      
+      // Cancel existing notifications
+      await cancelHolidayNotifications(id);
+      
+      set((s) => {
+        const timerIndex = s.timers.findIndex(t => t.id === id);
+        if (timerIndex === -1) return s;
+        
+        const updatedTimer = { ...s.timers[timerIndex], ...updates };
+        const newTimers = [...s.timers];
+        newTimers[timerIndex] = updatedTimer;
+        
+        return { timers: newTimers };
+      });
+      
+      // Reschedule notifications with updated data
+      const updatedTimer = get().timers.find(t => t.id === id);
+      if (updatedTimer) {
+        await scheduleHolidayNotifications(updatedTimer.id, updatedTimer.destination, updatedTimer.date);
+      }
+      
+      console.log(`Timer ${id} updated successfully`);
+    } catch (error) {
+      console.error('Error updating timer:', error);
+      throw error;
+    }
+  },
+  archiveTimer: (id) => {
+    console.log('archiveTimer called with id:', id);
     set((s) => {
       const t = s.timers.find((x) => x.id === id);
-      if (!t) return s;
+      if (!t) {
+        console.log('Timer not found for archiving:', id);
+        return s;
+      }
+      
+      console.log('Archiving timer:', t.destination);
       
       // Cancel notifications for archived timer
       cancelHolidayNotifications(id).catch((error) => {
         console.error('Failed to cancel notifications for archived timer:', error);
       });
       
-      return {
+      const newState = {
         timers: s.timers.filter((x) => x.id !== id),
         archivedTimers: [t, ...s.archivedTimers],
       };
-    }),
+      
+      console.log('Archive complete. Remaining timers:', newState.timers.length, 'Archived:', newState.archivedTimers.length);
+      return newState;
+    });
+  },
   restoreTimer: (id) =>
     set((s) => {
       const t = s.archivedTimers.find((x) => x.id === id);
@@ -121,7 +175,7 @@ export const useHolidayStore = create<State>((set, get) => ({
     }),
   removeTimer: async (id) => {
     try {
-      console.log(`Removing timer: ${id}`);
+      console.log(`removeTimer called with id: ${id}`);
       
       // Cancel notifications for deleted timer (non-blocking)
       cancelHolidayNotifications(id).catch((error) => {
@@ -130,6 +184,14 @@ export const useHolidayStore = create<State>((set, get) => ({
       
       // Update state without manual persistence (let subscription handle it)
       set((s) => {
+        const timerToRemove = s.timers.find((t) => t.id === id);
+        if (!timerToRemove) {
+          console.log('Timer not found for removal:', id);
+          return s;
+        }
+        
+        console.log('Removing timer:', timerToRemove.destination);
+        
         const newState = {
           timers: s.timers.filter((t) => t.id !== id),
           archivedTimers: s.archivedTimers.filter((t) => t.id !== id),
@@ -139,9 +201,11 @@ export const useHolidayStore = create<State>((set, get) => ({
         return newState;
       });
       
+      console.log('removeTimer function completed successfully');
+      
     } catch (error) {
       console.error('Error removing timer:', error);
-      // Don't re-throw - just log the error and continue
+      throw error; // Re-throw the error so the calling function can handle it
     }
   },
   
@@ -257,9 +321,14 @@ export const useHolidayStore = create<State>((set, get) => ({
       if (!raw) return;
       const { timers, archivedTimers, settings } = JSON.parse(raw);
       
-      // Migrate existing timers to include gamification fields
+      // Migrate existing timers to include gamification fields and travel details
       const migratedTimers = (timers ?? []).map((timer: any) => ({
         ...timer,
+        // Travel details (new fields)
+        adults: timer.adults ?? 1,
+        children: timer.children ?? 0,
+        duration: timer.duration ?? 7,
+        // Gamification fields
         streak: timer.streak ?? 0,
         xp: timer.xp ?? 0,
         badges: timer.badges ?? [],
@@ -269,6 +338,11 @@ export const useHolidayStore = create<State>((set, get) => ({
       
       const migratedArchivedTimers = (archivedTimers ?? []).map((timer: any) => ({
         ...timer,
+        // Travel details (new fields)
+        adults: timer.adults ?? 1,
+        children: timer.children ?? 0,
+        duration: timer.duration ?? 7,
+        // Gamification fields
         streak: timer.streak ?? 0,
         xp: timer.xp ?? 0,
         badges: timer.badges ?? [],

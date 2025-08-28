@@ -1,7 +1,8 @@
 import { useThemeStore } from '../store/useThemeStore';
 
 export function useTheme() {
-  const { isDark } = useThemeStore();
+  const { colorScheme } = useThemeStore();
+  const isDark = colorScheme === 'dark';
   
   return {
     isDark,

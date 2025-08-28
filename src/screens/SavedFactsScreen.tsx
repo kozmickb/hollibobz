@@ -1,210 +1,381 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useHolidayStore } from '../state/holidayStore';
-import { SavedFact } from '../state/holidayStore';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { useThemeStore } from '../store/useThemeStore';
+import { ThemeButton } from '../components/ThemeButton';
+
+type SavedFactsNav = NativeStackNavigationProp<RootStackParamList, "SavedFacts">;
 
 export function SavedFactsScreen() {
-  const navigation = useNavigation();
-  const { savedFacts, removeSavedFact } = useHolidayStore();
-  const [searchQuery, setSearchQuery] = useState('');
+  const navigation = useNavigation<SavedFactsNav>();
+  const { isDark } = useThemeStore();
 
-  // Group facts by destination
-  const groupedFacts = useMemo(() => {
-    const filtered = savedFacts.filter(fact => 
-      fact.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fact.fact.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const grouped = filtered.reduce((acc, fact) => {
-      if (!acc[fact.destination]) {
-        acc[fact.destination] = [];
-      }
-      acc[fact.destination].push(fact);
-      return acc;
-    }, {} as Record<string, SavedFact[]>);
-
-    return Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
-  }, [savedFacts, searchQuery]);
-
-  const handleRemoveFact = (savedAt: string) => {
-    removeSavedFact(savedAt);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
+  // Mock saved facts data
+  const savedFacts = [
+    {
+      id: '1',
+      destination: 'Paris, France',
+      fact: 'The Eiffel Tower was originally intended to be a temporary structure for the 1889 World\'s Fair.',
+      category: 'Architecture',
+      savedAt: '2024-01-15',
+    },
+    {
+      id: '2',
+      destination: 'Tokyo, Japan',
+      fact: 'Tokyo has the world\'s busiest pedestrian crossing, Shibuya Crossing, with over 2.4 million people crossing daily.',
+      category: 'Culture',
+      savedAt: '2024-01-14',
+    },
+    {
+      id: '3',
+      destination: 'New York, USA',
+      fact: 'Central Park is larger than the country of Monaco and contains over 25,000 trees.',
+      category: 'Nature',
+      savedAt: '2024-01-13',
+    },
+  ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F7F7F7' }}>
+    <SafeAreaView style={{
+      flex: 1,
+      backgroundColor: isDark ? '#0F172A' : '#FEF7ED',
+    }}>
+      <StatusBar 
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={isDark ? '#0F172A' : '#FEF7ED'}
+      />
+      
       {/* Header */}
-      <View style={{ 
-        backgroundColor: '#FFFFFF', 
-        paddingTop: 12, 
-        paddingBottom: 20, 
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: 20,
+        paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#E5E5E5',
+        borderBottomColor: isDark 
+          ? 'rgba(255, 255, 255, 0.1)' 
+          : 'rgba(251, 146, 60, 0.1)',
+        backgroundColor: isDark 
+          ? 'rgba(30, 41, 59, 0.8)' 
+          : 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(10px)',
       }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Pressable
             onPress={() => navigation.goBack()}
-            style={{ marginRight: 16 }}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: isDark 
+                ? 'rgba(255, 255, 255, 0.1)' 
+                : 'rgba(251, 146, 60, 0.1)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 12,
+            }}
           >
-            <Ionicons name="arrow-back" size={24} color="#333333" />
+            <Ionicons 
+              name="arrow-back" 
+              size={20} 
+              color={isDark ? '#F3F4F6' : '#F97316'} 
+            />
           </Pressable>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#333333' }}>
+          <Text style={{
+            fontSize: 20,
+            fontFamily: 'Poppins-Bold',
+            color: isDark ? '#F3F4F6' : '#1F2937',
+          }}>
             Saved Facts
           </Text>
         </View>
-
-        {/* Search bar */}
-        <View style={{ 
-          flexDirection: 'row', 
-          alignItems: 'center', 
-          backgroundColor: '#F5F5F5', 
-          borderRadius: 12, 
-          paddingHorizontal: 16,
-          paddingVertical: 12,
-        }}>
-          <Ionicons name="search" size={20} color="#666666" />
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search facts or destinations..."
-            style={{ 
-              flex: 1, 
-              marginLeft: 12, 
-              fontSize: 16,
-              color: '#333333',
-            }}
-            placeholderTextColor="#666666"
-          />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color="#666666" />
-            </Pressable>
-          )}
-        </View>
+        
+        <ThemeButton />
       </View>
 
-      {/* Content */}
-      <ScrollView style={{ flex: 1, padding: 20 }}>
-        {groupedFacts.length === 0 ? (
-          <View style={{ 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            paddingVertical: 12,
+      {/* Main Content */}
+      <ScrollView 
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section */}
+        <View style={{ marginBottom: 24 }}>
+          <View style={{
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            backgroundColor: isDark 
+              ? 'rgba(45, 212, 191, 0.2)' 
+              : 'rgba(45, 212, 191, 0.1)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 16,
+            alignSelf: 'center',
           }}>
-            <Ionicons name="bookmark-outline" size={64} color="#CCCCCC" />
-            <Text style={{ 
-              fontSize: 18, 
-              fontWeight: '600', 
-              color: '#666666', 
-              marginTop: 16,
-              textAlign: 'center',
-            }}>
-              {searchQuery ? 'No facts found' : 'No saved facts yet'}
-            </Text>
-            <Text style={{ 
-              fontSize: 14, 
-              color: '#999999', 
-              marginTop: 8,
-              textAlign: 'center',
-            }}>
-              {searchQuery ? 'Try adjusting your search' : 'Save interesting facts from your daily cards'}
-            </Text>
+            <Ionicons 
+              name="bookmark" 
+              size={32} 
+              color={isDark ? '#2DD4BF' : '#0D9488'} 
+            />
           </View>
-        ) : (
-          groupedFacts.map(([destination, facts]) => (
-            <View key={destination} style={{ marginBottom: 24 }}>
-              {/* Destination header */}
-              <View style={{ 
-                flexDirection: 'row', 
-                alignItems: 'center', 
-                marginBottom: 12,
-              }}>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#333333' }}>
-                  {destination}
-                </Text>
-                <View style={{ 
-                  backgroundColor: '#E5E7EB', 
-                  borderRadius: 12, 
-                  paddingHorizontal: 8, 
-                  paddingVertical: 4,
-                  marginLeft: 8,
-                }}>
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280' }}>
-                    {facts.length} {facts.length === 1 ? 'fact' : 'facts'}
-                  </Text>
-                </View>
-              </View>
+          <Text style={{
+            fontSize: 28,
+            fontFamily: 'Poppins-Bold',
+            color: isDark ? '#F3F4F6' : '#1F2937',
+            textAlign: 'center',
+            marginBottom: 8,
+          }}>
+            Your Travel Knowledge
+          </Text>
+          <Text style={{
+            fontSize: 16,
+            fontFamily: 'Poppins-Regular',
+            color: isDark ? '#9CA3AF' : '#6B7280',
+            textAlign: 'center',
+          }}>
+            Discover interesting facts about your destinations
+          </Text>
+        </View>
 
-              {/* Facts list */}
-              {facts.map((fact, index) => (
-                <View key={fact.savedAt} style={{ 
-                  backgroundColor: '#FFFFFF', 
-                  borderRadius: 12, 
-                  padding: 16, 
-                  marginBottom: 8,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.05,
-                  shadowRadius: 2,
-                  elevation: 1,
+        {/* Stats Card */}
+        <View style={{
+          backgroundColor: isDark 
+            ? 'rgba(30, 41, 59, 0.8)' 
+            : 'rgba(255, 255, 255, 0.9)',
+          borderRadius: 20,
+          padding: 20,
+          marginBottom: 24,
+          borderWidth: 1,
+          borderColor: isDark 
+            ? 'rgba(255, 255, 255, 0.1)' 
+            : 'rgba(251, 146, 60, 0.1)',
+          shadowColor: isDark ? '#000' : '#F97316',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isDark ? 0.1 : 0.05,
+          shadowRadius: 8,
+          elevation: isDark ? 2 : 1,
+        }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={{ alignItems: 'center', flex: 1 }}>
+              <Text style={{
+                fontSize: 24,
+                fontFamily: 'Poppins-Bold',
+                color: isDark ? '#F3F4F6' : '#1F2937',
+                marginBottom: 4,
+              }}>
+                {savedFacts.length}
+              </Text>
+              <Text style={{
+                fontSize: 14,
+                fontFamily: 'Poppins-Regular',
+                color: isDark ? '#9CA3AF' : '#6B7280',
+              }}>
+                Facts Saved
+              </Text>
+            </View>
+            
+            <View style={{ width: 1, height: 40, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(251, 146, 60, 0.1)' }} />
+            
+            <View style={{ alignItems: 'center', flex: 1 }}>
+              <Text style={{
+                fontSize: 24,
+                fontFamily: 'Poppins-Bold',
+                color: isDark ? '#F3F4F6' : '#1F2937',
+                marginBottom: 4,
+              }}>
+                {new Set(savedFacts.map(fact => fact.destination)).size}
+              </Text>
+              <Text style={{
+                fontSize: 14,
+                fontFamily: 'Poppins-Regular',
+                color: isDark ? '#9CA3AF' : '#6B7280',
+              }}>
+                Destinations
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Facts List */}
+        <View>
+          <Text style={{
+            fontSize: 20,
+            fontFamily: 'Poppins-Bold',
+            color: isDark ? '#F3F4F6' : '#1F2937',
+            marginBottom: 16,
+          }}>
+            Recent Facts
+          </Text>
+          
+          {savedFacts.map((fact, index) => (
+            <View
+              key={fact.id}
+              style={{
+                backgroundColor: isDark 
+                  ? 'rgba(30, 41, 59, 0.8)' 
+                  : 'rgba(255, 255, 255, 0.9)',
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 12,
+                borderWidth: 1,
+                borderColor: isDark 
+                  ? 'rgba(255, 255, 255, 0.1)' 
+                  : 'rgba(251, 146, 60, 0.1)',
+                shadowColor: isDark ? '#000' : '#F97316',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0.1 : 0.05,
+                shadowRadius: 4,
+                elevation: isDark ? 1 : 1,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 }}>
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: isDark 
+                    ? 'rgba(45, 212, 191, 0.2)' 
+                    : 'rgba(45, 212, 191, 0.1)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 12,
                 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                    <View style={{ 
-                      backgroundColor: '#3B82F6', 
-                      borderRadius: 20, 
-                      padding: 8, 
-                      marginRight: 12,
+                  <Ionicons 
+                    name="location" 
+                    size={20} 
+                    color={isDark ? '#2DD4BF' : '#0D9488'} 
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{
+                    fontSize: 16,
+                    fontFamily: 'Poppins-Bold',
+                    color: isDark ? '#F3F4F6' : '#1F2937',
+                    marginBottom: 4,
+                  }}>
+                    {fact.destination}
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{
+                      backgroundColor: isDark 
+                        ? 'rgba(139, 92, 246, 0.2)' 
+                        : 'rgba(139, 92, 246, 0.1)',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 12,
+                      marginRight: 8,
                     }}>
-                      <Ionicons name="bulb" size={16} color="white" />
-                    </View>
-                    
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ 
-                        fontSize: 14, 
-                        lineHeight: 20, 
-                        color: '#333333',
-                        marginBottom: 8,
+                      <Text style={{
+                        fontSize: 12,
+                        fontFamily: 'Poppins-Medium',
+                        color: isDark ? '#A78BFA' : '#8B5CF6',
                       }}>
-                        {fact.fact}
+                        {fact.category}
                       </Text>
-                      
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <Text style={{ 
-                          fontSize: 12, 
-                          color: '#666666',
-                        }}>
-                          Saved {formatDate(fact.savedAt)}
-                        </Text>
-                        
-                        <Pressable
-                          onPress={() => handleRemoveFact(fact.savedAt)}
-                          style={{ 
-                            backgroundColor: '#FEE2E2', 
-                            borderRadius: 16, 
-                            padding: 6,
-                          }}
-                        >
-                          <Ionicons name="trash-outline" size={14} color="#DC2626" />
-                        </Pressable>
-                      </View>
                     </View>
+                    <Text style={{
+                      fontSize: 12,
+                      fontFamily: 'Poppins-Regular',
+                      color: isDark ? '#9CA3AF' : '#6B7280',
+                    }}>
+                      {fact.savedAt}
+                    </Text>
                   </View>
                 </View>
-              ))}
+              </View>
+              
+              <Text style={{
+                fontSize: 14,
+                fontFamily: 'Poppins-Regular',
+                color: isDark ? '#D1D5DB' : '#374151',
+                lineHeight: 20,
+              }}>
+                {fact.fact}
+              </Text>
+              
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+                <Pressable
+                  style={{
+                    backgroundColor: isDark 
+                      ? 'rgba(251, 146, 60, 0.2)' 
+                      : 'rgba(251, 146, 60, 0.1)',
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: isDark 
+                      ? 'rgba(251, 146, 60, 0.3)' 
+                      : 'rgba(251, 146, 60, 0.2)',
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 12,
+                    fontFamily: 'Poppins-Medium',
+                    color: isDark ? '#FB923C' : '#F97316',
+                  }}>
+                    Share
+                  </Text>
+                </Pressable>
+              </View>
             </View>
-          ))
+          ))}
+        </View>
+
+        {/* Empty State */}
+        {savedFacts.length === 0 && (
+          <View style={{
+            alignItems: 'center',
+            paddingVertical: 60,
+          }}>
+            <View style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: isDark 
+                ? 'rgba(45, 212, 191, 0.2)' 
+                : 'rgba(45, 212, 191, 0.1)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+            }}>
+              <Ionicons 
+                name="bookmark-outline" 
+                size={32} 
+                color={isDark ? '#2DD4BF' : '#0D9488'} 
+              />
+            </View>
+            <Text style={{
+              fontSize: 18,
+              fontFamily: 'Poppins-SemiBold',
+              color: isDark ? '#F3F4F6' : '#1F2937',
+              marginBottom: 8,
+              textAlign: 'center',
+            }}>
+              No saved facts yet
+            </Text>
+            <Text style={{
+              fontSize: 14,
+              fontFamily: 'Poppins-Regular',
+              color: isDark ? '#9CA3AF' : '#6B7280',
+              textAlign: 'center',
+            }}>
+              Start chatting with Holly to discover interesting facts about your destinations!
+            </Text>
+          </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }

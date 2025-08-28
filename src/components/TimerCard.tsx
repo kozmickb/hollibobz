@@ -1,275 +1,229 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Pressable, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withRepeat,
-  withTiming,
-  withSequence,
-  interpolate,
-  runOnJS,
-} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../store/useThemeStore';
-import { textStyles, gradientTextStyles, accessibilityProps, hitSlop, pressableArea } from '../utils/accessibility';
+import { useHolidayStore } from '../store/useHolidayStore';
+import { daysUntil } from '../features/countdown/logic';
 
 interface TimerCardProps {
-  destination: string;
-  date: string;
-  daysLeft: number;
-  createdAt: string;
-  onPress: () => void;
-  style?: any;
+  timerId: string;
+  onPress?: () => void;
+  showProgress?: boolean;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+export function TimerCard({ timerId, onPress, showProgress = true }: TimerCardProps) {
+  const timer = useHolidayStore((s) => s.timers.find(t => t.id === timerId));
+  const { isDark } = useThemeStore();
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
-export function TimerCard({ destination, date, daysLeft, createdAt, onPress, style }: TimerCardProps) {
-  const { reduceMotion } = useThemeStore();
-  const scale = useSharedValue(1);
-  const shimmer = useSharedValue(0);
-  const pulseScale = useSharedValue(1);
-  const [showProgressTooltip, setShowProgressTooltip] = useState(false);
-
-  // Shimmer animation for excitement
   useEffect(() => {
-    if (!reduceMotion) {
-      shimmer.value = withRepeat(withTiming(1, { duration: 2000 }), -1, true);
-    }
-  }, [reduceMotion]);
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  // Pulse animation for urgent timers (less than 7 days)
   useEffect(() => {
-    if (daysLeft <= 7 && daysLeft > 0 && !reduceMotion) {
-      pulseScale.value = withRepeat(
-        withSpring(1.05, { damping: 8, stiffness: 100 }),
-        -1,
-        true
-      );
-    }
-  }, [daysLeft, reduceMotion]);
-
-  // Gentle countdown pulse animation every minute
-  useEffect(() => {
-    if (reduceMotion) return;
-    
-    const interval = setInterval(() => {
-      if (daysLeft > 0) {
-        scale.value = withSequence(
-          withTiming(0.98, { duration: 300 }),
-          withTiming(1, { duration: 300 })
-        );
-      }
-    }, 60000); // Every minute
-
-    return () => clearInterval(interval);
-  }, [daysLeft, reduceMotion]);
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseAnimation.start();
+    return () => pulseAnimation.stop();
+  }, [pulseAnim]);
 
   const handlePressIn = () => {
-    if (!reduceMotion) {
-      scale.value = withSpring(0.98);
-    }
+    Animated.spring(scaleAnim, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    if (!reduceMotion) {
-      scale.value = withSpring(1);
-    }
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
   };
 
-  const handlePress = () => {
-    runOnJS(onPress)();
-  };
+  if (!timer) return null;
 
-  const handleProgressPress = () => {
-    Alert.alert(
-      'Countdown Progress',
-      `${Math.round(progressPercentage)}% of your countdown complete`,
-      [{ text: 'OK' }]
-    );
-  };
-
-  const animatedCardStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { scale: daysLeft <= 7 && daysLeft > 0 ? pulseScale.value : 1 }
-    ],
-  }));
-
-  const shimmerStyle = useAnimatedStyle(() => {
-    const translateX = interpolate(shimmer.value, [0, 1], [-100, 300]);
-    return {
-      transform: [{ translateX }],
-    };
-  });
-
-  const getGradientColors = () => {
-    if (daysLeft <= 0) return ['#FF4757', '#FF6B6B']; // Red for past dates
-    if (daysLeft <= 7) return ['#FF6B6B', '#FFD93D']; // Sunset gradient for urgent
-    if (daysLeft <= 30) return ['#4ECDC4', '#42A5F5']; // Ocean gradient for soon
-    return ['#45B69C', '#4ECDC4']; // Green-turquoise for distant
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
-
-  const getDaysText = () => {
-    if (daysLeft <= 0) return 'Today!';
-    if (daysLeft === 1) return '1 day';
-    return `${daysLeft} days`;
-  };
-
-  // Calculate progress percentage
-  const getProgressPercentage = () => {
-    const created = new Date(createdAt).getTime();
-    const target = new Date(date).getTime();
-    const now = new Date().getTime();
-    
-    const totalDuration = target - created;
-    const elapsed = now - created;
-    
-    if (totalDuration <= 0) return 0;
-    if (elapsed <= 0) return 0;
-    if (elapsed >= totalDuration) return 100;
-    
-    return Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
-  };
-
-  const progressPercentage = getProgressPercentage();
+  const daysLeft = daysUntil(timer.date);
+  const progressPercent = Math.max(0, Math.min(1, (365 - daysLeft) / 365));
 
   return (
-    <AnimatedPressable
-      style={[animatedCardStyle, style]}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={handlePress}
-      hitSlop={hitSlop}
-      {...accessibilityProps.button}
+    <Animated.View
+      style={{
+        transform: [{ scale: scaleAnim }],
+      }}
     >
-      <View style={{ borderRadius: 20, overflow: 'hidden' }}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={{
+          marginBottom: 16,
+          borderRadius: 20,
+          overflow: 'hidden',
+          shadowColor: isDark ? '#000' : '#666',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isDark ? 0.3 : 0.2,
+          shadowRadius: 8,
+          elevation: 8,
+        }}
+      >
         <LinearGradient
-          colors={getGradientColors()}
+          colors={isDark 
+            ? ['#2a2a2a', '#1a1a1a'] 
+            : ['#FFFFFF', '#F8F8F8']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{
             padding: 20,
-            minHeight: 120,
-            position: 'relative',
+            borderWidth: 1,
+            borderColor: isDark ? '#444444' : '#E5E5E5',
           }}
         >
-          {/* Shimmer overlay for excitement */}
-          <Animated.View
-            style={[
-              {
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                width: 100,
-                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                transform: [{ skewX: '-20deg' }],
-              },
-              shimmerStyle,
-            ]}
-          />
-
-          {/* Content */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          {/* Header */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <View style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: isDark ? '#FF6B6B' : '#FF6B6B',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 12,
+            }}>
+              <Ionicons name="location" size={20} color="#FFFFFF" />
+            </View>
             <View style={{ flex: 1 }}>
-              <Text
-                style={[gradientTextStyles.h3, { fontSize: 20, marginBottom: 4 }]}
-                numberOfLines={2}
-                {...accessibilityProps.text}
-              >
-                {destination}
+              <Text style={{
+                fontSize: 18,
+                fontFamily: 'Poppins-Bold',
+                color: isDark ? '#FFFFFF' : '#333333',
+                marginBottom: 2,
+              }}>
+                {timer.destination}
               </Text>
-              <Text
-                style={[gradientTextStyles.bodySmall, { fontSize: 14, marginBottom: 8 }]}
-                {...accessibilityProps.text}
-              >
-                Departs in {getDaysText()}
-              </Text>
-              <Text
-                style={[gradientTextStyles.caption, { fontSize: 12 }]}
-                {...accessibilityProps.text}
-              >
-                {formatDate(date)}
+              <Text style={{
+                fontSize: 14,
+                fontFamily: 'Poppins-Regular',
+                color: isDark ? '#CCCCCC' : '#666666',
+              }}>
+                {new Date(timer.date).toLocaleDateString()}
               </Text>
             </View>
-            
-            <Ionicons 
-              name="airplane" 
-              size={28} 
-              color="rgba(255, 255, 255, 0.9)" 
-            />
           </View>
 
-          {/* Countdown */}
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 16 }}>
-            <View>
-              <Text
-                style={[gradientTextStyles.h1, { fontSize: 32, lineHeight: 36 }]}
-                {...accessibilityProps.text}
-              >
-                {Math.abs(daysLeft)}
-              </Text>
-              <Text
-                style={[gradientTextStyles.bodySmall, { fontSize: 14, marginTop: -4 }]}
-                {...accessibilityProps.text}
-              >
-                {getDaysText()}
-              </Text>
-            </View>
-            
-            {daysLeft <= 7 && daysLeft > 0 && (
-              <View
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 16,
-                }}
-              >
-                <Text
-                  style={{
-                    color: '#FFFFFF',
-                    fontSize: 12,
-                    fontFamily: 'Poppins-SemiBold',
-                  }}
-                >
-                  Almost here! 🎉
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Progress strip */}
-          <Pressable
-            onPress={handleProgressPress}
-            style={{ 
-              position: 'absolute', 
-              bottom: 0, 
-              left: 0, 
-              right: 0, 
-              height: 6,
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+          {/* Countdown Display */}
+          <Animated.View
+            style={{
+              alignItems: 'center',
+              marginBottom: 16,
+              transform: [{ scale: pulseAnim }],
             }}
           >
-            <View style={{
-              height: '100%',
-              width: `${progressPercentage}%`,
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              borderRadius: 3,
-            }} />
-          </Pressable>
+            <Text style={{
+              fontSize: 48,
+              fontFamily: 'Poppins-Bold',
+              color: isDark ? '#FF6B6B' : '#FF6B6B',
+              textAlign: 'center',
+            }}>
+              {daysLeft}
+            </Text>
+            <Text style={{
+              fontSize: 16,
+              fontFamily: 'Poppins-Medium',
+              color: isDark ? '#CCCCCC' : '#666666',
+              textAlign: 'center',
+            }}>
+              {daysLeft === 1 ? 'day' : 'days'} to go!
+            </Text>
+          </Animated.View>
+
+          {/* Progress Bar */}
+          {showProgress && (
+            <View style={{ marginBottom: 8 }}>
+              <View style={{
+                height: 8,
+                backgroundColor: isDark ? '#444444' : '#E5E5E5',
+                borderRadius: 4,
+                overflow: 'hidden',
+              }}>
+                <LinearGradient
+                  colors={['#FF6B6B', '#FFD93D']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    height: '100%',
+                    width: `${progressPercent * 100}%`,
+                    borderRadius: 4,
+                  }}
+                />
+              </View>
+              <Text style={{
+                fontSize: 12,
+                fontFamily: 'Poppins-Regular',
+                color: isDark ? '#CCCCCC' : '#666666',
+                textAlign: 'center',
+                marginTop: 4,
+              }}>
+                {Math.round(progressPercent * 100)}% complete
+              </Text>
+            </View>
+          )}
+
+          {/* Stats */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{
+                fontSize: 16,
+                fontFamily: 'Poppins-Bold',
+                color: isDark ? '#FF6B6B' : '#FF6B6B',
+              }}>
+                {timer.streak || 0}
+              </Text>
+              <Text style={{
+                fontSize: 12,
+                fontFamily: 'Poppins-Regular',
+                color: isDark ? '#CCCCCC' : '#666666',
+              }}>
+                Streak
+              </Text>
+            </View>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{
+                fontSize: 16,
+                fontFamily: 'Poppins-Bold',
+                color: isDark ? '#4ECDC4' : '#4ECDC4',
+              }}>
+                {timer.xp || 0}
+              </Text>
+              <Text style={{
+                fontSize: 12,
+                fontFamily: 'Poppins-Regular',
+                color: isDark ? '#CCCCCC' : '#666666',
+              }}>
+                XP
+              </Text>
+            </View>
+          </View>
         </LinearGradient>
-      </View>
-    </AnimatedPressable>
+      </Pressable>
+    </Animated.View>
   );
 }

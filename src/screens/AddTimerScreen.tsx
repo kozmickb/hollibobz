@@ -3,13 +3,13 @@ import { View, Text, TextInput, Alert, ScrollView, KeyboardAvoidingView, Platfor
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../store/useHolidayStore";
-import { useThemeStore } from '../store/useThemeStore';
+import { useThemeStore } from "../store/useThemeStore";
 import { ThemedButton } from "../components/ThemedButton";
 import { TripTickLogo } from "../components/TripTickLogo";
 import { DateTimeSelector } from "../components/DateTimeSelector";
+import { Ionicons } from '@expo/vector-icons';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "AddTimer">;
 
@@ -24,6 +24,9 @@ export function AddTimerScreen() {
     tomorrow.setHours(9, 0, 0, 0); // Set to 9:00 AM
     return tomorrow;
   });
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const [duration, setDuration] = useState(7);
 
   function onSave() {
     if (!destination.trim()) {
@@ -43,10 +46,15 @@ export function AddTimerScreen() {
     }
 
     const iso = selectedDate.toISOString();
-    addTimer({ destination: destination.trim(), date: iso });
+    addTimer({ 
+      destination: destination.trim(), 
+      date: iso, 
+      adults, 
+      children, 
+      duration 
+    });
     navigation.goBack();
   }
-
 
 
   return (
@@ -178,6 +186,111 @@ export function AddTimerScreen() {
               label="Date & Time"
               showTime={true}
             />
+          </View>
+
+          {/* Travel Group */}
+          <View style={{ marginBottom: 24 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontFamily: 'Poppins-SemiBold',
+                color: isDark ? '#FFFFFF' : '#333333',
+                marginBottom: 8,
+              }}
+            >
+              👥 Travel Group
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Poppins-Medium',
+                    color: isDark ? '#CCCCCC' : '#666666',
+                    marginBottom: 4,
+                  }}
+                >
+                  Adults
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderColor: isDark ? '#555555' : '#E5E5E5', borderRadius: 16, backgroundColor: isDark ? '#2a2a2a' : '#F7F7F7' }}>
+                  <Pressable
+                    onPress={() => setAdults(Math.max(1, adults - 1))}
+                    style={{ padding: 12 }}
+                  >
+                    <Ionicons name="remove" size={20} color={isDark ? '#FFFFFF' : '#333333'} />
+                  </Pressable>
+                  <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', color: isDark ? '#FFFFFF' : '#333333' }}>
+                    {adults}
+                  </Text>
+                  <Pressable
+                    onPress={() => setAdults(adults + 1)}
+                    style={{ padding: 12 }}
+                  >
+                    <Ionicons name="add" size={20} color={isDark ? '#FFFFFF' : '#333333'} />
+                  </Pressable>
+                </View>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontFamily: 'Poppins-Medium',
+                    color: isDark ? '#CCCCCC' : '#666666',
+                    marginBottom: 4,
+                  }}
+                >
+                  Children
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderColor: isDark ? '#555555' : '#E5E5E5', borderRadius: 16, backgroundColor: isDark ? '#2a2a2a' : '#F7F7F7' }}>
+                  <Pressable
+                    onPress={() => setChildren(Math.max(0, children - 1))}
+                    style={{ padding: 12 }}
+                  >
+                    <Ionicons name="remove" size={20} color={isDark ? '#FFFFFF' : '#333333'} />
+                  </Pressable>
+                  <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', color: isDark ? '#FFFFFF' : '#333333' }}>
+                    {children}
+                  </Text>
+                  <Pressable
+                    onPress={() => setChildren(children + 1)}
+                    style={{ padding: 12 }}
+                  >
+                    <Ionicons name="add" size={20} color={isDark ? '#FFFFFF' : '#333333'} />
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Trip Duration */}
+          <View style={{ marginBottom: 24 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontFamily: 'Poppins-SemiBold',
+                color: isDark ? '#FFFFFF' : '#333333',
+                marginBottom: 8,
+              }}
+            >
+              📅 Trip Duration
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 2, borderColor: isDark ? '#555555' : '#E5E5E5', borderRadius: 16, backgroundColor: isDark ? '#2a2a2a' : '#F7F7F7' }}>
+              <Pressable
+                onPress={() => setDuration(Math.max(1, duration - 1))}
+                style={{ padding: 12 }}
+              >
+                <Ionicons name="remove" size={20} color={isDark ? '#FFFFFF' : '#333333'} />
+              </Pressable>
+              <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', color: isDark ? '#FFFFFF' : '#333333' }}>
+                {duration} day{duration !== 1 ? 's' : ''}
+              </Text>
+              <Pressable
+                onPress={() => setDuration(duration + 1)}
+                style={{ padding: 12 }}
+              >
+                <Ionicons name="add" size={20} color={isDark ? '#FFFFFF' : '#333333'} />
+              </Pressable>
+            </View>
           </View>
 
           <View style={{ gap: 12 }}>

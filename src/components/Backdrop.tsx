@@ -31,8 +31,7 @@ export function Backdrop(props: { destination: string; imageUrl?: string }) {
     <View style={{ borderRadius: 20, overflow: 'hidden', height: 176 }}>
       <ImageBackground 
         source={{ uri: props.imageUrl }} 
-        style={{ flex: 1, justifyContent: 'flex-end' }}
-        resizeMode="cover"
+        style={{ flex: 1, justifyContent: 'flex-end', resizeMode: 'cover' }}
       >
         <View style={{
           backgroundColor: 'rgba(0, 0, 0, 0.4)',

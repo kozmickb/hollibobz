@@ -30,12 +30,8 @@ export function TripTickLogo({ size = 'md', style }: TripTickLogoProps) {
     <View style={[style]}>
       <Image
         source={require('../../assets/TT logo.png')}
-        style={[
-          getSizeStyles(),
-          {
-            resizeMode: 'contain',
-          }
-        ]}
+        style={getSizeStyles()}
+        resizeMode="contain"
         accessibilityLabel="TripTick Logo"
       />
     </View>

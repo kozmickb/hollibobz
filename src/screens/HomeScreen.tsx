@@ -1,310 +1,668 @@
-import React, { useMemo, useEffect, useState } from "react";
-import { View, Text, FlatList, ScrollView, Alert, Platform } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView, Pressable, Platform, ImageBackground } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../store/useHolidayStore";
-import { useThemeStore } from '../store/useThemeStore';
-import { BurgerMenuButton } from '../components/BurgerMenuButton';
-import { TripTickLogo } from '../components/TripTickLogo';
-import { CustomAlert } from "../components/CustomAlert";
-import { CountdownDisplay } from "../components/CountdownDisplay";
-import { HeroBackground } from "../components/HeroBackground";
-import { Box } from "../components/ui/Box";
+import { useThemeStore } from "../store/useThemeStore";
+import { Ionicons } from '@expo/vector-icons';
+import { Animated } from 'react-native';
+import { fetchPexelsBackdrop } from "../features/destination/backdrop";
+
+// TripTick UI components
 import { Text as RestyleText } from "../components/ui/Text";
-import { Button } from "../components/ui/Button";
-import { TripTickPalette } from "../theme/tokens";
+import { CustomAlert } from "../components/CustomAlert";
 
+// Import features
+import { daysUntil } from "../features/countdown/logic";
 
-// Try to import confetti with fallback
-let ConfettiCannon: any = null;
-try {
-  ConfettiCannon = require("react-native-confetti-cannon").default;
-} catch (error) {
-  console.log("Confetti not available:", error);
+type Nav = NativeStackNavigationProp<RootStackParamList, "Home">;
+
+interface Trip {
+  id: string;
+  destination: string;
+  date: string;
+  daysLeft: number;
+  hoursLeft: number;
+  minutesLeft: number;
+  secondsLeft: number;
 }
 
-type HomeNav = NativeStackNavigationProp<RootStackParamList, "Home">;
-
 export function HomeScreen() {
-  const navigation = useNavigation<HomeNav>();
-  const timers = useHolidayStore((s) => s.timers);
-  const archived = useHolidayStore((s) => s.archivedTimers);
-  const restore = useHolidayStore((s) => s.restoreTimer);
-  const purge = useHolidayStore((s) => s.purgeArchive);
-  const { colorScheme } = useThemeStore();
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [prevTimerCount, setPrevTimerCount] = useState(timers.length);
-  const [showPurgeAlert, setShowPurgeAlert] = useState(false);
+  const navigation = useNavigation<Nav>();
+  const { timers, archivedTimers, archiveTimer } = useHolidayStore();
+  const { isDark, toggleColorScheme } = useThemeStore();
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [timerToDelete, setTimerToDelete] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(20));
+  const [backgroundImages, setBackgroundImages] = useState<{[key: string]: string}>({});
 
-  // Show confetti when a new timer is added
   useEffect(() => {
-    if (timers.length > prevTimerCount) {
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 3000);
-    }
-    setPrevTimerCount(timers.length);
-  }, [timers.length, prevTimerCount]);
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
 
-  const sortedTimers = useMemo(() => {
-    return [...timers].sort((a, b) => {
-      const now = new Date().getTime();
-      const aDays = Math.ceil((new Date(a.date).getTime() - now) / (1000 * 60 * 60 * 24));
-      const bDays = Math.ceil((new Date(b.date).getTime() - now) / (1000 * 60 * 60 * 24));
-      return aDays - bDays;
-    });
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    return () => clearInterval(timer);
+  }, [fadeAnim, slideAnim]);
+
+  // Load background images for destinations
+  useEffect(() => {
+    const loadBackgroundImages = async () => {
+      const images: {[key: string]: string} = {};
+      for (const timer of timers) {
+        if (!backgroundImages[timer.destination]) {
+          try {
+            const result = await fetchPexelsBackdrop(timer.destination);
+            if (result.imageUrl) {
+              images[timer.destination] = result.imageUrl;
+            }
+          } catch (error) {
+            console.log('Failed to load background image for', timer.destination);
+          }
+        }
+      }
+      if (Object.keys(images).length > 0) {
+        setBackgroundImages(prev => ({ ...prev, ...images }));
+      }
+    };
+
+    loadBackgroundImages();
   }, [timers]);
 
-  const getTimerDaysLeft = (dateString: string) => {
-    const now = new Date();
-    const target = new Date(dateString);
-    return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const handleDeleteTimer = (timerId: string) => {
+    setTimerToDelete(timerId);
+    setShowDeleteAlert(true);
   };
 
-  const getGreeting = () => {
-    const nextTrip = sortedTimers[0];
-    if (!nextTrip) return "Ready for your next adventure?";
-    
-    const daysLeft = getTimerDaysLeft(nextTrip.date);
-    if (daysLeft <= 0) return "Your trip is here! 🎉";
-    if (daysLeft <= 7) return "Your trip is almost here! ✈️";
-    if (daysLeft <= 30) return "Exciting times ahead! 🌟";
-    return "Start dreaming of your next getaway! 🏖️";
+  const confirmDelete = () => {
+    if (timerToDelete) {
+      archiveTimer(timerToDelete);
+    }
+    setShowDeleteAlert(false);
+    setTimerToDelete(null);
   };
+
+  // Convert timers to Trip format
+  const tripsData: Trip[] = timers.map(timer => {
+    const daysLeft = daysUntil(timer.date);
+    const tripDate = new Date(timer.date);
+    const now = new Date();
+    const diffTime = tripDate.getTime() - now.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
+    const diffSeconds = Math.floor((diffTime % (1000 * 60)) / 1000);
+
+    return {
+      id: timer.id,
+      destination: timer.destination,
+      date: timer.date,
+      daysLeft: Math.max(0, diffDays),
+      hoursLeft: Math.max(0, diffHours),
+      minutesLeft: Math.max(0, diffMinutes),
+      secondsLeft: Math.max(0, diffSeconds),
+    };
+  });
+
+  const nextTrip = tripsData[0];
+
+  const navigationItems = [
+    { id: 'home', icon: 'home' as const, label: 'Home' },
+    { id: 'trips', icon: 'map' as const, label: 'Trips' },
+    { id: 'chat', icon: 'chatbubble' as const, label: 'AI Chat' },
+    { id: 'profile', icon: 'person' as const, label: 'Profile' },
+  ];
 
   return (
-    <Box flex={1} backgroundColor="bg">
-      {/* Hero Section with TripTick Background */}
-              <Box position="relative" paddingTop={12} paddingBottom={10} paddingHorizontal={5}>
-        <HeroBackground type="wave" height={200} />
-        
-        {/* Compact top bar */}
-        <Box flexDirection="row" justifyContent="space-between" alignItems="center" marginBottom={6}>
-          <Box flexDirection="row" alignItems="center" gap={8}>
-            <TripTickLogo size="lg" />
-            <RestyleText variant="2xl" color="text" fontWeight="bold">
+    <View style={{ flex: 1, backgroundColor: isDark ? "#1a1a1a" : "#fefefe" }}>
+      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+        {/* Header */}
+        <View
+          style={{
+            backgroundColor: isDark ? "rgba(31, 41, 55, 0.8)" : "rgba(255, 255, 255, 0.8)",
+            borderBottomWidth: 1,
+            borderBottomColor: isDark ? "#374151" : "#fbbf24",
+            paddingHorizontal: 16,
+            paddingTop: Platform.OS === 'ios' ? 60 : 40,
+            paddingBottom: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <ImageBackground
+              source={require('../../assets/TT logo.png')}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              resizeMode="cover"
+            />
+            <RestyleText variant="xl" color="text" fontWeight="bold">
               TripTick
             </RestyleText>
-          </Box>
-          <BurgerMenuButton />
-        </Box>
-
-        {/* Hero content */}
-        <Box position="relative" zIndex={1}>
-          <RestyleText variant="lg" color="text" marginBottom={2}>
-            {getGreeting()}
-          </RestyleText>
-          <RestyleText variant="sm" color="textMuted">
-            Count down to your next escape
-          </RestyleText>
-        </Box>
-      </Box>
-        
-
-
-      <ScrollView style={{ flex: 1 }}>
-        {/* Countdown Display for next trip */}
-        {sortedTimers.length > 0 && (
-          <Box 
-            alignItems="center" 
-            paddingVertical={20}
-            backgroundColor="surface"
-            margin={20}
-            borderRadius="lg"
-            shadowColor="scrim"
-            shadowOffset={{ width: 0, height: 2 }}
-            shadowOpacity={0.1}
-            shadowRadius={8}
-            elevation={3}
-          >
-            <CountdownDisplay 
-              daysLeft={getTimerDaysLeft(sortedTimers[0].date)} 
-              size="lg" 
-              showAnimation={true}
-            />
-          </Box>
-        )}
-        
-        {/* Action buttons */}
-        <Box padding={20} gap={12}>
-          <Button
-            onPress={() => navigation.navigate("AddTimer")}
-            variant="primary"
-          >
-            ✈️ Add New Timer
-          </Button>
-          <Button
-            onPress={() => navigation.navigate("HollyChat")}
-            variant="secondary"
-          >
-            🤖 Ask Holly Bobz
-          </Button>
-        </Box>
-
-        {/* Active timers */}
-        <Box paddingHorizontal={20}>
-          <RestyleText variant="xl" color="text" fontWeight="semibold" marginBottom={4}>
-            Your Trips
-          </RestyleText>
-
-          {sortedTimers.length === 0 ? (
-            <Box
-              backgroundColor="surface"
-              borderRadius="xl"
-              padding={40}
-              alignItems="center"
-              marginBottom={5}
-              borderWidth={2}
-              borderColor="textMuted"
-              borderStyle="dashed"
+          </View>
+          
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <Pressable
+              onPress={() => navigation.navigate('Archive')}
+              style={{
+                backgroundColor: isDark ? "#374151" : "#fef3c7",
+                borderRadius: 20,
+                padding: 8,
+              }}
             >
-              <Ionicons name="airplane-outline" size={64} color={TripTickPalette.textMuted} />
-              <RestyleText variant="lg" color="text" textAlign="center" marginTop={4} marginBottom={2}>
-                No trips yet
-              </RestyleText>
-              <RestyleText variant="md" color="textMuted" textAlign="center" marginBottom={6}>
-                Add your first and let the countdown begin.
-              </RestyleText>
-              <Button
-                onPress={() => navigation.navigate("AddTimer")}
-                variant="primary"
+              <Ionicons 
+                name="archive" 
+                size={20} 
+                color={isDark ? "#fbbf24" : "#d97706"} 
+              />
+            </Pressable>
+            <Pressable
+              onPress={toggleColorScheme}
+              style={{
+                backgroundColor: isDark ? "#374151" : "#ccfbf1",
+                borderRadius: 20,
+                padding: 8,
+              }}
+            >
+              <Ionicons 
+                name={isDark ? "sunny" : "moon"} 
+                size={20} 
+                color={isDark ? "#5eead4" : "#0d9488"} 
+              />
+            </Pressable>
+            <Pressable
+              style={{
+                backgroundColor: isDark ? "#374151" : "#ccfbf1",
+                borderRadius: 20,
+                padding: 8,
+              }}
+            >
+              <Ionicons 
+                name="settings" 
+                size={20} 
+                color={isDark ? "#5eead4" : "#0d9488"} 
+              />
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Main Content */}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+          {/* Current Trip Countdown */}
+          {nextTrip && (
+            <Animated.View
+              style={{
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              }}
+            >
+              <Pressable
+                onPress={() => navigation.navigate('TimerDrilldown', { timerId: nextTrip.id })}
+                style={{
+                  position: 'relative',
+                  borderRadius: 24,
+                  overflow: 'hidden',
+                  marginBottom: 24,
+                }}
               >
-                ✈️ Add Your First Trip
-              </Button>
-            </Box>
-          ) : (
-            <Box gap={4} marginBottom={5}>
-              {sortedTimers.map((timer) => (
-                <Box
-                  key={timer.id}
-                  backgroundColor="surface"
-                  borderRadius="lg"
-                  padding={16}
-                  borderWidth={1}
-                  borderColor="textMuted"
-                  onTouchEnd={() => navigation.navigate("TimerDetail", { timerId: timer.id })}
-                >
-                  <RestyleText variant="lg" color="text" fontWeight="semibold" marginBottom={4}>
-                    {timer.destination}
-                  </RestyleText>
-                  <RestyleText variant="sm" color="textMuted" marginBottom={8}>
-                    {new Date(timer.date).toLocaleDateString('en-GB')}
-                  </RestyleText>
-                  <RestyleText variant="md" color="primary">
-                    {getTimerDaysLeft(timer.date)} days to go
-                  </RestyleText>
-                </Box>
-              ))}
-            </Box>
-          )}
-        </Box>
-
-        {/* Archived section */}
-        {archived.length > 0 && (
-          <Box paddingHorizontal={20} paddingBottom={40}>
-            <RestyleText variant="md" color="textMuted" marginBottom={12}>
-              Archived Trips
-            </RestyleText>
-            
-            <Box
-              backgroundColor="surface"
-              borderRadius="lg"
-              padding={16}
-            >
-              {archived.map((timer, index) => (
-                <Box
-                  key={timer.id}
-                  paddingVertical={12}
-                  borderBottomWidth={index < archived.length - 1 ? 1 : 0}
-                  borderBottomColor="textMuted"
-                >
-                  <RestyleText variant="lg" color="text" fontWeight="semibold" marginBottom={4}>
-                    {timer.destination}
-                  </RestyleText>
-                  <RestyleText variant="sm" color="textMuted" marginBottom={8}>
-                    {new Date(timer.date).toLocaleDateString('en-GB')}
-                  </RestyleText>
-                  
-                  <Button
-                    onPress={() => restore(timer.id)}
-                    variant="ghost"
+                {backgroundImages[nextTrip.destination] ? (
+                  <ImageBackground
+                    source={{ uri: backgroundImages[nextTrip.destination] }}
+                    style={{ padding: 24 }}
+                    resizeMode="cover"
                   >
-                    Restore
-                  </Button>
-                </Box>
-              ))}
-              
-              <Box marginTop={16}>
-                <Button
-                  onPress={async () => {
-                    if (Platform.OS === 'web') {
-                      setShowPurgeAlert(true);
-                    } else {
-                      Alert.alert("Empty Archive", "Delete all archived timers permanently?", [
-                        { text: "Cancel", style: "cancel" },
-                        { 
-                          text: "Delete All", 
-                          style: "destructive", 
-                          onPress: async () => {
-                            await purge();
-                          }
-                        },
-                      ]);
-                    }
+                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' }} />
+                    <View style={{ position: 'relative', zIndex: 10 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <View>
+                          <RestyleText variant="sm" color="text" opacity={0.9}>
+                            Next Adventure
+                          </RestyleText>
+                          <RestyleText variant="xl" color="text" fontWeight="bold">
+                            {nextTrip.destination}
+                          </RestyleText>
+                        </View>
+                        <Ionicons name="calendar" size={24} color="#FFFFFF" opacity={0.8} />
+                      </View>
+                      
+                      <View style={{ flexDirection: 'row', gap: 12 }}>
+                        {[
+                          { label: 'Days', value: nextTrip.daysLeft },
+                          { label: 'Hours', value: nextTrip.hoursLeft },
+                          { label: 'Minutes', value: nextTrip.minutesLeft },
+                          { label: 'Seconds', value: nextTrip.secondsLeft }
+                        ].map((item) => (
+                          <Animated.View
+                            key={item.label}
+                            style={{
+                              flex: 1,
+                              opacity: fadeAnim,
+                              transform: [{ scale: fadeAnim }],
+                            }}
+                          >
+                            <View
+                              style={{
+                                backgroundColor: 'rgba(255,255,255,0.2)',
+                                borderRadius: 16,
+                                padding: 12,
+                                alignItems: 'center',
+                              }}
+                            >
+                              <RestyleText variant="2xl" color="text" fontWeight="bold">
+                                {item.value}
+                              </RestyleText>
+                              <RestyleText variant="xs" color="text" opacity={0.8}>
+                                {item.label}
+                              </RestyleText>
+                            </View>
+                          </Animated.View>
+                        ))}
+                      </View>
+                    </View>
+                  </ImageBackground>
+                ) : (
+                  <LinearGradient
+                    colors={['#8b5cf6', '#ec4899', '#f97316']}
+                    style={{ padding: 24 }}
+                  >
+                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.2)' }} />
+                    <View style={{ position: 'relative', zIndex: 10 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <View>
+                          <RestyleText variant="sm" color="text" opacity={0.9}>
+                            Next Adventure
+                          </RestyleText>
+                          <RestyleText variant="xl" color="text" fontWeight="bold">
+                            {nextTrip.destination}
+                          </RestyleText>
+                        </View>
+                        <Ionicons name="calendar" size={24} color="#FFFFFF" opacity={0.8} />
+                      </View>
+                      
+                      <View style={{ flexDirection: 'row', gap: 12 }}>
+                        {[
+                          { label: 'Days', value: nextTrip.daysLeft },
+                          { label: 'Hours', value: nextTrip.hoursLeft },
+                          { label: 'Minutes', value: nextTrip.minutesLeft },
+                          { label: 'Seconds', value: nextTrip.secondsLeft }
+                        ].map((item) => (
+                          <Animated.View
+                            key={item.label}
+                            style={{
+                              flex: 1,
+                              opacity: fadeAnim,
+                              transform: [{ scale: fadeAnim }],
+                            }}
+                          >
+                            <View
+                              style={{
+                                backgroundColor: 'rgba(255,255,255,0.2)',
+                                borderRadius: 16,
+                                padding: 12,
+                                alignItems: 'center',
+                              }}
+                            >
+                              <RestyleText variant="2xl" color="text" fontWeight="bold">
+                                {item.value}
+                              </RestyleText>
+                              <RestyleText variant="xs" color="text" opacity={0.8}>
+                                {item.label}
+                              </RestyleText>
+                            </View>
+                          </Animated.View>
+                        ))}
+                      </View>
+                    </View>
+                  </LinearGradient>
+                )}
+              </Pressable>
+            </Animated.View>
+          )}
+
+          {/* Upcoming Trips */}
+          {tripsData.length > 1 && (
+            <View style={{ marginBottom: 24 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <RestyleText variant="lg" color="text" fontWeight="semibold">
+                  Upcoming Trips
+                </RestyleText>
+                <Pressable
+                  onPress={() => navigation.navigate('AddTimer')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
                   }}
-                  variant="secondary"
                 >
-                  Empty Archive
-                </Button>
-              </Box>
-            </Box>
-        </Box>
-      )}
-      </ScrollView>
+                  <Ionicons 
+                    name="add" 
+                    size={16} 
+                    color={isDark ? "#5eead4" : "#0d9488"} 
+                  />
+                                <RestyleText variant="sm" color="secondary" fontWeight="medium">
+                Add Trip
+              </RestyleText>
+                </Pressable>
+              </View>
+              
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={{ flexDirection: 'row', gap: 16 }}>
+                  {tripsData.slice(1).map((trip) => (
+                    <Animated.View
+                      key={trip.id}
+                      style={{
+                        opacity: fadeAnim,
+                        transform: [{ translateX: slideAnim }],
+                      }}
+                    >
+                      <Pressable
+                        onPress={() => navigation.navigate('TimerDrilldown', { timerId: trip.id })}
+                        style={{
+                          width: 256,
+                          backgroundColor: isDark ? "#1f2937" : "#FFFFFF",
+                          borderWidth: 1,
+                          borderColor: isDark ? "#374151" : "#fbbf24",
+                          borderRadius: 16,
+                          padding: 16,
+                        }}
+                      >
+                        {backgroundImages[trip.destination] ? (
+                          <ImageBackground
+                            source={{ uri: backgroundImages[trip.destination] }}
+                            style={{
+                              width: "100%",
+                              height: 128,
+                              borderRadius: 12,
+                              marginBottom: 12,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                            resizeMode="cover"
+                          >
+                            <View style={{ 
+                              position: 'absolute', 
+                              top: 0, 
+                              left: 0, 
+                              right: 0, 
+                              bottom: 0, 
+                              backgroundColor: 'rgba(0,0,0,0.3)',
+                              borderRadius: 12,
+                            }} />
+                            <Ionicons name="location" size={32} color="#FFFFFF" style={{ zIndex: 1 }} />
+                          </ImageBackground>
+                        ) : (
+                          <View
+                            style={{
+                              width: "100%",
+                              height: 128,
+                              backgroundColor: "rgba(5, 150, 105, 0.2)",
+                              borderRadius: 12,
+                              marginBottom: 12,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Ionicons name="location" size={32} color="#FFFFFF" />
+                          </View>
+                        )}
+                        <RestyleText variant="md" color="text" fontWeight="semibold" marginBottom={1}>
+                          {trip.destination}
+                        </RestyleText>
+                        <RestyleText variant="sm" color="textMuted" marginBottom={2}>
+                          {trip.daysLeft} days left
+                        </RestyleText>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <Ionicons 
+                            name="time" 
+                            size={12} 
+                            color={isDark ? "#6b7280" : "#6b7280"} 
+                          />
+                          <RestyleText variant="xs" color="textMuted">
+                            {trip.hoursLeft}h {trip.minutesLeft}m
+                          </RestyleText>
+                        </View>
+                      </Pressable>
+                    </Animated.View>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          )}
 
-      {/* Confetti for new timer creation */}
-      {showConfetti && ConfettiCannon && (
-        <>
-          <ConfettiCannon
-            count={80}
-            origin={{ x: -50, y: 0 }}
-            autoStart
-            fadeOut
-            explosionSpeed={350}
-            fallSpeed={2000}
-            colors={['#e11d48', '#f97316', '#22c55e', '#0ea5e9', '#8b5cf6']}
-          />
-          <ConfettiCannon
-            count={80}
-            origin={{ x: 50, y: 0 }}
-            autoStart
-            fadeOut
-            explosionSpeed={350}
-            fallSpeed={2000}
-            colors={['#e11d48', '#f97316', '#22c55e', '#0ea5e9', '#8b5cf6']}
-          />
-        </>
-      )}
+          {/* AI Assistant */}
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
+            <LinearGradient
+              colors={['#0d9488', '#2563eb']}
+              style={{
+                borderRadius: 16,
+                padding: 24,
+                marginBottom: 24,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    borderRadius: 20,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name="chatbubble" size={20} color="#FFFFFF" />
+                </View>
+                <View>
+                  <RestyleText variant="md" color="text" fontWeight="semibold">
+                    AI Travel Assistant
+                  </RestyleText>
+                  <RestyleText variant="sm" color="text" opacity={0.9}>
+                    Your personal travel planning assistant
+                  </RestyleText>
+                </View>
+              </View>
+              <Pressable
+                onPress={() => navigation.navigate('HollyChat')}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  borderRadius: 12,
+                  padding: 12,
+                }}
+              >
+                <RestyleText variant="sm" color="text">
+                  Ask me anything about travel planning!
+                </RestyleText>
+              </Pressable>
+            </LinearGradient>
+          </Animated.View>
 
-      {/* Custom Alert for Web */}
+          {/* Progress Section */}
+          <View
+            style={{
+              backgroundColor: isDark ? "#1f2937" : "#FFFFFF",
+              borderWidth: 1,
+              borderColor: isDark ? "#374151" : "#fbbf24",
+              borderRadius: 16,
+              padding: 24,
+              marginBottom: 24,
+            }}
+          >
+            <RestyleText variant="md" color="text" fontWeight="semibold" marginBottom={4}>
+              Your Travel Progress
+            </RestyleText>
+            <View style={{ gap: 16 }}>
+              <View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <RestyleText variant="sm" color="textMuted">
+                    Trips Planned
+                  </RestyleText>
+                  <RestyleText variant="sm" color="text" fontWeight="medium">
+                    {timers.length}/5
+                  </RestyleText>
+                </View>
+                <View
+                  style={{
+                    width: "100%",
+                    height: 8,
+                    backgroundColor: isDark ? "#374151" : "#e5e7eb",
+                    borderRadius: 4,
+                  }}
+                >
+                  <Animated.View
+                    style={{
+                      width: `${Math.min(100, (timers.length / 5) * 100)}%`,
+                      height: 8,
+                      backgroundColor: '#fbbf24',
+                      borderRadius: 4,
+                    }}
+                  />
+                </View>
+              </View>
+              <View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <RestyleText variant="sm" color="textMuted">
+                    Countries to Visit
+                  </RestyleText>
+                  <RestyleText variant="sm" color="text" fontWeight="medium">
+                    {Math.min(timers.length, 10)}/10
+                  </RestyleText>
+                </View>
+                <View
+                  style={{
+                    width: "100%",
+                    height: 8,
+                    backgroundColor: isDark ? "#374151" : "#e5e7eb",
+                    borderRadius: 4,
+                  }}
+                >
+                  <Animated.View
+                    style={{
+                      width: `${Math.min(100, (timers.length / 10) * 100)}%`,
+                      height: 8,
+                      backgroundColor: '#5eead4',
+                      borderRadius: 4,
+                    }}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={{ gap: 12 }}>
+            <Pressable
+              onPress={() => navigation.navigate('AddTimer')}
+              style={{
+                backgroundColor: '#fbbf24',
+                borderRadius: 12,
+                padding: 16,
+                alignItems: 'center',
+              }}
+            >
+              <RestyleText variant="md" color="text" fontWeight="semibold">
+                ➕ Add New Timer
+              </RestyleText>
+            </Pressable>
+            
+            <Pressable
+              onPress={() => navigation.navigate('DestinationDetail', { destination: 'Paris' })}
+              style={{
+                backgroundColor: 'transparent',
+                borderWidth: 1,
+                borderColor: isDark ? "#5eead4" : "#0d9488",
+                borderRadius: 12,
+                padding: 16,
+                alignItems: 'center',
+              }}
+            >
+              <RestyleText variant="md" color="secondary" fontWeight="semibold">
+                🗺️ Explore Destinations
+              </RestyleText>
+            </Pressable>
+          </View>
+        </ScrollView>
+
+        {/* Bottom Navigation */}
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: isDark ? "rgba(31, 41, 55, 0.9)" : "rgba(255, 255, 255, 0.9)",
+            borderTopWidth: 1,
+            borderTopColor: isDark ? "#374151" : "#fbbf24",
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+          }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+            {navigationItems.map(item => (
+              <Pressable
+                key={item.id}
+                style={{
+                  alignItems: 'center',
+                  padding: 8,
+                  borderRadius: 12,
+                }}
+              >
+                <Ionicons 
+                  name={item.icon} 
+                  size={20} 
+                  color={item.id === 'home' ? (isDark ? "#fbbf24" : "#d97706") : (isDark ? "#6b7280" : "#6b7280")} 
+                />
+                <RestyleText 
+                  variant="xs" 
+                  color={item.id === 'home' ? "primary" : "textMuted"} 
+                  fontWeight="medium"
+                  marginTop={4}
+                >
+                  {item.label}
+                </RestyleText>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </Animated.View>
+
+      {/* Delete Alert */}
       <CustomAlert
-        visible={showPurgeAlert}
-        title="Empty Archive"
-        message="Delete all archived timers permanently?"
+        visible={showDeleteAlert}
+        title="Delete Timer"
+        message="Are you sure you want to delete this timer? This action cannot be undone."
         buttons={[
-          { text: "Cancel", style: "cancel" },
-          { 
-            text: "Delete All", 
-            style: "destructive", 
-            onPress: async () => {
-              await purge();
-            }
-          },
+          { text: "Cancel", onPress: () => setShowDeleteAlert(false) },
+          { text: "Delete", onPress: confirmDelete, style: "destructive" },
         ]}
-        onClose={() => setShowPurgeAlert(false)}
+        onClose={() => setShowDeleteAlert(false)}
       />
-    </Box>
+    </View>
   );
 }

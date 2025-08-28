@@ -1,5 +1,5 @@
 //DO NOT REMOVE THIS CODE
-console.log("[index] Project ID is: ", process.env.EXPO_PUBLIC_VIBECODE_PROJECT_ID);
+console.log("[index] Project ID is: ", process.env.EXPO_PUBLIC_VIBECODE_PROJECT_ID || "62ed6c16-c869-42cd-b91c-c82a9e410526");
 import "./global.css";
 import "react-native-get-random-values";
 import { LogBox } from "react-native";
