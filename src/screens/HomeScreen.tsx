@@ -205,6 +205,7 @@ export function HomeScreen() {
               />
             </Pressable>
             <Pressable
+              onPress={() => navigation.navigate('Profile')}
               style={{
                 backgroundColor: isDark ? "#374151" : "#ccfbf1",
                 borderRadius: 20,
@@ -639,6 +640,17 @@ export function HomeScreen() {
             {navigationItems.map(item => (
               <Pressable
                 key={item.id}
+                onPress={() => {
+                  if (item.id === 'home') {
+                    // Already on home, do nothing
+                  } else if (item.id === 'trips') {
+                    navigation.navigate('Trips');
+                  } else if (item.id === 'chat') {
+                    navigation.navigate('HollyChat');
+                  } else if (item.id === 'profile') {
+                    navigation.navigate('Profile');
+                  }
+                }}
                 style={{
                   alignItems: 'center',
                   padding: 8,

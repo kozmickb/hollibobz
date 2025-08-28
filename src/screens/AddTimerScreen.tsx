@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TextInput, Alert, ScrollView, KeyboardAvoidingView, Platform, Pressable } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from "@react-navigation/native";
@@ -10,6 +10,17 @@ import { ThemedButton } from "../components/ThemedButton";
 import { TripTickLogo } from "../components/TripTickLogo";
 import { DateTimeSelector } from "../components/DateTimeSelector";
 import { Ionicons } from '@expo/vector-icons';
+
+// Try to import confetti and haptics with fallback
+let ConfettiCannon: any = null;
+let Haptics: any = null;
+
+try {
+  ConfettiCannon = require("react-native-confetti-cannon").default;
+  Haptics = require("expo-haptics");
+} catch (error) {
+  console.log("Confetti or Haptics not available:", error);
+}
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "AddTimer">;
 
@@ -27,6 +38,7 @@ export function AddTimerScreen() {
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [duration, setDuration] = useState(7);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   function onSave() {
     if (!destination.trim()) {
@@ -53,7 +65,19 @@ export function AddTimerScreen() {
       children, 
       duration 
     });
-    navigation.goBack();
+    
+    // Trigger confetti celebration
+    setShowConfetti(true);
+    
+    // Nice haptic feedback
+    if (Haptics?.notificationAsync) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    }
+    
+    // Navigate back after a short delay to show confetti
+    setTimeout(() => {
+      navigation.goBack();
+    }, 1500);
   }
 
 
@@ -346,6 +370,30 @@ export function AddTimerScreen() {
           </Text>
         </View>
       </ScrollView>
+      
+      {/* Confetti celebration for new timer */}
+      {showConfetti && ConfettiCannon ? (
+        <>
+          <ConfettiCannon
+            count={80}
+            origin={{ x: -50, y: 0 }}
+            autoStart
+            fadeOut
+            explosionSpeed={400}
+            fallSpeed={2500}
+            colors={['#FF6B6B', '#FFD93D', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7']}
+          />
+          <ConfettiCannon
+            count={80}
+            origin={{ x: 50, y: 0 }}
+            autoStart
+            fadeOut
+            explosionSpeed={400}
+            fallSpeed={2500}
+            colors={['#FF6B6B', '#FFD93D', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7']}
+          />
+        </>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }
