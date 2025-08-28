@@ -7,6 +7,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -102,6 +104,7 @@ export async function scheduleHolidayNotifications(
             identifier: `holiday-${timerId}-${days}d`,
             content,
             trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.DATE,
               date: notificationDate,
               channelId: Platform.OS === 'android' ? 'holiday-reminders' : undefined,
             },
@@ -143,7 +146,9 @@ export async function cancelHolidayNotifications(timerId: string): Promise<void>
     console.log(`Found ${timerNotifications.length} notifications to cancel for timer ${timerId}`);
     
     if (timerNotifications.length > 0) {
-      await Notifications.cancelScheduledNotificationsAsync(identifiers);
+      for (const identifier of identifiers) {
+        await Notifications.cancelScheduledNotificationAsync(identifier);
+      }
       console.log(`Cancelled ${timerNotifications.length} notifications for timer: ${timerId}`);
     } else {
       console.log(`No notifications found to cancel for timer: ${timerId}`);
@@ -170,7 +175,9 @@ export async function cancelAllHolidayNotifications(): Promise<void> {
     
     const identifiers = holidayNotifications.map(n => n.identifier);
     if (identifiers.length > 0) {
-      await Notifications.cancelScheduledNotificationsAsync(identifiers);
+      for (const identifier of identifiers) {
+        await Notifications.cancelScheduledNotificationAsync(identifier);
+      }
       console.log(`Cancelled ${identifiers.length} holiday notifications`);
     }
   } catch (error) {

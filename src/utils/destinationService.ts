@@ -1,5 +1,5 @@
-// Note: Destination type removed as per simplified requirements
 import { getOpenAIChatResponse } from "../api/chat-service";
+import { Destination } from "../state/holidayStore";
 
 /**
  * Clean AI response text by removing hashtags, asterisks, and other formatting artifacts

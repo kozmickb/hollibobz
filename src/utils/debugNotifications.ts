@@ -25,7 +25,12 @@ export async function debugNotifications(): Promise<void> {
     
     // Log each holiday notification
     holidayNotifications.forEach(notification => {
-      console.log(`  - ${notification.identifier}: ${notification.content.title} (${new Date(notification.trigger.value).toLocaleDateString()})`);
+      const triggerInfo = notification.trigger ? 
+        (notification.trigger as any).date ? 
+          new Date((notification.trigger as any).date).toLocaleDateString() : 
+          'No date info' : 
+        'No trigger';
+      console.log(`  - ${notification.identifier}: ${notification.content.title} (${triggerInfo})`);
     });
     
     // Check notification categories (iOS)
