@@ -19,6 +19,18 @@ import { daysUntil } from "../features/countdown/logic";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Home">;
 
+// Helper function to get a random destination
+const getRandomDestination = (): string => {
+  const destinations = [
+    'Paris', 'London', 'New York', 'Tokyo', 'Rome', 'Barcelona', 
+    'Amsterdam', 'Berlin', 'Prague', 'Vienna', 'Budapest', 'Dubai', 
+    'Abu Dhabi', 'Singapore', 'Bangkok', 'Sydney', 'Melbourne', 
+    'Toronto', 'Vancouver', 'Mexico City', 'Rio de Janeiro', 
+    'Buenos Aires', 'Switzerland', 'Zurich', 'Geneva'
+  ];
+  return destinations[Math.floor(Math.random() * destinations.length)];
+};
+
 interface Trip {
   id: string;
   destination: string;
@@ -592,7 +604,7 @@ export function HomeScreen() {
             </Pressable>
             
             <Pressable
-              onPress={() => navigation.navigate('DestinationDetail', { destination: 'Paris' })}
+              onPress={() => navigation.navigate('DestinationDetail', { destination: getRandomDestination() })}
               style={{
                 backgroundColor: 'transparent',
                 borderWidth: 1,
@@ -603,7 +615,7 @@ export function HomeScreen() {
               }}
             >
               <RestyleText variant="md" color="secondary" fontWeight="semibold">
-                🗺️ Explore Destinations
+                🎲 Explore Random Destination
               </RestyleText>
             </Pressable>
           </View>
