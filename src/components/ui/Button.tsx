@@ -20,7 +20,7 @@ export const Button: React.FC<ButtonProps> = ({
       case 'primary':
         return (
           <LinearGradient
-            colors={[TripTickPalette.sunriseY, TripTickPalette.sunriseC]}
+            colors={[TripTickPalette.yellow400, TripTickPalette.orange500]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={{ borderRadius: 12 }}

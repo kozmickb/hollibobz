@@ -8,12 +8,12 @@ export const darkPaperTheme = {
   ...MD3DarkTheme,
   colors: {
     ...MD3DarkTheme.colors,
-    primary: palette.sunriseC,
-    primaryContainer: palette.sunriseY,
+    primary: palette.orange500,
+    primaryContainer: palette.yellow400,
     secondary: palette.teal600,
     secondaryContainer: palette.teal700,
-    tertiary: palette.sunriseO,
-    tertiaryContainer: palette.sunriseY,
+    tertiary: palette.orange400,
+    tertiaryContainer: palette.yellow400,
     
     background: palette.navy900,
     surface: palette.surface,
@@ -48,12 +48,12 @@ export const lightPaperTheme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
-    primary: palette.sunriseC,
-    primaryContainer: palette.sunriseY,
+    primary: palette.orange500,
+    primaryContainer: palette.yellow400,
     secondary: palette.teal600,
     secondaryContainer: palette.teal700,
-    tertiary: palette.sunriseO,
-    tertiaryContainer: palette.sunriseY,
+    tertiary: palette.orange400,
+    tertiaryContainer: palette.yellow400,
     
     background: '#FFFFFF',
     surface: '#F8FAFC',

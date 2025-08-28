@@ -36,9 +36,9 @@ export const HeroBackground: React.FC<HeroBackgroundProps> = ({
       <Svg width="100%" height={height} viewBox={`0 0 100 ${height}`}>
         <Defs>
           <LinearGradient id="sunriseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor={TripTickPalette.sunriseY} />
-            <Stop offset="50%" stopColor={TripTickPalette.sunriseO} />
-            <Stop offset="100%" stopColor={TripTickPalette.sunriseC} />
+                    <Stop offset="0%" stopColor={TripTickPalette.yellow400} />
+        <Stop offset="50%" stopColor={TripTickPalette.orange400} />
+        <Stop offset="100%" stopColor={TripTickPalette.orange500} />
           </LinearGradient>
         </Defs>
         <Path

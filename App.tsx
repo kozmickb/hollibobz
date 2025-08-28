@@ -60,7 +60,7 @@ export default function App() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <LinearGradient
-          colors={[TripTickPalette.sunriseC, TripTickPalette.sunriseY]}
+          colors={[TripTickPalette.orange500, TripTickPalette.yellow400]}
           style={{ 
             flex: 1, 
             width: '100%', 
