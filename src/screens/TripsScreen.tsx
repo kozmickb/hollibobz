@@ -3,7 +3,7 @@ import { View, ScrollView, Pressable, Platform, ImageBackground } from 'react-na
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { RestyleText } from '../components/RestyleText';
+import { Text as RestyleText } from '../components/ui/Text';
 import { useHolidayStore } from '../store/useHolidayStore';
 import { useTheme } from '../hooks/useTheme';
 import { RootStackParamList } from '../navigation/AppNavigator';
