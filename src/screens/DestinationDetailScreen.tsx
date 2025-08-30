@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { HomeStackParamList } from '../navigation/AppNavigator';
 import { useHolidayStore } from '../store/useHolidayStore';
 import { useThemeStore } from '../store/useThemeStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,8 +27,8 @@ import { loadCachedMeta, saveCachedMeta, fetchPexelsBackdrop } from '../features
 import { generateQuickFacts } from '../features/destination/quickFacts';
 import { clearLegacyCachedMeta } from '../features/destination/clearLegacyCache';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, "DestinationDetail">;
-type Rt = RouteProp<RootStackParamList, "DestinationDetail">;
+type Nav = NativeStackNavigationProp<HomeStackParamList, "DestinationDetail">;
+type Rt = RouteProp<HomeStackParamList, "DestinationDetail">;
 
 interface TravelFact {
   id: string;
@@ -169,14 +169,17 @@ export function DestinationDetailScreen() {
   };
 
   const tellMeMore = (query: string) => {
-    navigation.navigate("HollyChat", {
-      seedQuery: query,
-      context: { 
-        destination: destination, 
-        dateISO: timer?.date, 
-        timerId: timer?.id 
-      },
-      reset: false,
+    navigation.getParent()?.navigate("ChatTab", {
+      screen: "HollyChat",
+      params: {
+        seedQuery: query,
+        context: {
+          destination: destination,
+          dateISO: timer?.date,
+          timerId: timer?.id
+        },
+        reset: false
+      }
     });
   };
 
@@ -380,7 +383,7 @@ export function DestinationDetailScreen() {
                         </RestyleText>
                       </View>
                     </View>
-                    <RestyleText variant="3xl" color="#fb923c" fontWeight="bold" marginBottom={12}>
+                    <RestyleText variant="3xl" color="warning" fontWeight="bold" marginBottom={12}>
                       {timer.streak || 0} Days
                     </RestyleText>
                     <View
@@ -404,7 +407,7 @@ export function DestinationDetailScreen() {
                       <RestyleText variant="xs" color="textMuted">
                         Next milestone
                       </RestyleText>
-                      <RestyleText variant="xs" color="#fb923c" fontWeight="medium">
+                      <RestyleText variant="xs" color="warning" fontWeight="medium">
                         80%
                       </RestyleText>
                     </View>
@@ -440,7 +443,7 @@ export function DestinationDetailScreen() {
                         </RestyleText>
                       </View>
                     </View>
-                    <RestyleText variant="3xl" color="#a78bfa" fontWeight="bold" marginBottom={12}>
+                    <RestyleText variant="3xl" color="accent" fontWeight="bold" marginBottom={12}>
                       {timer.xp || 0} XP
                     </RestyleText>
                     <View
@@ -464,7 +467,7 @@ export function DestinationDetailScreen() {
                       <RestyleText variant="xs" color="textMuted">
                         Next level
                       </RestyleText>
-                      <RestyleText variant="xs" color="#a78bfa" fontWeight="medium">
+                      <RestyleText variant="xs" color="accent" fontWeight="medium">
                         60%
                       </RestyleText>
                     </View>
@@ -739,7 +742,7 @@ export function DestinationDetailScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <RestyleText variant="2xl" color="text" fontWeight="bold" marginBottom={8}>
-                    Ask HollyBobz AI
+                    Ask Holly Bobz
                   </RestyleText>
                   <RestyleText variant="md" color="text" marginBottom={16}>
                     "What are the must-visit hidden spots in {destination} that most tourists miss?"

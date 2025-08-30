@@ -1,8 +1,25 @@
 import { create } from "zustand";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { scheduleHolidayNotifications, cancelHolidayNotifications, cancelAllHolidayNotifications } from "../utils/notifications";
+import { Platform } from "react-native";
+import { hybridStorage } from "../lib/storage";
 
-type Timer = {
+// Conditionally import notifications only for native platforms
+let scheduleHolidayNotifications: (id: string, destination: string, date: string) => Promise<void>;
+let cancelHolidayNotifications: (id: string) => Promise<void>;
+let cancelAllHolidayNotifications: () => Promise<void>;
+
+if (Platform.OS !== 'web') {
+  const notifications = require("../utils/notifications");
+  scheduleHolidayNotifications = notifications.scheduleHolidayNotifications;
+  cancelHolidayNotifications = notifications.cancelHolidayNotifications;
+  cancelAllHolidayNotifications = notifications.cancelAllHolidayNotifications;
+} else {
+  // No-op functions for web
+  scheduleHolidayNotifications = async () => {};
+  cancelHolidayNotifications = async () => {};
+  cancelAllHolidayNotifications = async () => {};
+}
+
+export type Timer = {
   id: string;
   destination: string;
   date: string;      // ISO string
@@ -48,6 +65,7 @@ type State = {
   settings: {
     reduceMotion: boolean;
   };
+  isHydrated: boolean;
   addTimer: (input: AddInput) => void;
   updateTimer: (id: string, updates: Partial<Pick<Timer, 'destination' | 'date'>>) => Promise<void>;
   archiveTimer: (id: string) => void;
@@ -75,6 +93,7 @@ export const useHolidayStore = create<State>((set, get) => ({
   settings: {
     reduceMotion: false,
   },
+  isHydrated: false,
   addTimer: (input) => {
     const newTimer = {
       id: makeId(),
@@ -145,8 +164,23 @@ export const useHolidayStore = create<State>((set, get) => ({
       
       // Cancel notifications for archived timer
       cancelHolidayNotifications(id).catch((error) => {
-        console.error('Failed to cancel notifications for archived timer:', error);
+        if (Platform.OS === 'web') {
+          console.log('Notification cancellation skipped - web platform');
+        } else {
+          console.error('Failed to cancel notifications for archived timer:', error);
+        }
       });
+
+      // Clean up related checklist when archiving
+      (async () => {
+        try {
+          const { tripStore } = require('../lib/tripStore');
+          await tripStore.delete(id);
+          console.log(`Cleaned up checklist for archived timer: ${id}`);
+        } catch (error) {
+          console.warn('Failed to cleanup checklist for archived timer:', error);
+        }
+      })();
       
       const newState = {
         timers: s.timers.filter((x) => x.id !== id),
@@ -179,8 +213,23 @@ export const useHolidayStore = create<State>((set, get) => ({
       
       // Cancel notifications for deleted timer (non-blocking)
       cancelHolidayNotifications(id).catch((error) => {
-        console.error('Failed to cancel notifications for removed timer:', error);
+        if (Platform.OS === 'web') {
+          console.log('Notification cancellation skipped - web platform');
+        } else {
+          console.error('Failed to cancel notifications for removed timer:', error);
+        }
       });
+
+      // Clean up related checklist when removing timer
+      (async () => {
+        try {
+          const { tripStore } = require('../lib/tripStore');
+          await tripStore.delete(id);
+          console.log(`Cleaned up checklist for removed timer: ${id}`);
+        } catch (error) {
+          console.warn('Failed to cleanup checklist for removed timer:', error);
+        }
+      })();
       
       // Update state without manual persistence (let subscription handle it)
       set((s) => {
@@ -219,7 +268,11 @@ export const useHolidayStore = create<State>((set, get) => ({
       // Cancel notifications for all archived timers (non-blocking)
       archivedIds.forEach(id => {
         cancelHolidayNotifications(id).catch((error) => {
-          console.error(`Error cancelling notifications for ${id}:`, error);
+          if (Platform.OS === 'web') {
+            console.log('Notification cancellation skipped - web platform');
+          } else {
+            console.error(`Error cancelling notifications for ${id}:`, error);
+          }
         });
       });
       
@@ -317,10 +370,20 @@ export const useHolidayStore = create<State>((set, get) => ({
 
   _hydrate: async () => {
     try {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const { timers, archivedTimers, settings } = JSON.parse(raw);
-      
+      console.log('Starting store hydration...');
+      const raw = hybridStorage.getString(STORAGE_KEY);
+      console.log('Raw data from storage:', raw);
+
+      if (!raw) {
+        console.log('No stored data found, setting hydrated to true with empty data');
+        set({ isHydrated: true });
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      console.log('Parsed data:', parsed);
+      const { timers, archivedTimers, settings } = parsed;
+
       // Migrate existing timers to include gamification fields and travel details
       const migratedTimers = (timers ?? []).map((timer: any) => ({
         ...timer,
@@ -335,7 +398,7 @@ export const useHolidayStore = create<State>((set, get) => ({
         completedQuests: timer.completedQuests ?? [],
         lastCheckIn: timer.lastCheckIn ?? timer.createdAt ?? new Date().toISOString(),
       }));
-      
+
       const migratedArchivedTimers = (archivedTimers ?? []).map((timer: any) => ({
         ...timer,
         // Travel details (new fields)
@@ -349,29 +412,44 @@ export const useHolidayStore = create<State>((set, get) => ({
         completedQuests: timer.completedQuests ?? [],
         lastCheckIn: timer.lastCheckIn ?? timer.createdAt ?? new Date().toISOString(),
       }));
-      
-      set({ 
-        timers: migratedTimers, 
+
+      console.log('Setting hydrated data - timers:', migratedTimers.length, 'archived:', migratedArchivedTimers.length);
+
+      set({
+        timers: migratedTimers,
         archivedTimers: migratedArchivedTimers,
-        settings: settings ?? { reduceMotion: false }
+        settings: settings ?? { reduceMotion: false },
+        isHydrated: true
       });
-    } catch {
-      // ignore
+
+      console.log('Store hydration completed successfully');
+
+      // Force a synchronous update to trigger component subscriptions
+      setTimeout(() => {
+        const currentState = get();
+        console.log('Force synchronous update after hydration');
+        set({ ...currentState });
+      }, 0);
+    } catch (error) {
+      console.error('Error during store hydration:', error);
+      // Set hydrated to true even on error to prevent infinite loading
+      set({ isHydrated: true });
     }
   },
 }));
 
 // Helper function for immediate persistence
-const persistState = async () => {
+const persistState = () => {
   try {
     const state = useHolidayStore.getState();
-    const data = { 
-      timers: state.timers, 
+    const data = {
+      timers: state.timers,
       archivedTimers: state.archivedTimers,
       settings: state.settings
     };
-    console.log('Persisting state:', { timersCount: data.timers.length, archivedCount: data.archivedTimers.length });
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    console.log('Persisting state:', { timersCount: data.timers.length, archivedCount: data.archivedTimers.length, timers: data.timers });
+    hybridStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    console.log('State persisted successfully');
   } catch (error) {
     console.error('Error persisting state:', error);
   }
@@ -379,28 +457,38 @@ const persistState = async () => {
 
 // persist on any change
 let init = false;
-let persistenceTimeout: NodeJS.Timeout | null = null;
+let persistenceTimeout: ReturnType<typeof setTimeout> | null = null;
 
-useHolidayStore.subscribe(async (state) => {
-  if (!init) return;
-  
-  // Debounce persistence to avoid race conditions
-  if (persistenceTimeout) {
-    clearTimeout(persistenceTimeout);
+useHolidayStore.subscribe((state) => {
+  console.log('STORE SUBSCRIPTION: init:', init, 'timers count:', state.timers?.length || 0, 'isHydrated:', state.isHydrated);
+
+  // Only persist if the store is initialized and has been hydrated
+  if (!init || !state.isHydrated) {
+    console.log('STORE SUBSCRIPTION: Skipping persistence - store not ready yet');
+    return;
   }
-  
-  persistenceTimeout = setTimeout(async () => {
-    await persistState();
-    persistenceTimeout = null;
-  }, 100);
+
+  // Synchronous persistence logic
+  (async () => {
+    // Debounce persistence to avoid race conditions
+    if (persistenceTimeout) {
+      clearTimeout(persistenceTimeout);
+    }
+
+    persistenceTimeout = setTimeout(async () => {
+      await persistState();
+      persistenceTimeout = null;
+    }, 100);
+  })();
 });
 
 // Initialize store
 (async () => {
   try {
+    console.log('Starting holiday store initialization...');
     await useHolidayStore.getState()._hydrate();
     init = true;
-    console.log('Holiday store initialized');
+    console.log('Holiday store initialized successfully');
   } catch (error) {
     console.error('Error initializing holiday store:', error);
     init = true; // Still allow normal operation

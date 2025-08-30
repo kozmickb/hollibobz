@@ -9,10 +9,58 @@ import { getOpenAIClient } from "./openai";
 import { getGrokClient } from "./grok";
 
 /**
- * Get a text response from Deepseek
+ * Send AI request through server proxy (new implementation)
  * @param messages - The messages to send to the AI
  * @param options - The options for the request
  * @returns The response from the AI
+ */
+export const sendAIThroughProxy = async (
+  messages: AIMessage[],
+  options?: AIRequestOptions,
+): Promise<AIResponse> => {
+  try {
+    const proxyUrl = process.env.EXPO_PUBLIC_AI_PROXY_URL;
+    if (!proxyUrl) {
+      throw new Error('AI proxy URL not configured');
+    }
+
+    const response = await fetch(`${proxyUrl}/ai-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages,
+        model: options?.model,
+        temperature: options?.temperature ?? 0.7,
+        maxTokens: options?.maxTokens ?? 2048,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || `AI proxy error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      content: data.content || "",
+      usage: {
+        promptTokens: data.usage?.promptTokens || 0,
+        completionTokens: data.usage?.completionTokens || 0,
+        totalTokens: data.usage?.totalTokens || 0,
+      },
+    };
+  } catch (error) {
+    console.error("AI Proxy Error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Legacy: Get a text response from Deepseek (direct API call - deprecated)
+ * @deprecated Use sendAIThroughProxy instead
  */
 export const getDeepseekTextResponse = async (
   messages: AIMessage[],

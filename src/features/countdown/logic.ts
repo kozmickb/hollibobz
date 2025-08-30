@@ -116,7 +116,7 @@ export function getMilestoneMessage(milestone: Milestone, destination: string): 
     case 50:
       return `Halfway there! 50 days until your ${destination} adventure`;
     case 30:
-      return `30 days to go — Holly has a packing list ready for you`;
+      return `30 days to go — Holly Bobz has a packing list ready for you`;
     case 14:
       return `2 weeks left — time to start getting excited about ${destination}`;
     case 7:

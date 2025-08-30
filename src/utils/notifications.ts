@@ -194,7 +194,7 @@ function getNotificationContent(destination: string, daysLeft: number): Notifica
     },
     7: {
       title: `${destination} in 1 week! ✈️`,
-      body: `Your trip is almost here! Time to pack and get excited. Ask Holly for last-minute tips!`,
+      body: `Your trip is almost here! Time to pack and get excited. Ask Holly Bobz for last-minute tips!`,
     },
     1: {
       title: `${destination} tomorrow! 🎉`,

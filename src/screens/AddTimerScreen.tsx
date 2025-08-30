@@ -3,7 +3,7 @@ import { View, Text, TextInput, Alert, ScrollView, KeyboardAvoidingView, Platfor
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/AppNavigator";
+import { HomeStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../store/useHolidayStore";
 import { useThemeStore } from "../store/useThemeStore";
 import { ThemedButton } from "../components/ThemedButton";
@@ -22,7 +22,7 @@ try {
   console.log("Confetti or Haptics not available:", error);
 }
 
-type Nav = NativeStackNavigationProp<RootStackParamList, "AddTimer">;
+type Nav = NativeStackNavigationProp<HomeStackParamList, "AddTimer">;
 
 export function AddTimerScreen() {
   const navigation = useNavigation<Nav>();

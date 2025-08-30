@@ -158,7 +158,7 @@ export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
         }}
       >
         <RestyleText variant="xl" color="text" fontWeight="bold" marginBottom={4}>
-          HollyBobz AI Travel Info
+          Holly Bobz Travel Info
         </RestyleText>
       </Animated.View>
       

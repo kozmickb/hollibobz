@@ -10,11 +10,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { TripsStackParamList } from '../navigation/AppNavigator';
 import { useThemeStore } from '../store/useThemeStore';
 import { ThemeButton } from '../components/ThemeButton';
 
-type SavedFactsNav = NativeStackNavigationProp<RootStackParamList, "SavedFacts">;
+type SavedFactsNav = NativeStackNavigationProp<TripsStackParamList, "SavedFacts">;
 
 export function SavedFactsScreen() {
   const navigation = useNavigation<SavedFactsNav>();
@@ -371,7 +371,7 @@ export function SavedFactsScreen() {
               color: isDark ? '#9CA3AF' : '#6B7280',
               textAlign: 'center',
             }}>
-              Start chatting with Holly to discover interesting facts about your destinations!
+              Start chatting with Holly Bobz to discover interesting facts about your destinations!
             </Text>
           </View>
         )}

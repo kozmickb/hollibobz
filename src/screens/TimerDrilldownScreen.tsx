@@ -6,8 +6,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchPexelsBackdrop } from '../features/destination/backdrop';
+import { formatDestinationName } from '../utils/destinationImages';
 
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { TripsStackParamList } from '../navigation/AppNavigator';
 import { useHolidayStore } from '../store/useHolidayStore';
 import { useThemeStore } from '../store/useThemeStore';
 import { Text as RestyleText } from '../components/ui/Text';
@@ -18,8 +19,8 @@ import { GamificationStats } from '../components/GamificationStats';
 import { InfoDashboardSection } from '../components/InfoDashboardSection';
 import { EditTimerModal } from '../components/EditTimerModal';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, "TimerDrilldown">;
-type Rt = RouteProp<RootStackParamList, "TimerDrilldown">;
+type Nav = NativeStackNavigationProp<TripsStackParamList, "TimerDrilldown">;
+type Rt = RouteProp<TripsStackParamList, "TimerDrilldown">;
 
 interface TravelFact {
   id: string;
@@ -129,17 +130,20 @@ export function TimerDrilldownScreen() {
   };
 
   const tellMeMore = (query: string) => {
-    navigation.navigate("HollyChat", {
-      seedQuery: query,
-      context: { 
-        destination: timer?.destination, 
-        dateISO: timer?.date, 
-        adults: timer?.adults,
-        children: timer?.children,
-        duration: timer?.duration,
-        timerId: timer?.id 
-      },
-      reset: false,
+    navigation.getParent()?.navigate("ChatTab", {
+      screen: "HollyChat",
+      params: {
+        seedQuery: query,
+        context: {
+          destination: timer?.destination,
+          dateISO: timer?.date,
+          adults: timer?.adults,
+          children: timer?.children,
+          duration: timer?.duration,
+          timerId: timer?.id
+        },
+        reset: false
+      }
     });
   };
 
@@ -183,7 +187,7 @@ export function TimerDrilldownScreen() {
             </Pressable>
             <View>
               <RestyleText variant="xl" color="text" fontWeight="semibold">
-                {timer.destination}
+                {formatDestinationName(timer.destination)}
               </RestyleText>
               <RestyleText variant="sm" color="textMuted">
                 Trip Details
@@ -281,7 +285,7 @@ export function TimerDrilldownScreen() {
                      </View>
                    </View>
                    <RestyleText variant="xl" color="text" fontWeight="bold" marginBottom={2}>
-                     {timer.destination}
+                     {formatDestinationName(timer.destination)}
                    </RestyleText>
                    <RestyleText variant="xs" color="textMuted">
                      {formatDate(timer.date)}
@@ -445,7 +449,7 @@ export function TimerDrilldownScreen() {
                  </View>
                  <View style={{ flex: 1 }}>
                    <RestyleText variant="xl" color="text" fontWeight="bold" marginBottom={6}>
-                     Ask HollyBobz AI
+                     Ask Holly Bobz
                    </RestyleText>
                    <RestyleText variant="sm" color="text" marginBottom={12}>
                      "What are the must-visit hidden spots in {timer.destination} that most tourists miss?"

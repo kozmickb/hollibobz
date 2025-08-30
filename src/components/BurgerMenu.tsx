@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { useThemeStore } from '../store/useThemeStore';
 import { ThemeButton } from './ThemeButton';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { HomeStackParamList } from '../navigation/AppNavigator';
 import { textStyles, accessibilityProps, hitSlop } from '../utils/accessibility';
 
 interface BurgerMenuProps {
@@ -20,8 +20,9 @@ export function BurgerMenu({ visible, onClose }: BurgerMenuProps) {
   const menuItems: Array<{
     icon: any;
     label: string;
-    screen: keyof RootStackParamList;
+    screen: keyof HomeStackParamList;
     description: string;
+    isTab?: boolean;
   }> = [
     {
       icon: 'home-outline',
@@ -38,23 +39,17 @@ export function BurgerMenu({ visible, onClose }: BurgerMenuProps) {
     {
       icon: 'chatbubble-outline',
       label: 'Holly Chat',
-      screen: 'HollyChat',
-      description: 'AI travel assistant'
-    },
-    {
-      icon: 'bookmark-outline',
-      label: 'Saved Facts',
-      screen: 'SavedFacts',
-      description: 'Your collection of facts'
+      screen: 'HollyChat' as any,
+      description: 'Chat with Holly Bobz',
+      isTab: true
     }
   ];
 
-  const handleNavigate = (screen: keyof RootStackParamList) => {
+  const handleNavigate = (screen: keyof HomeStackParamList, isTab?: boolean) => {
     onClose();
-    if (screen === 'HollyChat') {
-      navigation.navigate(screen, undefined);
+    if (isTab) {
+      navigation.getParent()?.navigate('ChatTab', { screen: screen as any });
     } else {
-      // @ts-ignore - navigation typing for other screens
       navigation.navigate(screen);
     }
   };
@@ -117,7 +112,7 @@ export function BurgerMenu({ visible, onClose }: BurgerMenuProps) {
           {menuItems.map((item) => (
             <Pressable
               key={item.screen}
-              onPress={() => handleNavigate(item.screen)}
+              onPress={() => handleNavigate(item.screen, item.isTab)}
               hitSlop={hitSlop}
               style={{
                 backgroundColor: isDark ? '#2a2a2a' : '#FFFFFF',

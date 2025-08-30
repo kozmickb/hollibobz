@@ -7,9 +7,10 @@ import { useHolidayStore } from '../store/useHolidayStore';
 import { useThemeStore } from '../store/useThemeStore';
 import { Text as RestyleText } from '../components/ui/Text';
 import { ThemeButton } from '../components/ThemeButton';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { formatDestinationName } from '../utils/destinationImages';
+import { TripsStackParamList } from '../navigation/AppNavigator';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, "Archive">;
+type Nav = NativeStackNavigationProp<TripsStackParamList, "Archive">;
 
 export function ArchiveScreen() {
   const navigation = useNavigation<Nav>();
@@ -186,7 +187,7 @@ export function ArchiveScreen() {
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <View style={{ flex: 1 }}>
                       <RestyleText variant="lg" color="text" fontWeight="semibold" marginBottom={4}>
-                        {timer.destination}
+                        {formatDestinationName(timer.destination)}
                       </RestyleText>
                       <RestyleText variant="sm" color="textMuted">
                         {formatDate(timer.date)}

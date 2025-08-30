@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RouteProp } from "@react-navigation/native";
-import { RootStackParamList } from "../navigation/AppNavigator";
+import { HomeStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../store/useHolidayStore";
 import { useThemeStore } from "../store/useThemeStore";
 import { Ionicons } from '@expo/vector-icons';
@@ -48,8 +48,8 @@ import {
   Teaser 
 } from "../features/countdown/logic";
 
-type Nav = NativeStackNavigationProp<RootStackParamList, "TimerDetail">;
-type Rt = RouteProp<RootStackParamList, "TimerDetail">;
+type Nav = NativeStackNavigationProp<HomeStackParamList, "TimerDetail">;
+type Rt = RouteProp<HomeStackParamList, "TimerDetail">;
 
 export function TimerDetailScreen() {
   const navigation = useNavigation<Nav>();
@@ -199,7 +199,7 @@ export function TimerDetailScreen() {
     if (!quest || !timer) return;
     
     // Navigate to Holly with the quest's seed query
-    navigation.navigate('HollyChat', {
+    navigation.getParent()?.navigate('ChatTab', {
       seedQuery: quest.seedQuery, // Pass seedQuery at top level (already has destination replaced)
       context: {
         destination: timer.destination,
@@ -279,7 +279,7 @@ export function TimerDetailScreen() {
     if (!timer) return;
     
     console.log('FAQ Tell me more tapped:', query);
-    navigation.navigate("HollyChat", {
+    navigation.getParent()?.navigate("ChatTab", {
       seedQuery: query,
       context: { destination: timer.destination, dateISO: timer.date },
       reset: false,
@@ -501,7 +501,7 @@ export function TimerDetailScreen() {
           <Box flexDirection="row" gap={12}>
             <Button
               onPress={() =>
-                navigation.navigate("HollyChat", {
+                navigation.getParent()?.navigate("ChatTab", {
                   seedQuery: `Plan a trip to ${timer.destination} around ${dLabel}. Create a day by day plan with realistic timings and transit between sights.`,
                   context: { destination: timer.destination, dateISO: timer.date, timerId: timer.id },
                   reset: false,
@@ -513,7 +513,7 @@ export function TimerDetailScreen() {
               <Box flexDirection="row" alignItems="center" justifyContent="center" gap={8}>
                 <Ionicons name="chatbubble" size={20} color="#FFFFFF" />
                 <RestyleText variant="sm" color="text" fontWeight="semibold">
-                  Ask Holly
+                  Ask Holly Bobz
                 </RestyleText>
               </Box>
             </Button>

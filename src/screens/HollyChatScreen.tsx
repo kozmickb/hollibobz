@@ -16,22 +16,34 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { ChatStackParamList } from '../navigation/AppNavigator';
 import { useThemeStore } from '../store/useThemeStore';
 import { ThemeButton } from '../components/ThemeButton';
+import { useEntitlements } from '../hooks/useEntitlements';
+import { checkAndIncrementAI } from '../hooks/useAIQuota';
+import { PaywallModal } from '../components/PaywallModal';
+import { Analytics } from '../lib/monitoring';
 import { LinearGradient } from 'expo-linear-gradient';
 import Markdown from 'react-native-markdown-display';
-import { getDeepseekTextResponse, getOpenAITextResponse, getGrokTextResponse } from '../api/chat-service';
+import { sendAIThroughProxy } from '../api/chat-service';
 import { AIMessage } from '../types/ai';
+import ChecklistMessage from '../features/checklist/ChecklistMessage';
+import { enhancePromptForChecklist } from '../features/checklist/promptEnhancer';
+import { tripStore } from '../lib/tripStore';
+import { generateTripId, createTripFromChecklist, extractTripTitleFromPrompt } from '../utils/tripHelpers';
+import { extractJsonBlock } from '../features/checklist/itineraryParser';
+import { validateChecklistDoc } from '../features/checklist/validate';
 
-type HollyChatNav = NativeStackNavigationProp<RootStackParamList, "HollyChat">;
-type HollyChatRoute = RouteProp<RootStackParamList, "HollyChat">;
+type HollyChatNav = NativeStackNavigationProp<ChatStackParamList, "HollyChat">;
+type HollyChatRoute = RouteProp<ChatStackParamList, "HollyChat">;
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  tripId?: string;
+  hasChecklist?: boolean;
 }
 
 export function HollyChatScreen() {
@@ -43,17 +55,34 @@ export function HollyChatScreen() {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [aiStatus, setAiStatus] = useState('');
+  const [currentTripId, setCurrentTripId] = useState<string | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  // Entitlement hooks
+  const { hasPro, loading: entitlementsLoading } = useEntitlements();
   const scrollViewRef = useRef<ScrollView>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const dotAnim1 = useRef(new Animated.Value(0)).current;
   const dotAnim2 = useRef(new Animated.Value(0)).current;
   const dotAnim3 = useRef(new Animated.Value(0)).current;
+  const initializedRef = useRef(false); // Prevent duplicate initialization
 
-  // Initialize with seed query if provided
+    // Initialize with seed query if provided
   useEffect(() => {
+    console.log('HollyChatScreen initialized with route params:', route.params);
+    console.log('Context:', route.params?.context);
+    console.log('Timer ID from context:', route.params?.context?.timerId);
+
+    // Prevent duplicate initialization (fixes issue where welcome message appears twice)
+    if (initializedRef.current) {
+      console.log('HollyChatScreen already initialized, skipping...');
+      return;
+    }
+    initializedRef.current = true;
+
     // Check API status on component mount
     checkAPIStatus();
-    
+
     // Pre-load destination context if available
     if (route.params?.context?.destination && messages.length === 0) {
       const destination = route.params.context.destination;
@@ -62,7 +91,7 @@ export function HollyChatScreen() {
       const children = route.params.context.children || 0;
       const duration = route.params.context.duration || 7;
       
-      let welcomeContent = `🌟 Welcome to HollyBobz AI! I'm here to help you plan your amazing trip to **${destination}**.\n\n`;
+      let welcomeContent = `🌟 Welcome to Holly Bobz! I'm here to help you plan your amazing trip to **${destination}**.\n\n`;
       welcomeContent += `**Trip Details:**\n`;
       welcomeContent += `• **Destination:** ${destination}\n`;
       welcomeContent += `• **Date:** ${date ? new Date(date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Not specified'}\n`;
@@ -79,7 +108,7 @@ export function HollyChatScreen() {
       setMessages([welcomeMessage]);
     } else if (messages.length === 0) {
       // Generic welcome message for main dashboard chat
-      const welcomeContent = `🌟 **Welcome to HollyBobz AI!**\n\nI'm your personal travel planning assistant, here to help you with:\n\n` +
+      const welcomeContent = `🌟 **Welcome to Holly Bobz!**\n\nI'm your personal travel planning assistant, here to help you with:\n\n` +
         `• **Destination Research** - Find the perfect places to visit\n` +
         `• **Travel Planning** - Get tips on flights, accommodation, and activities\n` +
         `• **Budget Advice** - Plan your trip within your budget\n` +
@@ -106,7 +135,26 @@ export function HollyChatScreen() {
       setMessages([initialMessage]);
       handleSendMessage(route.params.seedQuery);
     }
-  }, [route.params?.seedQuery, route.params?.context?.destination]);
+    
+    // Initialize trip ID if provided
+    if (route.params?.tripId) {
+      setCurrentTripId(route.params.tripId);
+    }
+
+    // Cleanup function to reset initialization flag when component unmounts
+    return () => {
+      initializedRef.current = false;
+    };
+  }, [route.params?.seedQuery, route.params?.context?.destination, route.params?.tripId]);
+
+  // Reset initialization when route params change significantly (for navigation between different chat contexts)
+  useEffect(() => {
+    const hasContextChanged = route.params?.context?.destination || route.params?.seedQuery || route.params?.tripId;
+    if (hasContextChanged && initializedRef.current) {
+      console.log('Route context changed, resetting initialization');
+      initializedRef.current = false;
+    }
+  }, [route.params?.context?.destination, route.params?.seedQuery, route.params?.tripId]);
 
   // Animation functions
   const startPulseAnimation = () => {
@@ -161,13 +209,16 @@ export function HollyChatScreen() {
     dotAnim3.setValue(0);
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, displayContent?: string) => {
     if (!content.trim()) return;
+
+    // Enhance the content with checklist instructions if it appears to be an itinerary request
+    const enhancedContent = enhancePromptForChecklist(content.trim());
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: content.trim(),
+      content: displayContent?.trim() || content.trim(), // Use display content if provided
       timestamp: new Date(),
     };
 
@@ -187,14 +238,14 @@ export function HollyChatScreen() {
         content: msg.content,
       }));
 
-      // Add the new user message
+      // Add the new user message (enhanced with checklist instructions if needed)
       conversationHistory.push({
         role: 'user',
-        content: content.trim(),
+        content: enhancedContent,
       });
 
       // Add context about the trip if available
-      let systemPrompt = "You are HollyBobz AI, a friendly and knowledgeable AI travel assistant. You help users plan amazing trips with personalized advice, insider tips, and detailed recommendations. Be enthusiastic, helpful, and provide practical travel advice.";
+      let systemPrompt = "You are Holly Bobz, a friendly and knowledgeable AI travel assistant. You help users plan amazing trips with personalized advice, insider tips, and detailed recommendations. Be enthusiastic, helpful, and provide practical travel advice.";
       
       if (route.params?.context?.destination) {
         const context = route.params.context;
@@ -213,59 +264,96 @@ export function HollyChatScreen() {
         ...conversationHistory
       ];
 
-      // Try Deepseek first, then GPT, then Grok
-      let response;
-      let apiUsed = '';
+      // Check AI quota and entitlements
+      const quotaCheck = await checkAndIncrementAI({
+        hasPro,
+        userId: 'anonymous', // TODO: Replace with actual user ID when auth is implemented
+      });
 
+      if (!quotaCheck.ok) {
+        Analytics.track('paywall_shown', { reason: 'ai_limit_reached' });
+        setShowPaywall(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Use AI proxy (cheapest first selection handled server-side)
+      setAiStatus('Holly is thinking...');
+      const response = await sendAIThroughProxy(messagesWithSystem, {
+        temperature: 0.7,
+        maxTokens: 1000,
+      });
+
+      // Track successful AI usage
+      Analytics.aiMessageSent(
+        response.provider || 'unknown',
+        response.model || 'unknown',
+        response.usage.totalTokens
+      );
+
+      // Process checklist if present in response
+      let tripId = currentTripId || route.params?.tripId;
+      let hasChecklist = false;
+      
       try {
-        // Try Deepseek first
-        setAiStatus('Holly is thinking...');
-        const deepseekKey = process.env.EXPO_PUBLIC_VIBECODE_DEEPSEEK_API_KEY;
-        if (deepseekKey) {
-          response = await getDeepseekTextResponse(messagesWithSystem, {
-            temperature: 0.7,
-            maxTokens: 1000,
-          });
-          apiUsed = 'Deepseek';
-        } else {
-          throw new Error('Deepseek API key not configured');
-        }
-      } catch (deepseekError) {
-        console.log('Deepseek failed, trying OpenAI...');
-        setAiStatus('Holly is thinking...');
-        try {
-          // Try OpenAI second
-          const openaiKey = process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY;
-          if (openaiKey) {
-            response = await getOpenAITextResponse(messagesWithSystem, {
-              temperature: 0.7,
-              maxTokens: 1000,
-            });
-            apiUsed = 'OpenAI';
-          } else {
-            throw new Error('OpenAI API key not configured');
-          }
-        } catch (openaiError) {
-          console.log('OpenAI failed, trying Grok...');
-          setAiStatus('Holly is thinking...');
-          try {
-            // Try Grok third
-            const grokKey = process.env.EXPO_PUBLIC_VIBECODE_GROK_API_KEY;
-            if (grokKey) {
-              response = await getGrokTextResponse(messagesWithSystem, {
-                temperature: 0.7,
-                maxTokens: 1000,
-              });
-              apiUsed = 'Grok';
+        const jsonBlock = extractJsonBlock(response.content);
+        console.log('JSON Block extracted:', jsonBlock ? 'Found' : 'Not found');
+        if (jsonBlock) {
+          // Parse the JSON string first
+          const parsedJson = JSON.parse(jsonBlock);
+          console.log('Parsed JSON:', parsedJson);
+          const checklistDoc = validateChecklistDoc(parsedJson);
+          console.log('Checklist validation:', checklistDoc ? 'Valid' : 'Invalid');
+          if (checklistDoc) {
+            // Create or get trip, linking to existing timer if available
+            if (!tripId) {
+              // Check if we have timer context from route params
+              const timerContext = route.params?.context;
+              console.log('Route params context:', timerContext);
+              console.log('Timer ID from context:', timerContext?.timerId);
+              if (timerContext?.timerId) {
+                // Use timer ID as trip ID to link them
+                tripId = timerContext.timerId;
+                console.log('Linking checklist to existing timer:', tripId);
+              } else {
+                // Generate new trip ID
+                tripId = generateTripId();
+                console.log('Creating new trip for checklist:', tripId);
+              }
+              setCurrentTripId(tripId);
+              
+              // Create new trip with context from timer if available
+              let tripTitle = checklistDoc.tripTitle;
+              if (timerContext?.destination) {
+                tripTitle = `${timerContext.destination} Trip`;
+              } else {
+                tripTitle = tripTitle || extractTripTitleFromPrompt(content);
+              }
+              
+              const newTrip = createTripFromChecklist(checklistDoc, tripId);
+              newTrip.title = tripTitle;
+              
+              // Add timer context to trip if available
+              if (timerContext) {
+                newTrip.timerContext = {
+                  destination: timerContext.destination,
+                  date: timerContext.dateISO,
+                  duration: timerContext.duration,
+                  adults: timerContext.adults,
+                  children: timerContext.children,
+                };
+              }
+              
+              await tripStore.upsert(newTrip);
             } else {
-              throw new Error('Grok API key not configured');
+              // Update existing trip with checklist
+              await tripStore.setChecklist(tripId, checklistDoc);
             }
-          } catch (grokError) {
-            console.log('All APIs failed, using fallback');
-            setAiStatus('Holly is thinking...');
-            throw new Error('All API keys not configured');
+            hasChecklist = true;
           }
         }
+      } catch (error) {
+        console.warn('Failed to process checklist:', error);
       }
 
       const aiMessage: Message = {
@@ -273,7 +361,15 @@ export function HollyChatScreen() {
         role: 'assistant',
         content: response.content,
         timestamp: new Date(),
+        tripId: tripId || undefined,
+        hasChecklist,
       };
+      
+      console.log('AI Message created:', {
+        hasChecklist,
+        tripId,
+        messageId: aiMessage.id
+      });
 
       setMessages(prev => [...prev, aiMessage]);
       setAiStatus('');
@@ -501,14 +597,20 @@ The best trips are the ones that teach you something new!`
   };
 
   return (
-    <SafeAreaView style={{
-      flex: 1,
-      backgroundColor: isDark ? '#0F172A' : '#FEF7ED',
-    }}>
-      <StatusBar 
+    <>
+      <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={isDark ? '#0F172A' : '#FEF7ED'}
       />
+      <SafeAreaView style={{
+        flex: 1,
+        backgroundColor: isDark ? '#0F172A' : '#FEF7ED',
+      }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
       
       {/* Header */}
       <View style={{
@@ -579,14 +681,13 @@ The best trips are the ones that teach you something new!`
       </View>
 
       {/* Chat Messages */}
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
+      <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1 }}
-          contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+          contentContainerStyle={{ 
+            padding: 20, 
+            paddingBottom: Platform.OS === 'web' ? 160 : 130 // Reduced padding to clear input and nav bar
+          }}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
@@ -619,7 +720,7 @@ The best trips are the ones that teach you something new!`
                 marginBottom: 8,
                 textAlign: 'center',
               }}>
-                Chat with Holly
+                Chat with Holly Bobz
               </Text>
               <Text style={{
                 fontSize: 16,
@@ -668,61 +769,145 @@ The best trips are the ones that teach you something new!`
                     {message.content}
                   </Text>
                 ) : (
-                  <Markdown style={{
-                    body: {
-                      fontSize: 16,
-                      fontFamily: 'Poppins-Regular',
-                      color: isDark ? '#F3F4F6' : '#1F2937',
-                      lineHeight: 24,
-                    },
-                    heading1: {
-                      fontSize: 20,
-                      fontFamily: 'Poppins-Bold',
-                      color: isDark ? '#F3F4F6' : '#1F2937',
-                      marginTop: 8,
-                      marginBottom: 4,
-                    },
-                    heading2: {
-                      fontSize: 18,
-                      fontFamily: 'Poppins-Bold',
-                      color: isDark ? '#F3F4F6' : '#1F2937',
-                      marginTop: 8,
-                      marginBottom: 4,
-                    },
-                    heading3: {
-                      fontSize: 16,
-                      fontFamily: 'Poppins-Bold',
-                      color: isDark ? '#F3F4F6' : '#1F2937',
-                      marginTop: 8,
-                      marginBottom: 4,
-                    },
-                    strong: {
-                      fontFamily: 'Poppins-Bold',
-                      color: isDark ? '#F3F4F6' : '#1F2937',
-                    },
-                    em: {
-                      fontFamily: 'Poppins-Italic',
-                      color: isDark ? '#F3F4F6' : '#1F2937',
-                    },
-                    bullet_list: {
-                      marginTop: 4,
-                      marginBottom: 4,
-                    },
-                    ordered_list: {
-                      marginTop: 4,
-                      marginBottom: 4,
-                    },
-                    list_item: {
-                      marginTop: 2,
-                      marginBottom: 2,
-                    },
-                    paragraph: {
-                      marginTop: 4,
-                      marginBottom: 4,
-                    },
-                  }}>
-                    {message.content}
-                  </Markdown>
+                  <>
+                    <Markdown style={{
+                      body: {
+                        fontSize: 16,
+                        fontFamily: 'Poppins-Regular',
+                        color: isDark ? '#F3F4F6' : '#1F2937',
+                        lineHeight: 24,
+                      },
+                      heading1: {
+                        fontSize: 20,
+                        fontFamily: 'Poppins-Bold',
+                        color: isDark ? '#F3F4F6' : '#1F2937',
+                        marginTop: 8,
+                        marginBottom: 4,
+                      },
+                      heading2: {
+                        fontSize: 18,
+                        fontFamily: 'Poppins-Bold',
+                        color: isDark ? '#F3F4F6' : '#1F2937',
+                        marginTop: 8,
+                        marginBottom: 4,
+                      },
+                      heading3: {
+                        fontSize: 16,
+                        fontFamily: 'Poppins-Bold',
+                        color: isDark ? '#F3F4F6' : '#1F2937',
+                        marginTop: 8,
+                        marginBottom: 4,
+                      },
+                      strong: {
+                        fontFamily: 'Poppins-Bold',
+                        color: isDark ? '#F3F4F6' : '#1F2937',
+                      },
+                      em: {
+                        fontFamily: 'Poppins-Italic',
+                        color: isDark ? '#F3F4F6' : '#1F2937',
+                      },
+                      bullet_list: {
+                        marginTop: 4,
+                        marginBottom: 4,
+                      },
+                      ordered_list: {
+                        marginTop: 4,
+                        marginBottom: 4,
+                      },
+                      list_item: {
+                        marginTop: 2,
+                        marginBottom: 2,
+                      },
+                      paragraph: {
+                        marginTop: 4,
+                        marginBottom: 4,
+                      },
+                    }}>
+                      {/* Remove JSON blocks from display content */}
+                      {message.content.replace(/```json\s*[\s\S]*?```/g, '').trim()}
+                    </Markdown>
+                    <ChecklistMessage 
+                      messageContent={message.content} 
+                      onRegenerateRequest={() => {
+                        // Add itinerary regeneration with JSON format instruction
+                        const itineraryPrompt = `Please regenerate the previous itinerary with this specific format:
+
+Return two parts:
+1) A short readable trip overview for humans.
+2) A strict JSON object named itinerary_json that matches:
+{
+  "tripTitle": "string",
+  "sections": [
+    { "title": "string", "items": ["string", "..."] }
+  ]
+}
+Rules:
+- Put ONLY the JSON object in a single fenced code block marked json.
+- No comments or trailing text inside the code block.
+- Use null only if absolutely needed, otherwise omit fields.`;
+                        
+                        // Show user-friendly message but send technical prompt to AI
+                        const userFriendlyMessage = "Please regenerate the itinerary in a format I can turn into a checklist.";
+                        handleSendMessage(itineraryPrompt, userFriendlyMessage);
+                      }}
+                    />
+                    
+                    {/* Open Checklist Button */}
+                    {(() => {
+                      console.log('Checking Open Checklist button for message:', {
+                        messageId: message.id,
+                        hasChecklist: message.hasChecklist,
+                        tripId: message.tripId,
+                        shouldShow: message.hasChecklist && message.tripId
+                      });
+                      return message.hasChecklist && message.tripId;
+                    })() && (
+                      <View style={{
+                        marginTop: 12,
+                        paddingTop: 12,
+                        borderTopWidth: 1,
+                        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(251, 146, 60, 0.1)',
+                      }}>
+                        <Pressable
+                          onPress={() => {
+                            navigation.getParent()?.navigate('TripsTab', {
+                              screen: 'Checklist',
+                              params: { tripId: message.tripId! }
+                            });
+                          }}
+                          style={({ pressed }) => ({
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: isDark ? '#14B8A6' : '#F97316',
+                            paddingHorizontal: 20,
+                            paddingVertical: 12,
+                            borderRadius: 24,
+                            opacity: pressed ? 0.8 : 1,
+                            shadowColor: isDark ? '#14B8A6' : '#F97316',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.2,
+                            shadowRadius: 4,
+                            elevation: 3,
+                          })}
+                        >
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={20}
+                            color="#FFFFFF"
+                            style={{ marginRight: 8 }}
+                          />
+                          <Text style={{
+                            fontSize: 16,
+                            fontFamily: 'Poppins-SemiBold',
+                            color: '#FFFFFF',
+                          }}>
+                            Open Checklist
+                          </Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </>
                 )}
                 <Text style={{
                   fontSize: 12,
@@ -821,44 +1006,58 @@ The best trips are the ones that teach you something new!`
         <View style={{
           paddingHorizontal: 20,
           paddingVertical: 16,
+          paddingBottom: Platform.OS === 'ios' ? 85 : 75, // Reduced padding to clear navigation bar
+          marginBottom: Platform.OS === 'web' ? 50 : 0, // Reduced margin for web to clear tab bar
           borderTopWidth: 1,
-          borderTopColor: isDark 
-            ? 'rgba(255, 255, 255, 0.1)' 
+          borderTopColor: isDark
+            ? 'rgba(255, 255, 255, 0.1)'
             : 'rgba(251, 146, 60, 0.1)',
-          backgroundColor: isDark 
-            ? 'rgba(30, 41, 59, 0.8)' 
+          backgroundColor: isDark
+            ? 'rgba(30, 41, 59, 0.8)'
             : 'rgba(255, 255, 255, 0.8)',
         }}>
           <View style={{
             flexDirection: 'row',
             alignItems: 'flex-end',
-            gap: 12,
           }}>
             <View style={{
               flex: 1,
-              backgroundColor: isDark 
-                ? 'rgba(255, 255, 255, 0.1)' 
+              marginRight: 12,
+              backgroundColor: isDark
+                ? 'rgba(255, 255, 255, 0.1)'
                 : 'rgba(251, 146, 60, 0.05)',
               borderRadius: 24,
               borderWidth: 1,
-              borderColor: isDark 
-                ? 'rgba(255, 255, 255, 0.2)' 
+              borderColor: isDark
+                ? 'rgba(255, 255, 255, 0.2)'
                 : 'rgba(251, 146, 60, 0.2)',
+              minHeight: 48,
+              maxHeight: 100,
             }}>
               <TextInput
                 value={inputText}
                 onChangeText={setInputText}
-                placeholder="Ask Holly about your trip..."
+                placeholder="Ask Holly Bobz about your trip..."
                 placeholderTextColor={isDark ? '#6B7280' : '#9CA3AF'}
                 multiline
                 style={{
                   paddingHorizontal: 16,
                   paddingVertical: 12,
+                  paddingTop: 12,
                   fontSize: 16,
                   fontFamily: 'Poppins-Regular',
                   color: isDark ? '#F3F4F6' : '#1F2937',
-                  maxHeight: 100,
+                  minHeight: 24,
+                  maxHeight: 76,
+                  textAlignVertical: 'top',
                 }}
+                returnKeyType="send"
+                onSubmitEditing={() => {
+                  if (inputText.trim() && !isLoading) {
+                    handleSubmit();
+                  }
+                }}
+                blurOnSubmit={false}
               />
             </View>
             
@@ -891,7 +1090,18 @@ The best trips are the ones that teach you something new!`
             </Pressable>
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        onPurchased={() => {
+          setShowPaywall(false);
+          // Refresh entitlements
+          window.location.reload(); // Simple refresh for now
+        }}
+      />
+    </>
   );
 }

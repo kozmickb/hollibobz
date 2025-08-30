@@ -10,7 +10,7 @@ export const QUESTS: Quest[] = [
   {
     id: 'explore-destination',
     title: 'Destination Explorer',
-    description: 'Ask Holly about the top attractions in your destination',
+    description: 'Ask Holly Bobz about the top attractions in your destination',
     seedQuery: 'What are the top 5 must-see attractions in {destination}? Include opening hours and entry fees.',
     rewardXP: 10
   },

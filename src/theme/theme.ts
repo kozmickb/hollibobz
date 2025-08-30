@@ -3,44 +3,47 @@ import { TripTickPalette } from './tokens';
 
 const palette = TripTickPalette;
 
+// Define colors explicitly to ensure they're always available
+const colors = {
+  // Backgrounds
+  bg: palette.darkBg,
+  surface: palette.darkCard,
+  surfaceAlt: palette.surfaceAlt,
+  
+  // Text
+  text: palette.textOnNavy,
+  textMuted: palette.textMuted,
+  
+  // Primary colors (Orange gradient)
+  primary: palette.orange500,
+  primaryAlt: palette.orange400,
+  
+  // Secondary colors (Teal gradient) - explicitly defined with fallback
+  secondary: palette.teal500 || '#14B8A6',
+  secondaryAlt: palette.teal400 || '#2DD4BF',
+  
+  // Accent colors
+  accent: palette.yellow400,
+  accentAlt: palette.purple400,
+  
+  // Status colors
+  success: palette.teal600,
+  warning: palette.yellow500,
+  danger: palette.pink500,
+  
+  // Ring colors (gradient inspired)
+  ringLow: palette.navy600,
+  ringMid: palette.orange500,
+  ringHigh: palette.teal400,
+  
+  // Utility
+  scrim: palette.scrim,
+  whiteOverlay: palette.whiteOverlay,
+  transparent: 'transparent',
+} as const;
+
 const theme = createTheme({
-  colors: {
-    // Backgrounds
-    bg: palette.darkBg,
-    surface: palette.darkCard,
-    surfaceAlt: palette.surfaceAlt,
-    
-    // Text
-    text: palette.textOnNavy,
-    textMuted: palette.textMuted,
-    
-    // Primary colors (Orange gradient)
-    primary: palette.orange500,
-    primaryAlt: palette.orange400,
-    
-    // Secondary colors (Teal gradient)
-    secondary: palette.teal500,
-    secondaryAlt: palette.teal400,
-    
-    // Accent colors
-    accent: palette.yellow400,
-    accentAlt: palette.purple400,
-    
-    // Status colors
-    success: palette.teal600,
-    warning: palette.yellow500,
-    danger: palette.pink500,
-    
-    // Ring colors (gradient inspired)
-    ringLow: palette.navy600,
-    ringMid: palette.orange500,
-    ringHigh: palette.teal400,
-    
-    // Utility
-    scrim: palette.scrim,
-    whiteOverlay: palette.whiteOverlay,
-    transparent: 'transparent',
-  },
+  colors,
   
   spacing: {
     0: 0,
@@ -138,22 +141,33 @@ const theme = createTheme({
   },
 });
 
+// Light theme colors
+const lightColors = {
+  ...colors,
+  bg: palette.lightBg,
+  surface: palette.lightCard,
+  surfaceAlt: '#F8FAFC',
+  text: palette.navy900,
+  textMuted: palette.navy500,
+  whiteOverlay: palette.whiteOverlay,
+  // Ensure secondary color is available in light theme too
+  secondary: palette.teal500 || '#14B8A6',
+  secondaryAlt: palette.teal400 || '#2DD4BF',
+} as const;
+
 // Light theme variant
 const lightTheme = createTheme({
   ...theme,
-  colors: {
-    ...theme.colors,
-    bg: palette.lightBg,
-    surface: palette.lightCard,
-    surfaceAlt: '#F8FAFC',
-    text: palette.navy900,
-    textMuted: palette.navy500,
-    whiteOverlay: palette.whiteOverlay,
-  },
+  colors: lightColors,
 });
 
 export type Theme = typeof theme;
 export type LightTheme = typeof lightTheme;
 
+// Ensure the theme is properly exported and accessible
 export { theme, lightTheme };
 export default theme;
+
+
+
+

@@ -1,18 +1,64 @@
 import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+import { Platform } from "react-native";
 import { HomeScreen } from "../screens/HomeScreen";
 import { TripsScreen } from "../screens/TripsScreen";
 import { HollyChatScreen } from "../screens/HollyChatScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
+import { PrivacySecurityScreen } from "../screens/PrivacySecurityScreen";
+import { PrivacyPolicyScreen } from "../screens/PrivacyPolicyScreen";
+import { TermsOfServiceScreen } from "../screens/TermsOfServiceScreen";
+import { PaywallScreen } from "../screens/PaywallScreen";
 import { AddTimerScreen } from "../screens/AddTimerScreen";
 import { TimerDetailScreen } from "../screens/TimerDetailScreen";
 import { TimerDrilldownScreen } from "../screens/TimerDrilldownScreen";
 import { DestinationDetailScreen } from "../screens/DestinationDetailScreen";
 import { SavedFactsScreen } from "../screens/SavedFactsScreen";
 import { ArchiveScreen } from "../screens/ArchiveScreen";
+import ChecklistScreen from "../screens/ChecklistScreen";
+import { useThemeStore } from "../store/useThemeStore";
+
+// Tab Navigator Types
+export type TabParamList = {
+  HomeTab: undefined;
+  TripsTab: undefined;
+  ChatTab: undefined;
+  ProfileTab: undefined;
+};
+
+// Stack Navigator Types
+export type HomeStackParamList = {
+  Home: undefined;
+  AddTimer: undefined;
+  TimerDetail: { timerId: string };
+  DestinationDetail: { destination: string };
+};
+
+export type TripsStackParamList = {
+  Trips: undefined;
+  TimerDrilldown: { timerId: string };
+  Archive: undefined;
+  SavedFacts: undefined;
+  Checklist: { tripId: string };
+};
+
+export type ChatStackParamList = {
+  HollyChat: HollyChatParams | undefined;
+};
+
+export type ProfileStackParamList = {
+  Profile: undefined;
+  PrivacySecurity: undefined;
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
+  Paywall: undefined;
+};
 
 export type HollyChatParams = {
   seedQuery?: string;
+  tripId?: string;
   context?: {
     destination?: string;
     dateISO?: string;
@@ -28,34 +74,141 @@ export type HollyChatParams = {
   reset?: boolean;
 };
 
-export type RootStackParamList = {
-  Home: undefined;
-  Trips: undefined;
-  HollyChat: HollyChatParams | undefined;
-  Profile: undefined;
-  AddTimer: undefined;
-  TimerDetail: { timerId: string };
-  TimerDrilldown: { timerId: string };
-  DestinationDetail: { destination: string };
-  SavedFacts: undefined;
-  Archive: undefined;
-};
+// Create navigators
+const Tab = createBottomTabNavigator<TabParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const TripsStack = createNativeStackNavigator<TripsStackParamList>();
+const ChatStack = createNativeStackNavigator<ChatStackParamList>();
+const ProfileStack = createNativeStackNavigator<ProfileStackParamList>();
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
-
-export function AppNavigator() {
+// Home Stack Navigator
+function HomeStackNavigator() {
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: "TripTick", headerShown: false }} />
-      <Stack.Screen name="Trips" component={TripsScreen} options={{ title: "My Trips", headerShown: false }} />
-      <Stack.Screen name="HollyChat" component={HollyChatScreen} options={{ title: "Chat with Holly Bobz", headerShown: false }} />
-      <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: "Profile", headerShown: false }} />
-      <Stack.Screen name="AddTimer" component={AddTimerScreen} options={{ title: "Add Timer", presentation: "modal" }} />
-      <Stack.Screen name="TimerDetail" component={TimerDetailScreen} options={{ title: "Timer Details" }} />
-      <Stack.Screen name="TimerDrilldown" component={TimerDrilldownScreen} options={{ title: "Trip Details", headerShown: false }} />
-      <Stack.Screen name="DestinationDetail" component={DestinationDetailScreen} options={{ title: "Destination Details" }} />
-      <Stack.Screen name="SavedFacts" component={SavedFactsScreen} options={{ title: "Saved Facts" }} />
-      <Stack.Screen name="Archive" component={ArchiveScreen} options={{ title: "Archived Trips", headerShown: false }} />
-    </Stack.Navigator>
+    <HomeStack.Navigator>
+      <HomeStack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+      <HomeStack.Screen name="AddTimer" component={AddTimerScreen} options={{ title: "Add New Trip", presentation: "modal" }} />
+      <HomeStack.Screen name="TimerDetail" component={TimerDetailScreen} options={{ title: "Trip Details" }} />
+      <HomeStack.Screen name="DestinationDetail" component={DestinationDetailScreen} options={{ title: "Destination Details" }} />
+    </HomeStack.Navigator>
+  );
+}
+
+// Trips Stack Navigator
+function TripsStackNavigator() {
+  return (
+    <TripsStack.Navigator>
+      <TripsStack.Screen name="Trips" component={TripsScreen} options={{ headerShown: false }} />
+      <TripsStack.Screen name="TimerDrilldown" component={TimerDrilldownScreen} options={{ headerShown: false }} />
+      <TripsStack.Screen name="Archive" component={ArchiveScreen} options={{ title: "Archived Trips" }} />
+      <TripsStack.Screen name="SavedFacts" component={SavedFactsScreen} options={{ title: "Saved Facts" }} />
+      <TripsStack.Screen name="Checklist" component={ChecklistScreen} options={{ headerShown: false }} />
+    </TripsStack.Navigator>
+  );
+}
+
+// Chat Stack Navigator
+function ChatStackNavigator() {
+  return (
+    <ChatStack.Navigator>
+      <ChatStack.Screen name="HollyChat" component={HollyChatScreen} options={{ headerShown: false }} />
+    </ChatStack.Navigator>
+  );
+}
+
+// Profile Stack Navigator
+function ProfileStackNavigator() {
+  return (
+    <ProfileStack.Navigator>
+      <ProfileStack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+      <ProfileStack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} options={{ headerShown: false }} />
+      <ProfileStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ headerShown: false }} />
+      <ProfileStack.Screen name="TermsOfService" component={TermsOfServiceScreen} options={{ headerShown: false }} />
+      <ProfileStack.Screen name="Paywall" component={PaywallScreen} options={{ headerShown: false }} />
+    </ProfileStack.Navigator>
+  );
+}
+
+// Main Tab Navigator
+export function AppNavigator() {
+  const { isDark } = useThemeStore();
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: any;
+
+          if (route.name === 'HomeTab') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'TripsTab') {
+            iconName = focused ? 'map' : 'map-outline';
+          } else if (route.name === 'ChatTab') {
+            iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+          } else if (route.name === 'ProfileTab') {
+            iconName = focused ? 'person' : 'person-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: isDark ? '#14B8A6' : '#F97316',
+        tabBarInactiveTintColor: isDark ? '#9CA3AF' : '#6B7280',
+        tabBarStyle: {
+          backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+          borderTopColor: isDark ? '#374151' : '#E5E7EB',
+          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+          paddingTop: 5,
+          height: Platform.OS === 'ios' ? 80 : 70,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          ...Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+            },
+            android: {
+              elevation: 8,
+            },
+          }),
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontFamily: 'Poppins-Medium',
+        },
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen
+        name="HomeTab"
+        component={HomeStackNavigator}
+        options={{
+          title: 'Home',
+        }}
+      />
+      <Tab.Screen
+        name="TripsTab"
+        component={TripsStackNavigator}
+        options={{
+          title: 'My Trips',
+        }}
+      />
+      <Tab.Screen
+        name="ChatTab"
+        component={ChatStackNavigator}
+        options={{
+          title: 'Holly Bobz',
+        }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
+        component={ProfileStackNavigator}
+        options={{
+          title: 'Profile',
+        }}
+      />
+    </Tab.Navigator>
   );
 }

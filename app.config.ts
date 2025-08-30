@@ -16,42 +16,56 @@ const config: ExpoConfig = {
   scheme: 'triptick',
   version: '1.0.0',
   orientation: 'portrait',
+  // App icon - will be automatically sized for different platforms
   icon: './assets/TT logo.png',
   userInterfaceStyle: 'light',
+  // Splash screen configuration
   splash: {
-    image: './assets/splash.png',
+    image: './assets/TT logo.png',
     resizeMode: 'contain',
     backgroundColor: '#FF6B6B'
   },
   assetBundlePatterns: [
     '**/*'
   ],
-  ios: { 
-    bundleIdentifier: BUNDLE_ID, 
-    supportsTablet: true
+    ios: {
+    bundleIdentifier: BUNDLE_ID,
+    supportsTablet: true,
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+      // iOS 17+ Calendar permissions (separate read/write keys)
+      NSCalendarsFullAccessUsageDescription: "We use your calendar to read and update trip events you create.",
+      NSCalendarsWriteOnlyAccessUsageDescription: "We add trip events to your calendar without reading other entries.",
+      // iOS 17+ Reminders permissions (separate read/write keys)
+      NSRemindersFullAccessUsageDescription: "We use reminders to read and manage trip tasks you create.",
+      NSRemindersWriteOnlyAccessUsageDescription: "We add trip reminders without reading other entries.",
+      // Camera and media library permissions for profile photos
+      NSCameraUsageDescription: "We need camera access to take profile photos.",
+      NSPhotoLibraryUsageDescription: "We need photo library access to select profile photos."
+    }
   },
-  // Android configuration removed - iOS only
-  web: {
-    favicon: './assets/favicon.png'
+  android: {
+    package: ANDROID_PACKAGE,
+    permissions: ["READ_CALENDAR", "WRITE_CALENDAR", "CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"],
+    // Android adaptive icon configuration
+    adaptiveIcon: {
+      foregroundImage: './assets/TT logo.png',
+      backgroundColor: '#FF6B6B'
+    },
+    // Notification icon for Android
+    notificationIcon: './assets/TT logo.png'
   },
   plugins: [
-    'expo-font'
+    'expo-font',
+    'expo-secure-store'
   ],
-  experiments: {
-    typedRoutes: true
-  },
   extra: {
     eas: { projectId: "62ed6c16-c869-42cd-b91c-c82a9e410526" },
   },
   updates: { url: updatesUrl },
-  // Environment variables for AI providers
-  env: {
-    EXPO_PUBLIC_VIBECODE_PROJECT_ID: process.env.EXPO_PUBLIC_VIBECODE_PROJECT_ID || "62ed6c16-c869-42cd-b91c-c82a9e410526",
-    EXPO_PUBLIC_VIBECODE_DEEPSEEK_API_KEY: process.env.EXPO_PUBLIC_VIBECODE_DEEPSEEK_API_KEY || "sk-835d9533a57b4db29062e1551e233c49",
-    EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY: process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY || "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",
-    EXPO_PUBLIC_VIBECODE_ANTHROPIC_API_KEY: process.env.EXPO_PUBLIC_VIBECODE_ANTHROPIC_API_KEY || "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",
-    EXPO_PUBLIC_VIBECODE_XAI_API_KEY: process.env.EXPO_PUBLIC_VIBECODE_XAI_API_KEY || "xai-0ATBihUeEg2m3oOKS4bIFiC49BgKSGvKg2RbE9CNgH9sSgdjPDsO6DHdQ7VStjb0yl34ht78Tt8wYIvf",
-    EXPO_PUBLIC_PEXELS_API_KEY: process.env.EXPO_PUBLIC_PEXELS_API_KEY || "your_pexels_api_key_here",
+  // Add cache configuration to prevent permission issues
+  _internal: {
+    isDebug: false,
   },
 };
 

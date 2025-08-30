@@ -54,7 +54,7 @@ export function MilestoneBanner({ label }: MilestoneBannerProps) {
           color: isDark ? '#bbf7d0' : '#166534',
           lineHeight: 18,
         }}>
-          Check out today's teaser below or ask Holly for personalised advice
+          Check out today's teaser below or ask Holly Bobz for personalised advice
         </Text>
       </View>
     </View>

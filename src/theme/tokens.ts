@@ -19,7 +19,7 @@ export const TripTickPalette = {
   // Teal gradient (secondary brand colors)
   teal400: '#2DD4BF',
   teal500: '#14B8A6',
-  teal600: '#0D9488',
+
   
   // Yellow accent
   yellow400: '#FACC15',

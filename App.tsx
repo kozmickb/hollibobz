@@ -15,6 +15,12 @@ import { useFonts } from "./src/hooks/useFonts";
 import { TripTickLogo } from "./src/components/TripTickLogo";
 import { useThemeStore } from "./src/store/useThemeStore";
 import { TripTickPalette } from "./src/theme/tokens";
+import { UserStorageManager } from "./src/lib/userStorage";
+import { ErrorBoundary } from "./src/components/ErrorBoundary";
+
+// New imports for production hardening
+import { initPurchases } from "./src/api/purchases";
+import { Analytics, initSentry } from "./src/lib/monitoring";
 
 /*
 IMPORTANT NOTICE: DO NOT REMOVE
@@ -42,7 +48,77 @@ SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const { fontsLoaded, fontError } = useFonts();
-  const { colorScheme, restyleTheme, kittenTheme, paperTheme } = useThemeStore();
+  const { colorScheme, restyleTheme, kittenTheme, paperTheme, reinitializeTheme } = useThemeStore();
+  
+  // Debug theme state (can be removed once theme is stable)
+  console.log('App render - Theme debug:', {
+    colorScheme,
+    hasRestyleTheme: !!restyleTheme,
+    hasColors: !!restyleTheme?.colors,
+    hasSecondary: !!restyleTheme?.colors?.secondary,
+    secondaryValue: restyleTheme?.colors?.secondary,
+  });
+  
+  // Ensure theme is properly initialized
+  useEffect(() => {
+    if (!restyleTheme?.colors?.secondary) {
+      console.log('Theme missing secondary color, reinitializing...');
+      reinitializeTheme();
+    }
+  }, [restyleTheme, reinitializeTheme]);
+  
+
+  
+  // Ensure theme is properly initialized with complete structure
+  const safeRestyleTheme = restyleTheme || {
+    colors: {
+      primary: '#F97316',
+      secondary: '#14B8A6',
+      accent: '#FACC15',
+      text: '#FFFFFF',
+      textMuted: '#B8C2D9',
+      bg: '#0F172A',
+      surface: '#1E293B',
+      surfaceAlt: '#102046',
+      primaryAlt: '#FB923C',
+      secondaryAlt: '#2DD4BF',
+      accentAlt: '#A78BFA',
+      success: '#22C6A5',
+      warning: '#EAB308',
+      danger: '#EC4899',
+      ringLow: '#243461',
+      ringMid: '#F97316',
+      ringHigh: '#2DD4BF',
+      scrim: 'rgba(0,0,0,0.35)',
+      whiteOverlay: 'rgba(255,255,255,0.3)',
+      transparent: 'transparent',
+    },
+    spacing: {
+      0: 0, 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 28, 8: 32, 9: 36, 10: 40,
+      11: 44, 12: 48, 13: 52, 14: 56, 15: 60, 16: 64, 17: 68, 18: 72, 19: 76, 20: 80,
+    },
+    borderRadii: {
+      sm: 6, md: 12, lg: 16, xl: 24, pill: 999,
+    },
+    textVariants: {
+      xs: { fontSize: 12, lineHeight: 16, fontWeight: '400' },
+      sm: { fontSize: 14, lineHeight: 20, fontWeight: '400' },
+      md: { fontSize: 16, lineHeight: 24, fontWeight: '400' },
+      lg: { fontSize: 18, lineHeight: 26, fontWeight: '500' },
+      xl: { fontSize: 20, lineHeight: 28, fontWeight: '600' },
+      '2xl': { fontSize: 24, lineHeight: 32, fontWeight: '600' },
+      '3xl': { fontSize: 30, lineHeight: 36, fontWeight: '700' },
+      '4xl': { fontSize: 36, lineHeight: 40, fontWeight: '700' },
+      regular: { fontWeight: '400' },
+      medium: { fontWeight: '500' },
+      semibold: { fontWeight: '600' },
+      bold: { fontWeight: '700' },
+    },
+    breakpoints: {
+      phone: 0,
+      tablet: 768,
+    },
+  };
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded || fontError) {
@@ -53,6 +129,32 @@ export default function App() {
   useEffect(() => {
     if (fontsLoaded || fontError) {
       onLayoutRootView();
+
+      // Initialize all services
+      const initializeServices = async () => {
+        try {
+          // Initialize Sentry for error tracking
+          initSentry();
+
+          // Initialize Analytics
+          Analytics.init();
+          Analytics.appOpen();
+
+          // Initialize RevenueCat for payments
+          await initPurchases();
+
+          // Initialize user profile
+          const userManager = UserStorageManager.getInstance();
+          await userManager.initializeProfile();
+
+          console.log('All services initialized successfully');
+        } catch (error) {
+          console.error('Failed to initialize services:', error);
+          Analytics.error(error as Error, 'App initialization');
+        }
+      };
+
+      initializeServices();
     }
   }, [fontsLoaded, fontError, onLayoutRootView]);
 
@@ -98,19 +200,21 @@ export default function App() {
   }
 
   return (
-    <ApplicationProvider {...eva} theme={kittenTheme}>
-      <PaperProvider theme={paperTheme}>
-        <ThemeProvider theme={restyleTheme}>
-          <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-            <SafeAreaProvider>
-              <NavigationContainer>
-                <AppNavigator />
-                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-              </NavigationContainer>
-            </SafeAreaProvider>
-          </GestureHandlerRootView>
-        </ThemeProvider>
-      </PaperProvider>
-    </ApplicationProvider>
+    <ErrorBoundary>
+      <ApplicationProvider {...eva} theme={kittenTheme}>
+        <PaperProvider theme={paperTheme}>
+          <ThemeProvider theme={safeRestyleTheme}>
+            <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
+              <SafeAreaProvider>
+                <NavigationContainer>
+                  <AppNavigator />
+                  <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                </NavigationContainer>
+              </SafeAreaProvider>
+            </GestureHandlerRootView>
+          </ThemeProvider>
+        </PaperProvider>
+      </ApplicationProvider>
+    </ErrorBoundary>
   );
 }

@@ -3,21 +3,22 @@ import { View, Text, ScrollView, Pressable, Platform, ImageBackground } from "re
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/AppNavigator";
+import { HomeStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../store/useHolidayStore";
 import { useThemeStore } from "../store/useThemeStore";
 import { Ionicons } from '@expo/vector-icons';
 import { Animated } from 'react-native';
 import { fetchPexelsBackdrop } from "../features/destination/backdrop";
+import { formatDestinationName } from "../utils/destinationImages";
 
 // TripTick UI components
-import { Text as RestyleText } from "../components/ui/Text";
+import { Text as RestyleText, SafeText } from "../components/ui/Text";
 import { CustomAlert } from "../components/CustomAlert";
 
 // Import features
 import { daysUntil } from "../features/countdown/logic";
 
-type Nav = NativeStackNavigationProp<RootStackParamList, "Home">;
+type Nav = NativeStackNavigationProp<HomeStackParamList, "Home">;
 
 // Helper function to get a random destination
 const getRandomDestination = (): string => {
@@ -61,12 +62,12 @@ export function HomeScreen() {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 1000,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 800,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }),
     ]).start();
 
@@ -134,13 +135,6 @@ export function HomeScreen() {
 
   const nextTrip = tripsData[0];
 
-  const navigationItems = [
-    { id: 'home', icon: 'home' as const, label: 'Home' },
-    { id: 'trips', icon: 'map' as const, label: 'Trips' },
-    { id: 'chat', icon: 'chatbubble' as const, label: 'AI Chat' },
-    { id: 'profile', icon: 'person' as const, label: 'Profile' },
-  ];
-
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#1a1a1a" : "#fefefe" }}>
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
@@ -177,7 +171,7 @@ export function HomeScreen() {
           
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <Pressable
-              onPress={() => navigation.navigate('Archive')}
+              onPress={() => navigation.getParent()?.navigate('TripsTab', { screen: 'Archive' })}
               style={{
                 backgroundColor: isDark ? "#374151" : "#fef3c7",
                 borderRadius: 20,
@@ -205,7 +199,7 @@ export function HomeScreen() {
               />
             </Pressable>
             <Pressable
-              onPress={() => navigation.navigate('Profile')}
+              onPress={() => navigation.getParent()?.navigate('ProfileTab')}
               style={{
                 backgroundColor: isDark ? "#374151" : "#ccfbf1",
                 borderRadius: 20,
@@ -232,7 +226,7 @@ export function HomeScreen() {
               }}
             >
               <Pressable
-                onPress={() => navigation.navigate('TimerDrilldown', { timerId: nextTrip.id })}
+                onPress={() => navigation.getParent()?.navigate('TripsTab', { screen: 'TimerDrilldown', params: { timerId: nextTrip.id } })}
                 style={{
                   position: 'relative',
                   borderRadius: 24,
@@ -254,7 +248,7 @@ export function HomeScreen() {
                             Next Adventure
                           </RestyleText>
                           <RestyleText variant="xl" color="text" fontWeight="bold">
-                            {nextTrip.destination}
+                            {formatDestinationName(nextTrip.destination)}
                           </RestyleText>
                         </View>
                         <Ionicons name="calendar" size={24} color="#FFFFFF" opacity={0.8} />
@@ -308,7 +302,7 @@ export function HomeScreen() {
                             Next Adventure
                           </RestyleText>
                           <RestyleText variant="xl" color="text" fontWeight="bold">
-                            {nextTrip.destination}
+                            {formatDestinationName(nextTrip.destination)}
                           </RestyleText>
                         </View>
                         <Ionicons name="calendar" size={24} color="#FFFFFF" opacity={0.8} />
@@ -374,9 +368,9 @@ export function HomeScreen() {
                     size={16} 
                     color={isDark ? "#5eead4" : "#0d9488"} 
                   />
-                                <RestyleText variant="sm" color="secondary" fontWeight="medium">
+                                <SafeText variant="sm" color="secondary" fontWeight="medium">
                 Add Trip
-              </RestyleText>
+              </SafeText>
                 </Pressable>
               </View>
               
@@ -391,7 +385,7 @@ export function HomeScreen() {
                       }}
                     >
                       <Pressable
-                        onPress={() => navigation.navigate('TimerDrilldown', { timerId: trip.id })}
+                        onPress={() => navigation.getParent()?.navigate('TripsTab', { screen: 'TimerDrilldown', params: { timerId: trip.id } })}
                         style={{
                           width: 256,
                           backgroundColor: isDark ? "#1f2937" : "#FFFFFF",
@@ -441,7 +435,7 @@ export function HomeScreen() {
                           </View>
                         )}
                         <RestyleText variant="md" color="text" fontWeight="semibold" marginBottom={1}>
-                          {trip.destination}
+                          {formatDestinationName(trip.destination)}
                         </RestyleText>
                         <RestyleText variant="sm" color="textMuted" marginBottom={2}>
                           {trip.daysLeft} days left
@@ -494,15 +488,15 @@ export function HomeScreen() {
                 </View>
                 <View>
                   <RestyleText variant="md" color="text" fontWeight="semibold">
-                    AI Travel Assistant
+                    Holly Bobz
                   </RestyleText>
                   <RestyleText variant="sm" color="text" opacity={0.9}>
-                    Your personal travel planning assistant
+                    Your AI travel planning assistant
                   </RestyleText>
                 </View>
               </View>
               <Pressable
-                onPress={() => navigation.navigate('HollyChat')}
+                onPress={() => navigation.getParent()?.navigate('ChatTab')}
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.2)',
                   borderRadius: 12,
@@ -615,65 +609,13 @@ export function HomeScreen() {
                 alignItems: 'center',
               }}
             >
-              <RestyleText variant="md" color="secondary" fontWeight="semibold">
+              <SafeText variant="md" color="secondary" fontWeight="semibold">
                 🎲 Explore Random Destination
-              </RestyleText>
+              </SafeText>
             </Pressable>
           </View>
         </ScrollView>
 
-        {/* Bottom Navigation */}
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: isDark ? "rgba(31, 41, 55, 0.9)" : "rgba(255, 255, 255, 0.9)",
-            borderTopWidth: 1,
-            borderTopColor: isDark ? "#374151" : "#fbbf24",
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-          }}
-        >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-            {navigationItems.map(item => (
-              <Pressable
-                key={item.id}
-                onPress={() => {
-                  if (item.id === 'home') {
-                    // Already on home, do nothing
-                  } else if (item.id === 'trips') {
-                    navigation.navigate('Trips');
-                  } else if (item.id === 'chat') {
-                    navigation.navigate('HollyChat');
-                  } else if (item.id === 'profile') {
-                    navigation.navigate('Profile');
-                  }
-                }}
-                style={{
-                  alignItems: 'center',
-                  padding: 8,
-                  borderRadius: 12,
-                }}
-              >
-                <Ionicons 
-                  name={item.icon} 
-                  size={20} 
-                  color={item.id === 'home' ? (isDark ? "#fbbf24" : "#d97706") : (isDark ? "#6b7280" : "#6b7280")} 
-                />
-                <RestyleText 
-                  variant="xs" 
-                  color={item.id === 'home' ? "primary" : "textMuted"} 
-                  fontWeight="medium"
-                  marginTop={4}
-                >
-                  {item.label}
-                </RestyleText>
-              </Pressable>
-            ))}
-          </View>
-        </View>
       </Animated.View>
 
       {/* Delete Alert */}
