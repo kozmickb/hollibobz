@@ -97,21 +97,76 @@ export function getDestinationImage(destinationName: string): string {
     return fallbackImages[0];
   }
 
-  const normalizedName = destinationName.toLowerCase().trim();
+  const strip = (s: string) => s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}+/gu, '')
+    .replace(/['’`-]/g, '')
+    .toLowerCase()
+    .trim();
 
-  // Check for exact matches first
+  const normalizedName = strip(destinationName).replace(/\s+/g, ' ');
+  const keys = Object.keys(destinationImageMap);
+
+  // Alias map for common misspellings/variants
+  const alias: Record<string, string> = {
+    'abu dhabi': 'abu dhabi',
+    'abudhabi': 'abu dhabi',
+    'abu-dhabi': 'abu dhabi',
+    'abu dabi': 'abu dhabi',
+    'abu dabee': 'abu dhabi',
+    'abhu dhabi': 'abu dhabi',
+  };
+  const aliased = alias[normalizedName];
+  if (aliased && destinationImageMap[aliased]) {
+    return destinationImageMap[aliased];
+  }
+
+  // Exact
   if (destinationImageMap[normalizedName]) {
     return destinationImageMap[normalizedName];
   }
 
-  // Check for partial matches
-  for (const [key, imageUrl] of Object.entries(destinationImageMap)) {
-    if (normalizedName.includes(key) || key.includes(normalizedName)) {
-      return imageUrl;
+  // Partial matching removed to avoid accidental mis-maps (e.g., very short inputs)
+
+  // Fuzzy match (Levenshtein)
+  const levenshtein = (a: string, b: string): number => {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+      }
+    }
+    return dp[m][n];
+  };
+
+  let bestKey = '';
+  let best = Number.POSITIVE_INFINITY;
+  for (const key of keys) {
+    const score = levenshtein(normalizedName, strip(key));
+    if (score < best) {
+      best = score;
+      bestKey = key;
     }
   }
+  // Also compare names without spaces
+  const nameNoSpace = normalizedName.replace(/\s+/g, '');
+  for (const key of keys) {
+    const score = levenshtein(nameNoSpace, strip(key).replace(/\s+/g, ''));
+    if (score < best) {
+      best = score;
+      bestKey = key;
+    }
+  }
+  const threshold = Math.max(3, Math.ceil(Math.max(1, normalizedName.length) * 0.4));
+  if (bestKey && best <= threshold) {
+    return destinationImageMap[bestKey];
+  }
 
-  // If no match found, use a fallback based on destination name hash
+  // Fallback: deterministic scenic image
   const hash = normalizedName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return fallbackImages[hash % fallbackImages.length];
 }

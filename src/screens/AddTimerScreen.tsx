@@ -10,6 +10,8 @@ import { ThemedButton } from "../components/ThemedButton";
 import { TripTickLogo } from "../components/TripTickLogo";
 import { DateTimeSelector } from "../components/DateTimeSelector";
 import { Ionicons } from '@expo/vector-icons';
+import { searchDestinations, getDestinationInfo } from "../api/destination-data";
+import { formatDestinationName } from "../utils/destinationImages";
 
 // Try to import confetti and haptics with fallback
 let ConfettiCannon: any = null;
@@ -39,6 +41,31 @@ export function AddTimerScreen() {
   const [children, setChildren] = useState(0);
   const [duration, setDuration] = useState(7);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [tripType, setTripType] = useState<'business' | 'leisure'>('leisure');
+
+  async function updateSuggestions(input: string) {
+    const q = input.trim();
+    if (q.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    // Basic partial matches
+    const basics = searchDestinations(q).slice(0, 6);
+    // Also try fuzzy and add suggestedName to the top if available
+    try {
+      const info = await getDestinationInfo(q);
+      const maybe = info?.suggestedName || "";
+      const items = basics.includes(maybe) || !maybe ? basics : [maybe, ...basics];
+      setSuggestions(items);
+      setShowSuggestions(items.length > 0);
+    } catch {
+      setSuggestions(basics);
+      setShowSuggestions(basics.length > 0);
+    }
+  }
 
   function onSave() {
     if (!destination.trim()) {
@@ -63,7 +90,8 @@ export function AddTimerScreen() {
       date: iso, 
       adults, 
       children, 
-      duration 
+      duration,
+      tripType
     });
     
     // Trigger confetti celebration
@@ -185,7 +213,7 @@ export function AddTimerScreen() {
             </Text>
             <TextInput
               value={destination}
-              onChangeText={setDestination}
+              onChangeText={(t) => { setDestination(t); updateSuggestions(t); }}
               placeholder="e.g., Paris, Tenerife, New York"
               placeholderTextColor="#999999"
               style={{
@@ -199,7 +227,33 @@ export function AddTimerScreen() {
                 color: isDark ? '#FFFFFF' : '#333333',
                 backgroundColor: isDark ? '#2a2a2a' : '#F7F7F7',
               }}
+              autoCorrect={false}
+              autoCapitalize="words"
+              onFocus={() => updateSuggestions(destination)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
             />
+            {showSuggestions && suggestions.length > 0 && (
+              <View style={{
+                marginTop: 8,
+                borderWidth: 1,
+                borderColor: isDark ? '#444444' : '#E5E5E5',
+                backgroundColor: isDark ? '#1f2937' : '#FFFFFF',
+                borderRadius: 12,
+                overflow: 'hidden'
+              }}>
+                {suggestions.map((s) => (
+                  <Pressable
+                    key={s}
+                    onPress={() => { setDestination(formatDestinationName(s)); setShowSuggestions(false); }}
+                    style={{ paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: isDark ? '#374151' : '#F1F1F1' }}
+                  >
+                    <Text style={{ color: isDark ? '#F3F4F6' : '#1F2937', fontFamily: 'Poppins-Medium', fontSize: 14 }}>
+                      {formatDestinationName(s)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
 
           <View style={{ marginBottom: 32 }}>
@@ -283,6 +337,50 @@ export function AddTimerScreen() {
                   </Pressable>
                 </View>
               </View>
+            </View>
+          </View>
+
+          {/* Trip Purpose */}
+          <View style={{ marginBottom: 24 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontFamily: 'Poppins-SemiBold',
+                color: isDark ? '#FFFFFF' : '#333333',
+                marginBottom: 8,
+              }}
+            >
+              🎯 Trip Purpose
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Pressable
+                onPress={() => setTripType('leisure')}
+                style={{
+                  flex: 1,
+                  borderWidth: 2,
+                  borderColor: tripType === 'leisure' ? '#10b981' : (isDark ? '#555555' : '#E5E5E5'),
+                  backgroundColor: tripType === 'leisure' ? (isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)') : (isDark ? '#2a2a2a' : '#F7F7F7'),
+                  borderRadius: 16,
+                  padding: 14,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontFamily: 'Poppins-SemiBold', color: isDark ? '#FFFFFF' : '#333333' }}>Leisure</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setTripType('business')}
+                style={{
+                  flex: 1,
+                  borderWidth: 2,
+                  borderColor: tripType === 'business' ? '#10b981' : (isDark ? '#555555' : '#E5E5E5'),
+                  backgroundColor: tripType === 'business' ? (isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)') : (isDark ? '#2a2a2a' : '#F7F7F7'),
+                  borderRadius: 16,
+                  padding: 14,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ fontFamily: 'Poppins-SemiBold', color: isDark ? '#FFFFFF' : '#333333' }}>Business</Text>
+              </Pressable>
             </View>
           </View>
 

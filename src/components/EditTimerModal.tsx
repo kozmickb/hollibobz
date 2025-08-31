@@ -32,6 +32,8 @@ export const EditTimerModal: React.FC<EditTimerModalProps> = ({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const timer = useHolidayStore((s) => s.timers.find(t => t.id === timerId));
+  const [tripType, setTripType] = useState<'business' | 'leisure'>(timer?.tripType || 'leisure');
 
   const handleDateChange = (event: any, date?: Date) => {
     setShowDatePicker(false);
@@ -43,7 +45,7 @@ export const EditTimerModal: React.FC<EditTimerModalProps> = ({
   const handleUpdateDate = async () => {
     setIsUpdating(true);
     try {
-      await updateTimer(timerId, { date: selectedDate.toISOString() });
+      await updateTimer(timerId, { date: selectedDate.toISOString(), ...(tripType ? { tripType } as any : {}) });
       onClose();
     } catch (error) {
       console.error('Error updating timer date:', error);
@@ -210,6 +212,43 @@ export const EditTimerModal: React.FC<EditTimerModalProps> = ({
                 minimumDate={new Date()}
               />
             )}
+          </View>
+
+          {/* Trip Purpose */}
+          <View style={{ marginBottom: 24 }}>
+            <RestyleText variant="sm" color="text" fontWeight="semibold" marginBottom={8}>
+              Trip Purpose
+            </RestyleText>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pressable
+                onPress={() => setTripType('leisure')}
+                style={{
+                  flex: 1,
+                  backgroundColor: tripType === 'leisure' ? (isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)') : 'transparent',
+                  borderWidth: 1,
+                  borderColor: tripType === 'leisure' ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                  borderRadius: 8,
+                  padding: 12,
+                  alignItems: 'center',
+                }}
+              >
+                <RestyleText variant="sm" color="text" fontWeight="semibold">Leisure</RestyleText>
+              </Pressable>
+              <Pressable
+                onPress={() => setTripType('business')}
+                style={{
+                  flex: 1,
+                  backgroundColor: tripType === 'business' ? (isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.1)') : 'transparent',
+                  borderWidth: 1,
+                  borderColor: tripType === 'business' ? '#10b981' : (isDark ? '#374151' : '#e5e7eb'),
+                  borderRadius: 8,
+                  padding: 12,
+                  alignItems: 'center',
+                }}
+              >
+                <RestyleText variant="sm" color="text" fontWeight="semibold">Business</RestyleText>
+              </Pressable>
+            </View>
           </View>
 
           {/* Action Buttons */}

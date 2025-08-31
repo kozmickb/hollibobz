@@ -3,7 +3,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { storage } from "../lib/storage";
 
 interface RootStore {}
 
@@ -17,7 +17,11 @@ const useRootStore = create<RootStore>()(
     }),
     {
       name: "root-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => ({
+        getItem: storage.getItem,
+        setItem: storage.setItem,
+        removeItem: storage.removeItem
+      })),
     },
   ),
 );

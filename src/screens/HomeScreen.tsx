@@ -555,10 +555,10 @@ export function HomeScreen() {
               <View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                   <RestyleText variant="sm" color="textMuted">
-                    Countries to Visit
+                    Countries Visited
                   </RestyleText>
                   <RestyleText variant="sm" color="text" fontWeight="medium">
-                    {Math.min(timers.length, 10)}/10
+                    {Math.min(timers.length, 197)}/197
                   </RestyleText>
                 </View>
                 <View
@@ -571,7 +571,7 @@ export function HomeScreen() {
                 >
                   <Animated.View
                     style={{
-                      width: `${Math.min(100, (timers.length / 10) * 100)}%`,
+                      width: `${Math.min(100, (timers.length / 197) * 100)}%`,
                       height: 8,
                       backgroundColor: '#5eead4',
                       borderRadius: 4,
@@ -584,6 +584,19 @@ export function HomeScreen() {
 
           {/* Action Buttons */}
           <View style={{ gap: 12 }}>
+            <Pressable
+              onPress={() => navigation.getParent()?.navigate('TripsTab', { screen: 'Trips' })}
+              style={{
+                backgroundColor: isDark ? '#0ea5e9' : '#38bdf8',
+                borderRadius: 12,
+                padding: 16,
+                alignItems: 'center',
+              }}
+            >
+              <RestyleText variant="md" color="text" fontWeight="semibold" style={{ color: '#FFFFFF' }}>
+                🗺️ View My Trips
+              </RestyleText>
+            </Pressable>
             <Pressable
               onPress={() => navigation.navigate('AddTimer')}
               style={{

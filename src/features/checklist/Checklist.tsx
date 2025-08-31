@@ -10,8 +10,26 @@ type Props = { doc: ChecklistDoc; storageKey?: string };
 
 export default function Checklist({ doc, storageKey = `checklist:${doc.tripTitle}` }: Props) {
   const { isDark } = useThemeStore();
+  const safeStorage = {
+    get<T>(key: string, fallback: T): T {
+      try {
+        return storage && typeof (storage as any).get === 'function'
+          ? (storage as any).get<T>(key, fallback)
+          : fallback;
+      } catch {
+        return fallback;
+      }
+    },
+    set<T>(key: string, value: T) {
+      try {
+        if (storage && typeof (storage as any).set === 'function') {
+          (storage as any).set(key, value);
+        }
+      } catch {}
+    }
+  };
   const [state, setState] = useState<ChecklistState>(() =>
-    storage.get<ChecklistState>(storageKey, { ticks: {} })
+    safeStorage.get<ChecklistState>(storageKey, { ticks: {} })
   );
   const [expandedSections, setExpandedSections] = useState<Record<number, boolean>>({});
   const [userPreferences, setUserPreferences] = useState<any>(null);
@@ -45,7 +63,7 @@ export default function Checklist({ doc, storageKey = `checklist:${doc.tripTitle
     loadPreferences();
   }, [doc.sections]);
 
-  useEffect(() => { storage.set(storageKey, state); }, [state, storageKey]);
+  useEffect(() => { safeStorage.set(storageKey, state); }, [state, storageKey]);
 
   const totals = useMemo(() => {
     let done = 0, total = 0;

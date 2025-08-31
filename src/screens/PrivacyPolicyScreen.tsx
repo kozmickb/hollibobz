@@ -4,10 +4,18 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../store/useThemeStore';
 import { Text as RestyleText } from '../components/ui/Text';
+import { createShadowStyle } from '../utils/shadowUtils';
 
 export function PrivacyPolicyScreen() {
   const navigation = useNavigation();
   const { isDark } = useThemeStore();
+  
+  const shadowStyle = createShadowStyle({
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  });
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
@@ -39,7 +47,7 @@ export function PrivacyPolicyScreen() {
         <View style={styles.content}>
 
           {/* Introduction */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Introduction
             </RestyleText>
@@ -50,7 +58,7 @@ export function PrivacyPolicyScreen() {
           </View>
 
           {/* Information We Collect */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Information We Collect
             </RestyleText>
@@ -91,7 +99,7 @@ export function PrivacyPolicyScreen() {
           </View>
 
           {/* How We Use Your Information */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               How We Use Your Information
             </RestyleText>
@@ -132,7 +140,7 @@ export function PrivacyPolicyScreen() {
           </View>
 
           {/* Data Storage and Security */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Data Storage and Security
             </RestyleText>
@@ -151,7 +159,7 @@ export function PrivacyPolicyScreen() {
           </View>
 
           {/* Third-Party Services */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Third-Party Services
             </RestyleText>
@@ -189,7 +197,7 @@ export function PrivacyPolicyScreen() {
           </View>
 
           {/* Your Rights */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Your Rights
             </RestyleText>
@@ -230,7 +238,7 @@ export function PrivacyPolicyScreen() {
           </View>
 
           {/* Data Retention */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Data Retention
             </RestyleText>
@@ -244,7 +252,7 @@ export function PrivacyPolicyScreen() {
           </View>
 
           {/* Children's Privacy */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Children's Privacy
             </RestyleText>
@@ -256,7 +264,7 @@ export function PrivacyPolicyScreen() {
           </View>
 
           {/* Changes to This Policy */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Changes to This Policy
             </RestyleText>
@@ -268,7 +276,7 @@ export function PrivacyPolicyScreen() {
           </View>
 
           {/* Contact Us */}
-          <View style={[styles.section, styles.lastSection, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, styles.lastSection, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Contact Us
             </RestyleText>
@@ -329,10 +337,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
   },
   lastSection: {

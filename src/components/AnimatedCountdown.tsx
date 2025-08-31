@@ -3,6 +3,7 @@ import { View, Text, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../store/useThemeStore';
 import { Text as RestyleText } from './ui/Text';
+import { createShadowStyle } from '../utils/shadowUtils';
 
 interface AnimatedCountdownProps {
   targetDate: Date;
@@ -130,20 +131,26 @@ export const AnimatedCountdown: React.FC<AnimatedCountdownProps> = ({ targetDate
     </View>
   );
 
+  const shadowStyle = createShadowStyle({
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  });
+
   return (
     <Animated.View
-      style={{
-        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-        borderRadius: 12,
-        padding: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 4,
-        maxWidth: 280,
-        alignSelf: 'center',
-      }}
+      style={[
+        {
+          backgroundColor: isDark ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+          borderRadius: 12,
+          padding: 16,
+          elevation: 4,
+          maxWidth: 280,
+          alignSelf: 'center',
+        },
+        shadowStyle
+      ]}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
         <Ionicons name="time-outline" size={16} color="#3b82f6" />

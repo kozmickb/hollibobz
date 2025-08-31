@@ -16,15 +16,15 @@ const config: ExpoConfig = {
   scheme: 'triptick',
   version: '1.0.0',
   orientation: 'portrait',
-  // App icon - will be automatically sized for different platforms
-  icon: './assets/TT logo.png',
+  // Temporarily disabled to bypass image processing permission issues
+  // icon: './assets/TT logo.png',
   userInterfaceStyle: 'light',
-  // Splash screen configuration
-  splash: {
-    image: './assets/TT logo.png',
-    resizeMode: 'contain',
-    backgroundColor: '#FF6B6B'
-  },
+  // Temporarily disabled to bypass image processing permission issues
+  // splash: {
+  //   image: './assets/TT logo.png',
+  //   resizeMode: 'contain',
+  //   backgroundColor: '#FF6B6B'
+  // },
   assetBundlePatterns: [
     '**/*'
   ],
@@ -33,6 +33,10 @@ const config: ExpoConfig = {
     supportsTablet: true,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      // iOS ATS dev exception (only for development)
+      NSAppTransportSecurity: {
+        NSAllowsArbitraryLoads: true
+      },
       // iOS 17+ Calendar permissions (separate read/write keys)
       NSCalendarsFullAccessUsageDescription: "We use your calendar to read and update trip events you create.",
       NSCalendarsWriteOnlyAccessUsageDescription: "We add trip events to your calendar without reading other entries.",
@@ -47,20 +51,23 @@ const config: ExpoConfig = {
   android: {
     package: ANDROID_PACKAGE,
     permissions: ["READ_CALENDAR", "WRITE_CALENDAR", "CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"],
-    // Android adaptive icon configuration
-    adaptiveIcon: {
-      foregroundImage: './assets/TT logo.png',
-      backgroundColor: '#FF6B6B'
-    },
-    // Notification icon for Android
-    notificationIcon: './assets/TT logo.png'
+    // Temporarily disabled to bypass image processing permission issues
+    // adaptiveIcon: {
+    //   foregroundImage: './assets/TT logo.png',
+    //   backgroundColor: '#FF6B6B'
+    // },
+    // Temporarily disabled to bypass image processing permission issues
+    // notificationIcon: './assets/TT logo.png'
   },
   plugins: [
     'expo-font',
-    'expo-secure-store'
+    'expo-secure-store',
+    './expo-plugins.js'
   ],
   extra: {
     eas: { projectId: "62ed6c16-c869-42cd-b91c-c82a9e410526" },
+    LAN_IP: "localhost",
+    API_BASE_URL: "http://localhost:8787"
   },
   updates: { url: updatesUrl },
   // Add cache configuration to prevent permission issues

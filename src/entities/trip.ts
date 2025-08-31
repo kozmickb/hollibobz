@@ -8,6 +8,8 @@ export type Trip = {
   title: string;
   createdAt: string;
   checklist?: ChecklistDoc | null;
+  archived?: boolean;
+  archivedAt?: string;
   timerContext?: {
     destination?: string;
     date?: string;

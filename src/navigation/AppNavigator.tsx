@@ -18,6 +18,7 @@ import { DestinationDetailScreen } from "../screens/DestinationDetailScreen";
 import { SavedFactsScreen } from "../screens/SavedFactsScreen";
 import { ArchiveScreen } from "../screens/ArchiveScreen";
 import ChecklistScreen from "../screens/ChecklistScreen";
+import { ChecklistArchiveScreen } from "../screens/ChecklistArchiveScreen";
 import { useThemeStore } from "../store/useThemeStore";
 
 // Tab Navigator Types
@@ -42,6 +43,7 @@ export type TripsStackParamList = {
   Archive: undefined;
   SavedFacts: undefined;
   Checklist: { tripId: string };
+  ChecklistArchive: undefined;
 };
 
 export type ChatStackParamList = {
@@ -102,6 +104,7 @@ function TripsStackNavigator() {
       <TripsStack.Screen name="Archive" component={ArchiveScreen} options={{ title: "Archived Trips" }} />
       <TripsStack.Screen name="SavedFacts" component={SavedFactsScreen} options={{ title: "Saved Facts" }} />
       <TripsStack.Screen name="Checklist" component={ChecklistScreen} options={{ headerShown: false }} />
+      <TripsStack.Screen name="ChecklistArchive" component={ChecklistArchiveScreen as any} options={{ title: "Archived Checklists" }} />
     </TripsStack.Navigator>
   );
 }

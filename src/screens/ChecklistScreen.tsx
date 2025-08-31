@@ -202,6 +202,66 @@ export default function ChecklistScreen() {
             </Text>
           )}
         </View>
+        {trip.checklist && (
+          <View style={{
+            backgroundColor: isDark ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.15)',
+            borderColor: isDark ? 'rgba(16,185,129,0.35)' : 'rgba(5,150,105,0.35)',
+            borderWidth: 1,
+            borderRadius: 12,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            marginRight: 8,
+          }}>
+            <Text style={{ color: isDark ? '#34D399' : '#065F46', fontFamily: 'Poppins-SemiBold' }}>Checklist</Text>
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {!trip.archived && (
+            <Pressable
+              onPress={async () => {
+                try {
+                  await tripStore.archive(trip.id);
+                  const updated = await tripStore.get(trip.id);
+                  setTrip(updated);
+                } catch (e) {
+                  console.warn('Failed to archive checklist:', e);
+                }
+              }}
+              style={[styles.actionButton, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(251, 146, 60, 0.08)' }]}
+            >
+              <Ionicons name="archive" size={18} color={isDark ? '#F3F4F6' : '#F97316'} />
+            </Pressable>
+          )}
+          {trip.archived && (
+            <Pressable
+              onPress={async () => {
+                try {
+                  await tripStore.restore(trip.id);
+                  const updated = await tripStore.get(trip.id);
+                  setTrip(updated);
+                } catch (e) {
+                  console.warn('Failed to restore checklist:', e);
+                }
+              }}
+              style={[styles.actionButton, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)' }]}
+            >
+              <Ionicons name="refresh" size={18} color={isDark ? '#34D399' : '#059669'} />
+            </Pressable>
+          )}
+          <Pressable
+            onPress={async () => {
+              try {
+                await tripStore.delete(trip.id);
+                navigation.goBack();
+              } catch (e) {
+                console.warn('Failed to delete checklist:', e);
+              }
+            }}
+            style={[styles.actionButton, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.08)' }]}
+          >
+            <Ionicons name="trash" size={18} color={isDark ? '#FCA5A5' : '#DC2626'} />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -233,6 +293,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerContent: {
     flex: 1,

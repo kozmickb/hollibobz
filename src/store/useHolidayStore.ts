@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Platform } from "react-native";
-import { hybridStorage } from "../lib/storage";
+import { storage } from "../lib/storage";
 
 // Conditionally import notifications only for native platforms
 let scheduleHolidayNotifications: (id: string, destination: string, date: string) => Promise<void>;
@@ -28,6 +28,7 @@ export type Timer = {
   adults: number;
   children: number;
   duration: number;  // Number of days
+  tripType?: 'business' | 'leisure';
   // Gamification fields
   streak: number;
   xp: number;
@@ -102,6 +103,7 @@ export const useHolidayStore = create<State>((set, get) => ({
       adults: input.adults,
       children: input.children,
       duration: input.duration,
+      tripType: (input as any).tripType || 'leisure',
       createdAt: new Date().toISOString(),
       // Initialize gamification fields
       streak: 0,
@@ -371,7 +373,7 @@ export const useHolidayStore = create<State>((set, get) => ({
   _hydrate: async () => {
     try {
       console.log('Starting store hydration...');
-      const raw = hybridStorage.getString(STORAGE_KEY);
+      const raw = await storage.getItem(STORAGE_KEY);
       console.log('Raw data from storage:', raw);
 
       if (!raw) {
@@ -439,7 +441,7 @@ export const useHolidayStore = create<State>((set, get) => ({
 }));
 
 // Helper function for immediate persistence
-const persistState = () => {
+const persistState = async () => {
   try {
     const state = useHolidayStore.getState();
     const data = {
@@ -448,7 +450,7 @@ const persistState = () => {
       settings: state.settings
     };
     console.log('Persisting state:', { timersCount: data.timers.length, archivedCount: data.archivedTimers.length, timers: data.timers });
-    hybridStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    await storage.setItem(STORAGE_KEY, JSON.stringify(data));
     console.log('State persisted successfully');
   } catch (error) {
     console.error('Error persisting state:', error);
@@ -475,8 +477,8 @@ useHolidayStore.subscribe((state) => {
       clearTimeout(persistenceTimeout);
     }
 
-    persistenceTimeout = setTimeout(async () => {
-      await persistState();
+    persistenceTimeout = setTimeout(() => {
+      persistState();
       persistenceTimeout = null;
     }, 100);
   })();

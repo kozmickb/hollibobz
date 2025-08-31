@@ -5,7 +5,8 @@ import { dispatchWithCheapestFirst } from "../ai/providerRouter";
 const aiProxySchema = z.object({
   messages: z.array(z.object({
     role: z.string(),
-    content: z.string()
+    content: z.string(),
+    name: z.string().optional()
   })),
   model: z.string().optional(),
   temperature: z.number().optional(),

@@ -1,25 +1,25 @@
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storage } from './storage';
 import { Trip, ChecklistDoc } from "../entities/trip";
 import { UserStorageManager, STORAGE_KEYS } from "./userStorage";
 
 const KEY = STORAGE_KEYS.trips; // Use new storage key
 
 // Platform-specific storage helpers
-const storage = {
+const tripStorage = {
   async getItem(key: string): Promise<string | null> {
     if (Platform.OS === 'web') {
       return localStorage.getItem(key);
     }
-    return AsyncStorage.getItem(key);
+    return storage.getItem(key);
   },
-  
+
   async setItem(key: string, value: string): Promise<void> {
     if (Platform.OS === 'web') {
       localStorage.setItem(key, value);
       return;
     }
-    return AsyncStorage.setItem(key, value);
+    return storage.setItem(key, value);
   },
 
   async removeItem(key: string): Promise<void> {
@@ -27,7 +27,7 @@ const storage = {
       localStorage.removeItem(key);
       return;
     }
-    return AsyncStorage.removeItem(key);
+    return storage.removeItem(key);
   }
 };
 
@@ -36,7 +36,7 @@ const userManager = UserStorageManager.getInstance();
 
 async function loadAll(): Promise<Trip[]> {
   try {
-    const data = await storage.getItem(KEY);
+    const data = await tripStorage.getItem(KEY);
     return JSON.parse(data || "[]") as Trip[];
   } catch {
     return [];
@@ -45,7 +45,7 @@ async function loadAll(): Promise<Trip[]> {
 
 async function saveAll(trips: Trip[]): Promise<void> {
   try {
-    await storage.setItem(KEY, JSON.stringify(trips));
+    await tripStorage.setItem(KEY, JSON.stringify(trips));
   } catch {
     console.error('Failed to save trips to storage');
   }
@@ -101,11 +101,29 @@ export const tripStore = {
     // Also clean up checklist progress data
     try {
       const checklistKey = `checklist:${id}`;
-      await storage.removeItem(checklistKey);
+      await tripStorage.removeItem(checklistKey);
       console.log(`Cleaned up checklist data for trip: ${id}`);
     } catch (error) {
       console.warn('Failed to clean up checklist data:', error);
     }
+  },
+
+  async archive(id: string): Promise<void> {
+    const all = await loadAll();
+    const idx = all.findIndex(t => t.id === id);
+    if (idx < 0) return;
+    const updated = { ...all[idx], archived: true, archivedAt: new Date().toISOString() };
+    all[idx] = updated;
+    await saveAll(all);
+  },
+
+  async restore(id: string): Promise<void> {
+    const all = await loadAll();
+    const idx = all.findIndex(t => t.id === id);
+    if (idx < 0) return;
+    const updated = { ...all[idx], archived: false, archivedAt: undefined };
+    all[idx] = updated;
+    await saveAll(all);
   },
 
   // Clean up orphaned checklists that don't have corresponding timers

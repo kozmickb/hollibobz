@@ -68,9 +68,46 @@ export function TimerDetailScreen() {
   const [teaser, setTeaser] = useState<Teaser | null>(null);
   const [loadingQuickFacts, setLoadingQuickFacts] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [hasChecklist, setHasChecklist] = useState<boolean>(false);
+  const [checklistTripId, setChecklistTripId] = useState<string | null>(null);
 
   // Meta/backdrop hydrate with AI-generated quick facts
   useEffect(() => {
+    // Detect checklist linked to this timer (by exact id or by destination/title)
+    (async () => {
+      try {
+        const { tripStore } = require('../lib/tripStore');
+        const allTrips = await tripStore.getAll();
+        const exact = allTrips.find((t: any) => t.id === timerId && t.checklist && !t.archived);
+        if (exact) {
+          setHasChecklist(true);
+          setChecklistTripId(exact.id);
+          return;
+        }
+        const byContext = allTrips.find((t: any) => t.timerContext?.destination?.toLowerCase() === (timer?.destination || '').toLowerCase() && t.checklist);
+        if (byContext?.archived) {
+          setHasChecklist(false);
+          setChecklistTripId(null);
+          return;
+        }
+        if (byContext) {
+          setHasChecklist(true);
+          setChecklistTripId(byContext.id);
+          return;
+        }
+        const byTitle = allTrips.find((t: any) => (t.title || '').toLowerCase().includes((timer?.destination || '').toLowerCase()) && t.checklist && !t.archived);
+        if (byTitle) {
+          setHasChecklist(true);
+          setChecklistTripId(byTitle.id);
+          return;
+        }
+        setHasChecklist(false);
+        setChecklistTripId(null);
+      } catch (e) {
+        setHasChecklist(false);
+        setChecklistTripId(null);
+      }
+    })();
     let mounted = true;
     (async () => {
       if (!timer) return;
@@ -498,6 +535,58 @@ export function TimerDetailScreen() {
         
         {/* Actions Section */}
         <Box marginBottom={6} gap={12}>
+          {/* Checklist Card */}
+          <Box backgroundColor="surface" borderRadius="lg" padding={16} borderWidth={1} borderColor="textMuted">
+            <Box flexDirection="row" alignItems="center" justifyContent="space-between">
+              <Box flexDirection="row" alignItems="center" gap={10}>
+                <Ionicons name="checkmark-circle" size={22} color={hasChecklist ? (colorScheme === 'dark' ? '#10B981' : '#059669') : (colorScheme === 'dark' ? '#6B7280' : '#9CA3AF')} />
+                <Box>
+                  <RestyleText variant="md" color="text" fontWeight="semibold">
+                    Trip Checklist
+                  </RestyleText>
+                  <RestyleText variant="xs" color="textMuted">
+                    {hasChecklist ? 'Open your saved checklist.' : 'No checklist yet. Create one with Holly.'}
+                  </RestyleText>
+                </Box>
+              </Box>
+              <Box flexDirection="row" gap={8}>
+                <Pressable
+                  onPress={() => {
+                    if (hasChecklist && checklistTripId) {
+                      // Open existing checklist
+                      // This page lives under Trips stack
+                      navigation.getParent()?.navigate('TripsTab', {
+                        screen: 'Checklist',
+                        params: { tripId: checklistTripId }
+                      });
+                    } else {
+                      // Guide user to ask Holly to generate an itinerary checklist with timer context
+                      navigation.getParent()?.navigate('ChatTab', {
+                        seedQuery: `Please generate a detailed trip itinerary with a checklist for ${timer.destination} around ${dLabel}. Return JSON per the app's checklist format.`,
+                        context: { destination: timer.destination, dateISO: timer.date, timerId: timer.id, duration: timer.duration, adults: timer.adults, children: timer.children },
+                        reset: false,
+                      });
+                    }
+                  }}
+                  style={{
+                    backgroundColor: hasChecklist ? (colorScheme === 'dark' ? '#10B981' : '#059669') : (colorScheme === 'dark' ? '#374151' : '#F3F4F6'),
+                    borderRadius: 10,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    opacity: 1,
+                  }}
+                >
+                  <Box flexDirection="row" alignItems="center" gap={6}>
+                    <Ionicons name={hasChecklist ? 'open' : 'add-circle'} size={18} color={hasChecklist ? '#FFFFFF' : (colorScheme === 'dark' ? '#E5E7EB' : '#111827')} />
+                    <RestyleText variant="sm" color="text" fontWeight="semibold" style={{ color: hasChecklist ? '#FFFFFF' : undefined }}>
+                      {hasChecklist ? 'Open' : 'Create'}
+                    </RestyleText>
+                  </Box>
+                </Pressable>
+              </Box>
+            </Box>
+          </Box>
+
           <Box flexDirection="row" gap={12}>
             <Button
               onPress={() =>

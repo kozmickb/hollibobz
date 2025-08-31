@@ -1,10 +1,14 @@
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
 import { aiProxy } from "./router/aiProxy";
 import { usageRouter } from "./router/usage";
 
+// Load environment variables
+dotenv.config();
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8787;
 
 // Middleware
 app.use(cors({

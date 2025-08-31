@@ -39,6 +39,7 @@ export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(20));
   const [destinationInfo, setDestinationInfo] = useState<DestinationInfo | null>(null);
+  const [suggestion, setSuggestion] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -62,6 +63,12 @@ export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
         const info = await getDestinationInfo(destination);
         console.log('Destination info loaded:', info);
         setDestinationInfo(info);
+        // If we matched via partial/fuzzy, surface a suggestion banner
+        if (info && info.matchType && info.matchType !== 'exact' && info.matchType !== 'default' && info.suggestedName) {
+          setSuggestion(info.suggestedName);
+        } else {
+          setSuggestion(null);
+        }
       } catch (error) {
         console.error('Error fetching destination info:', error);
       } finally {
@@ -151,6 +158,24 @@ export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
         transform: [{ translateY: slideAnim }]
       }}
     >
+      {suggestion && (
+        <View style={{
+          backgroundColor: isDark ? 'rgba(250, 204, 21, 0.15)' : 'rgba(250, 204, 21, 0.15)',
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(250, 204, 21, 0.35)' : 'rgba(250, 204, 21, 0.35)',
+          padding: 10,
+          borderRadius: 8,
+          marginBottom: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <Ionicons name="information-circle" size={18} color={isDark ? '#fde68a' : '#d97706'} />
+          <RestyleText variant="xs" color="text" fontWeight="medium" style={{ color: isDark ? '#fde68a' : '#92400e' }}>
+            Did you mean {suggestion.charAt(0).toUpperCase() + suggestion.slice(1)}?
+          </RestyleText>
+        </View>
+      )}
       <Animated.View
         style={{
           opacity: fadeAnim,
@@ -186,13 +211,15 @@ export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
               borderWidth: 1,
               borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
               opacity: fadeAnim,
-              transform: [{ 
-                translateY: slideAnim,
-                scale: fadeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.9, 1]
-                })
-              }]
+              transform: [
+                { translateY: slideAnim },
+                {
+                  scale: fadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.9, 1]
+                  })
+                }
+              ]
             }}
           >
             <Animated.View

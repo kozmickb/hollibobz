@@ -7,6 +7,7 @@ import { AIMessage, AIRequestOptions, AIResponse } from "../types/ai";
 import { getDeepseekClient } from "./deepseek";
 import { getOpenAIClient } from "./openai";
 import { getGrokClient } from "./grok";
+import { API_BASE_URL } from "../config/env";
 
 /**
  * Send AI request through server proxy (new implementation)
@@ -19,12 +20,19 @@ export const sendAIThroughProxy = async (
   options?: AIRequestOptions,
 ): Promise<AIResponse> => {
   try {
-    const proxyUrl = process.env.EXPO_PUBLIC_AI_PROXY_URL;
-    if (!proxyUrl) {
-      throw new Error('AI proxy URL not configured');
+    if (!API_BASE_URL) {
+      // Return a mock response when AI service is not available
+      return {
+        content: "I'm sorry, but the AI service is currently unavailable. Please try again later.",
+        usage: {
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+        },
+      };
     }
 
-    const response = await fetch(`${proxyUrl}/ai-proxy`, {
+    const response = await fetch(`${API_BASE_URL}/ai-proxy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -54,7 +62,15 @@ export const sendAIThroughProxy = async (
     };
   } catch (error) {
     console.error("AI Proxy Error:", error);
-    throw error;
+    // Return a fallback response when the server is not available
+    return {
+      content: "I'm sorry, but the AI service is currently unavailable. Please try again later.",
+      usage: {
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+      },
+    };
   }
 };
 

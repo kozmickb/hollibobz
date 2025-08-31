@@ -13,7 +13,13 @@
       "env": {
         "EXPO_NO_CACHE": "1",
         "EXPO_SKIP_CACHE": "1",
-        "CI": "1"
+        "CI": "1",
+        "EXPO_IMAGE_UTILS_CACHE_DISABLED": "1",
+        "EXPO_SKIP_ICON_GENERATION": "1",
+        "EXPO_SKIP_SPLASH_GENERATION": "1",
+        "EXPO_SKIP_IMAGE_PROCESSING": "1",
+        "EXPO_DISABLE_IMAGE_UTILS": "1",
+        "EXPO_SKIP_ASSET_GENERATION": "1"
       }
     },
     "preview": {
@@ -27,7 +33,13 @@
       "env": {
         "EXPO_NO_CACHE": "1",
         "EXPO_SKIP_CACHE": "1",
-        "CI": "1"
+        "CI": "1",
+        "EXPO_IMAGE_UTILS_CACHE_DISABLED": "1",
+        "EXPO_SKIP_ICON_GENERATION": "1",
+        "EXPO_SKIP_SPLASH_GENERATION": "1",
+        "EXPO_SKIP_IMAGE_PROCESSING": "1",
+        "EXPO_DISABLE_IMAGE_UTILS": "1",
+        "EXPO_SKIP_ASSET_GENERATION": "1"
       }
     },
     "production": {
@@ -45,7 +57,10 @@
         "CI": "1",
         "EXPO_IMAGE_UTILS_CACHE_DISABLED": "1",
         "EXPO_SKIP_ICON_GENERATION": "1",
-        "EXPO_SKIP_SPLASH_GENERATION": "1"
+        "EXPO_SKIP_SPLASH_GENERATION": "1",
+        "EXPO_SKIP_IMAGE_PROCESSING": "1",
+        "EXPO_DISABLE_IMAGE_UTILS": "1",
+        "EXPO_SKIP_ASSET_GENERATION": "1"
       }
     }
   },

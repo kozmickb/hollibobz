@@ -15,8 +15,9 @@ import { Text as RestyleText } from '../components/ui/Text';
 
 // MVP2 Components
 import { AnimatedCountdown } from '../components/AnimatedCountdown';
-import { GamificationStats } from '../components/GamificationStats';
+import { tripStore } from '../lib/tripStore';
 import { InfoDashboardSection } from '../components/InfoDashboardSection';
+import { calculateChecklistProgress } from '../utils/checklistProgress';
 import { EditTimerModal } from '../components/EditTimerModal';
 
 type Nav = NativeStackNavigationProp<TripsStackParamList, "TimerDrilldown">;
@@ -62,6 +63,9 @@ export function TimerDrilldownScreen() {
   const [slideAnim] = useState(new Animated.Value(20));
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [hasChecklist, setHasChecklist] = useState(false);
+  const [checklistTripId, setChecklistTripId] = useState<string | null>(null);
+  const [checklistProgress, setChecklistProgress] = useState<number | null>(null);
   
   // Find the timer for this ID
   const timer = useMemo(() => {
@@ -78,6 +82,74 @@ export function TimerDrilldownScreen() {
     console.log('TimerDrilldownScreen timer data:', timer);
     console.log('TimerDrilldownScreen passing destination:', timer?.destination);
   }, [timer]);
+
+  // Detect checklist linked to this timer
+  useEffect(() => {
+    (async () => {
+      try {
+        const all = await tripStore.getAll();
+        const exact = all.find((t: any) => t.id === timerId && t.checklist && !t.archived);
+        if (exact) {
+          setHasChecklist(true);
+          setChecklistTripId(exact.id);
+          try {
+            const trip = await tripStore.get(exact.id);
+            if (trip?.checklist) {
+              const pct = await calculateChecklistProgress(exact.id, trip.checklist);
+              setChecklistProgress(pct);
+            } else {
+              setChecklistProgress(null);
+            }
+          } catch {
+            setChecklistProgress(null);
+          }
+          return;
+        }
+        const dest = (timer?.destination || '').toLowerCase();
+        const byContext = all.find((t: any) => (t.timerContext?.destination || '').toLowerCase() === dest && t.checklist && !t.archived);
+        if (byContext) {
+          setHasChecklist(true);
+          setChecklistTripId(byContext.id);
+          try {
+            const trip = await tripStore.get(byContext.id);
+            if (trip?.checklist) {
+              const pct = await calculateChecklistProgress(byContext.id, trip.checklist);
+              setChecklistProgress(pct);
+            } else {
+              setChecklistProgress(null);
+            }
+          } catch {
+            setChecklistProgress(null);
+          }
+          return;
+        }
+        const byTitle = all.find((t: any) => (t.title || '').toLowerCase().includes(dest) && t.checklist && !t.archived);
+        if (byTitle) {
+          setHasChecklist(true);
+          setChecklistTripId(byTitle.id);
+          try {
+            const trip = await tripStore.get(byTitle.id);
+            if (trip?.checklist) {
+              const pct = await calculateChecklistProgress(byTitle.id, trip.checklist);
+              setChecklistProgress(pct);
+            } else {
+              setChecklistProgress(null);
+            }
+          } catch {
+            setChecklistProgress(null);
+          }
+          return;
+        }
+        setHasChecklist(false);
+        setChecklistTripId(null);
+        setChecklistProgress(null);
+      } catch (e) {
+        setHasChecklist(false);
+        setChecklistTripId(null);
+        setChecklistProgress(null);
+      }
+    })();
+  }, [timerId, timer?.destination]);
 
   useEffect(() => {
     Animated.parallel([
@@ -300,20 +372,87 @@ export function TimerDrilldownScreen() {
             </View>
           </Animated.View>
 
-                     {/* Gamification Stats */}
-           <Animated.View
-             style={{
-               opacity: fadeAnim,
-               transform: [{ translateY: slideAnim }],
-             }}
-           >
-             <View style={{ marginBottom: 24 }}>
-               <GamificationStats
-                 experiencePoints={timer.xp || 0}
-                 xpProgress={60}
-               />
-             </View>
-           </Animated.View>
+          {/* Checklist Card (replaces Experience Points for MVP) */}
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: isDark ? '#111827' : '#ffffff',
+                borderRadius: 12,
+                padding: 16,
+                borderWidth: 1,
+                borderColor: isDark ? '#1f2937' : '#e5e7eb',
+                marginBottom: 24,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Ionicons name="checkmark-circle" size={22} color={hasChecklist ? (isDark ? '#10B981' : '#059669') : (isDark ? '#6B7280' : '#9CA3AF')} />
+                  <View>
+                    <RestyleText variant="md" color="text" fontWeight="semibold">
+                      Trip Checklist
+                    </RestyleText>
+                    <RestyleText variant="xs" color="textMuted">
+                      {hasChecklist ? 'Open your saved checklist.' : 'No checklist yet. Create one with Holly.'}
+                    </RestyleText>
+                    {hasChecklist && checklistProgress !== null && (
+                      <View style={{
+                        alignSelf: 'flex-start',
+                        marginTop: 6,
+                        backgroundColor: isDark ? '#064E3B' : '#D1FAE5',
+                        borderRadius: 999,
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(16,185,129,0.25)' : 'rgba(5,150,105,0.25)'
+                      }}>
+                        <RestyleText variant="xs" color="text" fontWeight="semibold" style={{ color: isDark ? '#34D399' : '#065F46' }}>
+                          {checklistProgress}% complete
+                        </RestyleText>
+                      </View>
+                    )}
+                  </View>
+                </View>
+                <Pressable
+                  onPress={() => {
+                    if (hasChecklist && checklistTripId) {
+                      navigation.navigate('Checklist', { tripId: checklistTripId });
+                    } else if (timer) {
+                      navigation.getParent()?.navigate('ChatTab', {
+                        seedQuery: `Please generate a detailed trip itinerary with a checklist for ${timer.destination} around ${formatDate(timer.date)}. Return JSON per the app's checklist format.`,
+                        context: {
+                          destination: timer.destination,
+                          dateISO: timer.date,
+                          timerId: timer.id,
+                          duration: timer.duration,
+                          adults: timer.adults,
+                          children: timer.children,
+                        },
+                        reset: false,
+                      });
+                    }
+                  }}
+                  style={{
+                    backgroundColor: hasChecklist ? (isDark ? '#10B981' : '#059669') : (isDark ? '#374151' : '#F3F4F6'),
+                    borderRadius: 10,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name={hasChecklist ? 'open' : 'add-circle'} size={18} color={hasChecklist ? '#FFFFFF' : (isDark ? '#E5E7EB' : '#111827')} />
+                    <RestyleText variant="sm" color="text" fontWeight="semibold" style={{ color: hasChecklist ? '#FFFFFF' : undefined }}>
+                      {hasChecklist ? 'Open' : 'Create'}
+                    </RestyleText>
+                  </View>
+                </Pressable>
+              </View>
+            </View>
+          </Animated.View>
 
                      {/* Info Dashboard Section */}
            <Animated.View

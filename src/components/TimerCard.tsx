@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../store/useThemeStore';
 import { useHolidayStore } from '../store/useHolidayStore';
 import { daysUntil } from '../features/countdown/logic';
+import { createShadowStyle } from '../utils/shadowUtils';
 
 interface TimerCardProps {
   timerId: string;
@@ -74,16 +75,20 @@ export function TimerCard({ timerId, onPress, showProgress = true }: TimerCardPr
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={{
-          marginBottom: 16,
-          borderRadius: 20,
-          overflow: 'hidden',
-          shadowColor: isDark ? '#000' : '#666',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: isDark ? 0.3 : 0.2,
-          shadowRadius: 8,
-          elevation: 8,
-        }}
+        style={[
+          {
+            marginBottom: 16,
+            borderRadius: 20,
+            overflow: 'hidden',
+            elevation: 8,
+          },
+          createShadowStyle({
+            shadowColor: isDark ? '#000' : '#666',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: isDark ? 0.3 : 0.2,
+            shadowRadius: 8,
+          })
+        ]}
       >
         <LinearGradient
           colors={isDark 

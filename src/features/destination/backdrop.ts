@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { storage } from "../../lib/storage";
 
 const KEY_PREFIX = "dest_meta_v1_";
 
@@ -6,14 +6,14 @@ export type BackdropResult = { imageUrl?: string };
 
 export async function loadCachedMeta(dest: string) {
   try {
-    const raw = await AsyncStorage.getItem(KEY_PREFIX + dest.toLowerCase());
+    const raw = await storage.getItem(KEY_PREFIX + dest.toLowerCase());
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
 export async function saveCachedMeta(dest: string, meta: any) {
   try {
-    await AsyncStorage.setItem(KEY_PREFIX + dest.toLowerCase(), JSON.stringify(meta));
+    await storage.setItem(KEY_PREFIX + dest.toLowerCase(), JSON.stringify(meta));
   } catch {}
 }
 

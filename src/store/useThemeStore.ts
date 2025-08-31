@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storage } from '../lib/storage';
 import { theme, lightTheme } from '../theme/theme';
 import { darkKittenTheme, lightKittenTheme } from '../theme/uiKittenMapping';
 import { darkPaperTheme, lightPaperTheme } from '../theme/paperTheme';
@@ -129,7 +129,11 @@ export const useThemeStore = create<ThemeState>()(
     },
     {
       name: 'triptick-theme-storage-v2', // Changed name to clear old persisted state
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => ({
+        getItem: storage.getItem,
+        setItem: storage.setItem,
+        removeItem: storage.removeItem
+      })),
     }
   )
 );

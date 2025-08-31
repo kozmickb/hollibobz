@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storage } from '../lib/storage';
 import { ChecklistDoc } from '../entities/trip';
 
 export async function calculateChecklistProgress(tripId: string, checklist: ChecklistDoc): Promise<number> {
@@ -11,7 +11,7 @@ export async function calculateChecklistProgress(tripId: string, checklist: Chec
     if (Platform.OS === 'web') {
       checklistData = localStorage.getItem(storageKey);
     } else {
-      checklistData = await AsyncStorage.getItem(storageKey);
+      checklistData = await storage.getItem(storageKey);
     }
     
     if (!checklistData) {
@@ -41,7 +41,7 @@ export async function getChecklistStats(tripId: string, checklist: ChecklistDoc)
     if (Platform.OS === 'web') {
       checklistData = localStorage.getItem(storageKey);
     } else {
-      checklistData = await AsyncStorage.getItem(storageKey);
+      checklistData = await storage.getItem(storageKey);
     }
     
     const totalItems = checklist.sections.reduce((sum, section) => sum + section.items.length, 0);

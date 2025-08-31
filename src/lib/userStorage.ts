@@ -1,6 +1,6 @@
 import { UserProfile, UserData, createDefaultUserProfile } from '../entities/userProfile';
 import { Trip } from '../entities/trip';
-import { hybridStorage, STORAGE_KEYS as SECURE_KEYS, migrateFromAsyncStorage } from './storage';
+import { storage, STORAGE_KEYS as SECURE_KEYS, migrateFromAsyncStorage } from './storage';
 
 // Storage keys for organized data
 export const STORAGE_KEYS = {
@@ -28,12 +28,12 @@ export class UserStorageManager {
   async initializeProfile(): Promise<UserProfile> {
     try {
       // Check if migration is needed
-      const migrationCompleted = hybridStorage.getString('migration_completed');
+      const migrationCompleted = await storage.getItem('migration_completed');
       if (!migrationCompleted) {
         await migrateFromAsyncStorage();
       }
 
-      const profileData = hybridStorage.getString(STORAGE_KEYS.userProfile);
+      const profileData = await storage.getItem(STORAGE_KEYS.userProfile);
 
       if (profileData) {
         this.userProfile = JSON.parse(profileData);
@@ -138,7 +138,7 @@ export class UserStorageManager {
     if (!this.userProfile) return;
 
     try {
-      hybridStorage.setItem(STORAGE_KEYS.userProfile, JSON.stringify(this.userProfile));
+      await storage.setItem(STORAGE_KEYS.userProfile, JSON.stringify(this.userProfile));
     } catch (error) {
       console.error('Error saving user profile:', error);
     }
@@ -181,14 +181,14 @@ export class UserStorageManager {
   private async migrateLegacyData(): Promise<void> {
     try {
       // Check for legacy trip data
-      const legacyTrips = await hybridStorage.getItem(STORAGE_KEYS.legacyTrips);
+      const legacyTrips = await storage.getItem(STORAGE_KEYS.legacyTrips);
       if (legacyTrips) {
         console.log('Migrating legacy trip data');
         const trips = JSON.parse(legacyTrips);
 
         if (Array.isArray(trips) && trips.length > 0) {
           // Convert to new format and save
-          await hybridStorage.setItem(STORAGE_KEYS.trips, legacyTrips);
+          await storage.setItem(STORAGE_KEYS.trips, legacyTrips);
 
           // Update profile stats
           await this.updateStats({
@@ -198,7 +198,7 @@ export class UserStorageManager {
       }
 
       // Check for legacy holiday data
-      const legacyHolidays = await hybridStorage.getItem(STORAGE_KEYS.legacyHolidays);
+      const legacyHolidays = await storage.getItem(STORAGE_KEYS.legacyHolidays);
       if (legacyHolidays) {
         console.log('Legacy holiday data found - keeping for timer compatibility');
         // Keep legacy holiday data for timer functionality
@@ -213,8 +213,8 @@ export class UserStorageManager {
   async exportUserData(): Promise<UserData> {
     const profile = await this.getProfile();
 
-    const tripsData = await hybridStorage.getItem(STORAGE_KEYS.trips);
-    const checklistsData = await hybridStorage.getItem(STORAGE_KEYS.checklists);
+    const tripsData = await storage.getItem(STORAGE_KEYS.trips);
+    const checklistsData = await storage.getItem(STORAGE_KEYS.checklists);
 
     return {
       profile,
@@ -232,12 +232,12 @@ export class UserStorageManager {
       
       // Save trips
       if (userData.trips && Object.keys(userData.trips).length > 0) {
-        await hybridStorage.setItem(STORAGE_KEYS.trips, JSON.stringify(userData.trips));
+                await storage.setItem(STORAGE_KEYS.trips, JSON.stringify(userData.trips));
       }
-
+      
       // Save checklists
       if (userData.checklists && Object.keys(userData.checklists).length > 0) {
-        await hybridStorage.setItem(STORAGE_KEYS.checklists, JSON.stringify(userData.checklists));
+        await storage.setItem(STORAGE_KEYS.checklists, JSON.stringify(userData.checklists));
       }
       
       console.log('User data imported successfully');
@@ -250,9 +250,9 @@ export class UserStorageManager {
   // Clear all user data (for reset/logout)
   async clearUserData(): Promise<void> {
     try {
-      await hybridStorage.removeItem(STORAGE_KEYS.userProfile);
-      await hybridStorage.removeItem(STORAGE_KEYS.trips);
-      await hybridStorage.removeItem(STORAGE_KEYS.checklists);
+      await storage.removeItem(STORAGE_KEYS.userProfile);
+      await storage.removeItem(STORAGE_KEYS.trips);
+      await storage.removeItem(STORAGE_KEYS.checklists);
 
       this.userProfile = null;
       console.log('User data cleared');
@@ -268,13 +268,13 @@ export class UserStorageManager {
     estimatedSize: string;
   }> {
     try {
-      const allKeys = await hybridStorage.getAllKeys();
+      const allKeys = await storage.getAllKeys();
       const triptickKeys = allKeys.filter(key => key.startsWith('triptick:'));
 
       // Estimate size by getting all triptick data
       let totalSize = 0;
       for (const key of triptickKeys) {
-        const data = await hybridStorage.getItem(key);
+        const data = await storage.getItem(key);
         if (data) {
           totalSize += data.length;
         }

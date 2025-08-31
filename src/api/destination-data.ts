@@ -13,6 +13,9 @@ export interface DestinationInfo {
   population?: string;
   capital?: string;
   emergencyNumber?: string;
+  // Optional metadata for matching/validation UX
+  matchType?: 'exact' | 'partial' | 'fuzzy' | 'default';
+  suggestedName?: string; // canonical destination used when not an exact match
 }
 
 // Destination data mapping
@@ -292,6 +295,18 @@ const destinationData: Record<string, DestinationInfo> = {
     capital: 'Bern',
     emergencyNumber: '112'
   }
+  ,
+  'bucharest': {
+    currency: 'Romanian Leu (RON)',
+    languages: ['Romanian', 'English'],
+    bestMonths: ['Apr', 'May', 'Sep', 'Oct'],
+    transportation: ['Metro', 'Bus', 'Tram', 'Taxi'],
+    temperature: '0-30°C',
+    timezone: 'EET/EEST (UTC+2/+3)',
+    population: '1.7M',
+    capital: 'Bucharest',
+    emergencyNumber: '112'
+  }
 };
 
 /**
@@ -300,28 +315,122 @@ const destinationData: Record<string, DestinationInfo> = {
  * @returns Promise<DestinationInfo> - The destination information
  */
 export const getDestinationInfo = async (destinationName: string): Promise<DestinationInfo> => {
+  // Helper: strip accents/diacritics
+  const stripDiacritics = (s: string) => s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}+/gu, '')
+    .replace(/['’`-]/g, '')
+    .toLowerCase()
+    .trim();
+
   // Normalize the destination name
-  const normalizedName = destinationName.toLowerCase().trim();
-  
+  const normalizedName = stripDiacritics(destinationName);
+
+  const keys = Object.keys(destinationData);
+
+  // Common aliases/misspellings → canonical keys
+  const aliasMap: Record<string, string> = {
+    'abudhabi': 'abu dhabi',
+    'abu dhabi': 'abu dhabi',
+    'abu-dhabi': 'abu dhabi',
+    'abu dabi': 'abu dhabi',
+    'abu dabee': 'abu dhabi',
+    'abhu dhabi': 'abu dhabi',
+    'abudhaby': 'abu dhabi',
+    'abudhabyu': 'abu dhabi',
+  };
+  const aliasKey = aliasMap[normalizedName.replace(/\s+/g, ' ')];
+  if (aliasKey && destinationData[aliasKey]) {
+    return { ...destinationData[aliasKey], matchType: 'fuzzy', suggestedName: aliasKey };
+  }
   console.log('Looking for destination:', normalizedName);
-  console.log('Available destinations:', Object.keys(destinationData));
-  
-  // Check if we have data for this destination
+  console.log('Available destinations:', keys);
+
+  // 1) Exact match
   if (destinationData[normalizedName]) {
     console.log('Found exact match for:', normalizedName);
-    return destinationData[normalizedName];
+    return { ...destinationData[normalizedName], matchType: 'exact', suggestedName: normalizedName };
   }
-  
-  // Try partial matching
-  const partialMatch = Object.keys(destinationData).find(key => 
-    normalizedName.includes(key) || key.includes(normalizedName)
+
+  // 2) Partial match (contains either way)
+  const partialMatch = keys.find(key =>
+    normalizedName.includes(stripDiacritics(key)) || stripDiacritics(key).includes(normalizedName)
   );
-  
   if (partialMatch) {
     console.log('Found partial match:', partialMatch, 'for:', normalizedName);
-    return destinationData[partialMatch];
+    return { ...destinationData[partialMatch], matchType: 'partial', suggestedName: partialMatch };
   }
-  
+
+  // 3) Fuzzy match with Levenshtein distance
+  const levenshtein = (a: string, b: string): number => {
+    const m = a.length, n = b.length;
+    const dp = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,      // deletion
+          dp[i][j - 1] + 1,      // insertion
+          dp[i - 1][j - 1] + cost // substitution
+        );
+      }
+    }
+    return dp[m][n];
+  };
+
+  let bestKey = '';
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (const key of keys) {
+    const score = levenshtein(normalizedName, stripDiacritics(key));
+    if (score < bestScore) {
+      bestScore = score;
+      bestKey = key;
+    }
+  }
+  // Second pass: compare without spaces to handle missing/extra spaces
+  const nameNoSpace = normalizedName.replace(/\s+/g, '');
+  for (const key of keys) {
+    const keyNoSpace = stripDiacritics(key).replace(/\s+/g, '');
+    const score = levenshtein(nameNoSpace, keyNoSpace);
+    if (score < bestScore) {
+      bestScore = score;
+      bestKey = key;
+    }
+  }
+  // Third pass: token-aware compare for two-word names (helps variants like "abu dabee")
+  const nameTokens = normalizedName.split(/\s+/).filter(Boolean);
+  if (nameTokens.length >= 2) {
+    for (const key of keys) {
+      const keyTokens = stripDiacritics(key).split(/\s+/).filter(Boolean);
+      if (keyTokens.length >= 2) {
+        const a1 = levenshtein(nameTokens[0], keyTokens[0]);
+        const a2 = levenshtein(nameTokens[1], keyTokens[1]);
+        const totalA = a1 + a2;
+        if (totalA < bestScore) {
+          bestScore = totalA;
+          bestKey = key;
+        }
+        // Also try swapped just in case
+        const b1 = levenshtein(nameTokens[0], keyTokens[1] || '');
+        const b2 = levenshtein(nameTokens[1], keyTokens[0] || '');
+        const totalB = b1 + b2;
+        if (totalB < bestScore) {
+          bestScore = totalB;
+          bestKey = key;
+        }
+      }
+    }
+  }
+  // Threshold: allow small typos relative to length (e.g., 40% of length or <= 3)
+  const len = Math.max(1, normalizedName.length);
+  const threshold = Math.max(3, Math.ceil(len * 0.4));
+  if (bestKey && bestScore <= threshold) {
+    console.log(`Fuzzy matched "${destinationName}" -> "${bestKey}" (distance=${bestScore})`);
+    return { ...destinationData[bestKey], matchType: 'fuzzy', suggestedName: bestKey };
+  }
+
   console.log('No match found for:', normalizedName, 'returning default data');
   
   // If not found, return default data with a note
@@ -334,7 +443,8 @@ export const getDestinationInfo = async (destinationName: string): Promise<Desti
     timezone: 'Local Timezone',
     population: 'Unknown',
     capital: 'Unknown',
-    emergencyNumber: 'Local Emergency'
+    emergencyNumber: 'Local Emergency',
+    matchType: 'default'
   };
 };
 

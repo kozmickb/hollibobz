@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { storage } from "../../lib/storage";
 
 export type Milestone = 100 | 50 | 30 | 14 | 7 | 3 | 1 | 0;
 
@@ -40,7 +40,7 @@ const TEASER_PREFIX = "teaser_v1_"; // key: teaser_v1_{timerId}_{YYYY-MM-DD}
 export async function getCachedTeaser(timerId: string, when = new Date()): Promise<Teaser | null> {
   try {
     const key = `${TEASER_PREFIX}${timerId}_${dateKey(when)}`;
-    const raw = await AsyncStorage.getItem(key);
+    const raw = await storage.getItem(key);
     return raw ? JSON.parse(raw) as Teaser : null;
   } catch { 
     return null; 
@@ -50,7 +50,7 @@ export async function getCachedTeaser(timerId: string, when = new Date()): Promi
 export async function cacheTeaser(timerId: string, teaser: Teaser, when = new Date()) {
   try {
     const key = `${TEASER_PREFIX}${timerId}_${dateKey(when)}`;
-    await AsyncStorage.setItem(key, JSON.stringify(teaser));
+    await storage.setItem(key, JSON.stringify(teaser));
   } catch {}
 }
 

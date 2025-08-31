@@ -1,14 +1,29 @@
 import React from "react";
-import { View, ScrollView, StyleSheet, Platform } from "react-native";
+import { View, ScrollView, StyleSheet, Platform, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { Text as RestyleText } from "../components/ui/Text";
 import { useThemeStore } from "../store/useThemeStore";
+import { createShadowStyle } from "../utils/shadowUtils";
 import { startTrialOrPurchase } from "../api/purchases";
 
 export function PaywallScreen() {
   const navigation = useNavigation();
   const { isDark } = useThemeStore();
+  
+  const shadowStyle = createShadowStyle({
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  });
+  
+  const pricingShadowStyle = createShadowStyle({
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  });
 
   const handlePurchase = async () => {
     try {
@@ -79,7 +94,7 @@ export function PaywallScreen() {
       </View>
 
       <View style={styles.pricingContainer}>
-        <View style={[styles.pricingCard, { backgroundColor: isDark ? '#1f2937' : '#ffffff' }]}>
+        <View style={[styles.pricingCard, { backgroundColor: isDark ? '#1f2937' : '#ffffff' }, pricingShadowStyle]}>
           <RestyleText variant="lg" style={[styles.pricingTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
             TripTick Plus
           </RestyleText>
@@ -129,9 +144,16 @@ export function PaywallScreen() {
 
 function FeatureCard({ icon, title, description }: { icon: string; title: string; description: string }) {
   const { isDark } = useThemeStore();
+  
+  const shadowStyle = createShadowStyle({
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  });
 
   return (
-    <View style={[styles.featureCard, { backgroundColor: isDark ? '#1f2937' : '#ffffff' }]}>
+    <View style={[styles.featureCard, { backgroundColor: isDark ? '#1f2937' : '#ffffff' }, shadowStyle]}>
       <View style={styles.featureIcon}>
         <Ionicons name={icon as any} size={24} color="#be5cff" />
       </View>
@@ -190,10 +212,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
   },
   featureIcon: {
@@ -223,10 +241,6 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
     elevation: 6,
   },
   pricingTitle: {

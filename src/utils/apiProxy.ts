@@ -1,6 +1,8 @@
 // API Proxy for future backend integration
 // This placeholder prepares for swapping from direct OpenAI/Grok calls to a serverless backend
 
+import { API_BASE_URL } from "../config/env";
+
 export interface ApiMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -30,7 +32,7 @@ export interface ChatResponse {
 
 // Development flag - switch to true when backend is ready
 const USE_BACKEND_PROXY = false;
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://your-backend.vercel.app';
+const BACKEND_URL = API_BASE_URL || 'https://your-backend.vercel.app';
 
 export async function callChatAPI(request: ChatRequest): Promise<ChatResponse> {
   if (USE_BACKEND_PROXY) {

@@ -12,7 +12,7 @@ export const PROVIDER_COSTS = {
 export type ProviderCost = typeof PROVIDER_COSTS[keyof typeof PROVIDER_COSTS];
 
 export interface AIRequest {
-  messages: Array<{ role: string; content: string }>;
+  messages: Array<{ role: string; content: string; name?: string }>;
   model?: string;
   temperature?: number;
   maxTokens?: number;
@@ -35,23 +35,46 @@ export interface AIResponse {
  * Select the cheapest available provider based on model preferences
  */
 export function selectCheapestProvider(requestedModel?: string): { provider: string; model: string; cost: number } {
+  const isProviderAvailable = (provider: string): boolean => {
+    switch (provider) {
+      case 'deepseek':
+        return !!(process.env.DEEPSEEK_API_KEY || process.env.EXPO_PUBLIC_VIBECODE_DEEPSEEK_API_KEY);
+      case 'openai':
+        return !!(process.env.OPENAI_API_KEY || process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY);
+      case 'grok':
+        return !!(process.env.XAI_API_KEY || process.env.EXPO_PUBLIC_VIBECODE_XAI_API_KEY);
+      default:
+        return false;
+    }
+  };
+
+  // Respect requested model only if its provider is available
   if (requestedModel && PROVIDER_COSTS[requestedModel as keyof typeof PROVIDER_COSTS]) {
     const costInfo = PROVIDER_COSTS[requestedModel as keyof typeof PROVIDER_COSTS];
-    return {
-      provider: costInfo.provider,
-      model: requestedModel,
-      cost: costInfo.costPer1kTokens
-    };
+    if (isProviderAvailable(costInfo.provider)) {
+      return {
+        provider: costInfo.provider,
+        model: requestedModel,
+        cost: costInfo.costPer1kTokens
+      };
+    }
+  }
+
+  // Filter to only available providers
+  const availableProviders = Object.entries(PROVIDER_COSTS)
+    .filter(([, costInfo]) => isProviderAvailable(costInfo.provider));
+
+  if (availableProviders.length === 0) {
+    throw new Error('No AI providers are configured. Please set API keys.');
   }
 
   // Sort by cost (cheapest first), then by priority
-  const sortedProviders = Object.entries(PROVIDER_COSTS)
-    .sort(([,a], [,b]) => {
-      if (a.costPer1kTokens !== b.costPer1kTokens) {
-        return a.costPer1kTokens - b.costPer1kTokens;
-      }
-      return a.priority - b.priority;
-    });
+  const sortedProviders = availableProviders.sort(([, a], [, b]) => {
+    if (a.costPer1kTokens !== b.costPer1kTokens) {
+      return a.costPer1kTokens - b.costPer1kTokens;
+    }
+    return a.priority - b.priority;
+  });
 
   const [model, costInfo] = sortedProviders[0];
   return {
@@ -89,10 +112,23 @@ export async function dispatchWithCheapestFirst(request: AIRequest): Promise<AIR
   } catch (error) {
     console.error(`Error with ${provider}:`, error);
 
-    // Fallback to next cheapest provider
+    // Fallback to next cheapest available provider
+    const isProviderAvailable = (p: string): boolean => {
+      switch (p) {
+        case 'deepseek':
+          return !!(process.env.DEEPSEEK_API_KEY || process.env.EXPO_PUBLIC_VIBECODE_DEEPSEEK_API_KEY);
+        case 'openai':
+          return !!(process.env.OPENAI_API_KEY || process.env.EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY);
+        case 'grok':
+          return !!(process.env.XAI_API_KEY || process.env.EXPO_PUBLIC_VIBECODE_XAI_API_KEY);
+        default:
+          return false;
+      }
+    };
+
     const fallbackProviders = Object.entries(PROVIDER_COSTS)
-      .filter(([, costInfo]) => costInfo.provider !== provider)
-      .sort(([,a], [,b]) => a.costPer1kTokens - b.costPer1kTokens);
+      .filter(([, costInfo]) => costInfo.provider !== provider && isProviderAvailable(costInfo.provider))
+      .sort(([, a], [, b]) => a.costPer1kTokens - b.costPer1kTokens);
 
     for (const [fallbackModel, fallbackCost] of fallbackProviders) {
       try {

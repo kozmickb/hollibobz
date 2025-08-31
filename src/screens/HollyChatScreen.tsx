@@ -28,7 +28,8 @@ import Markdown from 'react-native-markdown-display';
 import { sendAIThroughProxy } from '../api/chat-service';
 import { AIMessage } from '../types/ai';
 import ChecklistMessage from '../features/checklist/ChecklistMessage';
-import { enhancePromptForChecklist } from '../features/checklist/promptEnhancer';
+import * as ChecklistPrompt from '../features/checklist/promptEnhancer';
+import { getDestinationInfo } from '../api/destination-data';
 import { tripStore } from '../lib/tripStore';
 import { generateTripId, createTripFromChecklist, extractTripTitleFromPrompt } from '../utils/tripHelpers';
 import { extractJsonBlock } from '../features/checklist/itineraryParser';
@@ -66,6 +67,7 @@ export function HollyChatScreen() {
   const dotAnim2 = useRef(new Animated.Value(0)).current;
   const dotAnim3 = useRef(new Animated.Value(0)).current;
   const initializedRef = useRef(false); // Prevent duplicate initialization
+  const lastSeedRef = useRef<string | null>(null); // Prevent duplicate seeded sends
 
     // Initialize with seed query if provided
   useEffect(() => {
@@ -126,14 +128,11 @@ export function HollyChatScreen() {
     }
     
     if (route.params?.seedQuery) {
-      const initialMessage: Message = {
-        id: '1',
-        role: 'user',
-        content: route.params.seedQuery,
-        timestamp: new Date(),
-      };
-      setMessages([initialMessage]);
-      handleSendMessage(route.params.seedQuery);
+      // Avoid duplicate seeded send when effect re-runs
+      if (lastSeedRef.current !== route.params.seedQuery) {
+        lastSeedRef.current = route.params.seedQuery;
+        handleSendMessage(route.params.seedQuery);
+      }
     }
     
     // Initialize trip ID if provided
@@ -209,11 +208,18 @@ export function HollyChatScreen() {
     dotAnim3.setValue(0);
   };
 
+  // Helper to determine if prompt is itinerary-like without importing private symbol
+  const isItineraryLike = (text: string) => {
+    const t = (text || '').toLowerCase();
+    const keys = ['itinerary','schedule','plan','agenda','checklist','day by day','things to do','activities','trip plan','travel plan','visit','sightseeing','tour'];
+    return keys.some(k => t.includes(k));
+  };
+
   const handleSendMessage = async (content: string, displayContent?: string) => {
     if (!content.trim()) return;
 
     // Enhance the content with checklist instructions if it appears to be an itinerary request
-    const enhancedContent = enhancePromptForChecklist(content.trim());
+    const enhancedContent = (ChecklistPrompt as any).enhancePromptForChecklist(content.trim());
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -238,14 +244,25 @@ export function HollyChatScreen() {
         content: msg.content,
       }));
 
-      // Add the new user message (enhanced with checklist instructions if needed)
-      conversationHistory.push({
-        role: 'user',
-        content: enhancedContent,
-      });
+      // Add the new user message (enhanced with checklist instructions if needed), with richer context
+      let enrichedContent = enhancedContent;
+      try {
+        if (route.params?.context?.destination && isItineraryLike(enhancedContent)) {
+          const ctx = route.params?.context;
+          const destInfo = await getDestinationInfo(ctx.destination!);
+          enrichedContent = (ChecklistPrompt as any).buildChecklistPrompt(enhancedContent, {
+            destination: ctx.destination,
+            dateISO: ctx.dateISO,
+            duration: ctx.duration,
+            adults: ctx.adults,
+            children: ctx.children,
+          }, destInfo);
+        }
+      } catch {}
+      conversationHistory.push({ role: 'user', content: enrichedContent });
 
       // Add context about the trip if available
-      let systemPrompt = "You are Holly Bobz, a friendly and knowledgeable AI travel assistant. You help users plan amazing trips with personalized advice, insider tips, and detailed recommendations. Be enthusiastic, helpful, and provide practical travel advice.";
+      let systemPrompt = "You are Holly Bobz, a friendly and knowledgeable AI travel assistant. You help users plan amazing trips with personalized advice, insider tips, and detailed recommendations. Be enthusiastic, helpful, and provide practical travel advice.\n\nRules for checklists and itineraries:\n- Be specific and destination-aware. Avoid generic phrasing like 'get a meal' or 'book transport'.\n- Use concrete, actionable items that a user can do next.\n- If accommodation, neighborhoods, venues, or bookings have been mentioned earlier in the conversation, incorporate them.\n- Do NOT invent names. If a specific name is uncertain, use a clear placeholder (e.g., '<confirm hotel restaurant name>') or make the next-step explicit (e.g., 'choose and book a restaurant near Al Zahiyah').\n- Tailor to group (adults/children), trip purpose (business vs leisure), duration, season/date, and local norms (e.g., dress code).\n- Prefer sections such as Packing, Transport setup, Day-of logistics, Documents/Payments, Local etiquette, and a purpose-specific section (e.g., Meetings for business, Attractions for leisure).";
       
       if (route.params?.context?.destination) {
         const context = route.params.context;
@@ -253,7 +270,10 @@ export function HollyChatScreen() {
         systemPrompt += `\nTrip date: ${context.dateISO}.`;
         systemPrompt += `\nTravel group: ${context.adults || 1} adult${(context.adults || 1) !== 1 ? 's' : ''}${(context.children || 0) > 0 ? `, ${context.children} child${(context.children || 0) !== 1 ? 'ren' : ''}` : ''}.`;
         systemPrompt += `\nTrip duration: ${context.duration || 7} day${(context.duration || 7) !== 1 ? 's' : ''}.`;
-        systemPrompt += `\n\nProvide recommendations and advice tailored to this specific trip, group size, and duration.`;
+        if ((context as any).tripType) {
+          systemPrompt += `\nTrip purpose: ${(context as any).tripType === 'business' ? 'Business' : 'Leisure'}.`;
+        }
+        systemPrompt += `\n\nProvide recommendations and advice tailored to this specific trip, group size, duration, and purpose. Ensure items are concrete and destination-aware.`;
       } else {
         systemPrompt += `\n\nThis is a general travel planning conversation. Provide helpful advice for travel planning in general.`;
       }
@@ -285,11 +305,12 @@ export function HollyChatScreen() {
       });
 
       // Track successful AI usage
-      Analytics.aiMessageSent(
-        response.provider || 'unknown',
-        response.model || 'unknown',
-        response.usage.totalTokens
-      );
+      try {
+        const provider = (response as any)?.provider || 'unknown';
+        const model = (response as any)?.model || 'unknown';
+        const tokens = (response as any)?.usage?.totalTokens || 0;
+        Analytics.aiMessageSent(provider, model, tokens);
+      } catch {}
 
       // Process checklist if present in response
       let tripId = currentTripId || route.params?.tripId;
@@ -625,8 +646,7 @@ The best trips are the ones that teach you something new!`
           : 'rgba(251, 146, 60, 0.1)',
         backgroundColor: isDark 
           ? 'rgba(30, 41, 59, 0.8)' 
-          : 'rgba(255, 255, 255, 0.8)',
-        backdropFilter: 'blur(10px)',
+          : 'rgba(255, 255, 255, 0.8)'
       }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Pressable
@@ -853,15 +873,7 @@ Rules:
                     />
                     
                     {/* Open Checklist Button */}
-                    {(() => {
-                      console.log('Checking Open Checklist button for message:', {
-                        messageId: message.id,
-                        hasChecklist: message.hasChecklist,
-                        tripId: message.tripId,
-                        shouldShow: message.hasChecklist && message.tripId
-                      });
-                      return message.hasChecklist && message.tripId;
-                    })() && (
+                    {message.hasChecklist && message.tripId && (
                       <View style={{
                         marginTop: 12,
                         paddingTop: 12,

@@ -4,10 +4,18 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../store/useThemeStore';
 import { Text as RestyleText } from '../components/ui/Text';
+import { createShadowStyle } from '../utils/shadowUtils';
 
 export function TermsOfServiceScreen() {
   const navigation = useNavigation();
   const { isDark } = useThemeStore();
+  
+  const shadowStyle = createShadowStyle({
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  });
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
@@ -39,7 +47,7 @@ export function TermsOfServiceScreen() {
         <View style={styles.content}>
 
           {/* Introduction */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Agreement to Terms
             </RestyleText>
@@ -50,7 +58,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* Description of Service */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Description of Service
             </RestyleText>
@@ -91,7 +99,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* User Accounts and Data */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               User Accounts and Data
             </RestyleText>
@@ -105,7 +113,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* Acceptable Use */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Acceptable Use
             </RestyleText>
@@ -146,7 +154,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* AI Assistant Usage */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               AI Assistant (Holly Bobz)
             </RestyleText>
@@ -179,7 +187,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* Third-Party Services */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Third-Party Services
             </RestyleText>
@@ -208,7 +216,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* Intellectual Property */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Intellectual Property
             </RestyleText>
@@ -222,7 +230,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* Disclaimers */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Disclaimers
             </RestyleText>
@@ -243,7 +251,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* Limitation of Liability */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Limitation of Liability
             </RestyleText>
@@ -256,7 +264,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* Termination */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Termination
             </RestyleText>
@@ -270,7 +278,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* Governing Law */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Governing Law
             </RestyleText>
@@ -282,7 +290,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* Changes to Terms */}
-          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Changes to Terms
             </RestyleText>
@@ -295,7 +303,7 @@ export function TermsOfServiceScreen() {
           </View>
 
           {/* Contact Information */}
-          <View style={[styles.section, styles.lastSection, { backgroundColor: isDark ? '#111827' : '#ffffff' }]}>
+          <View style={[styles.section, styles.lastSection, { backgroundColor: isDark ? '#111827' : '#ffffff' }, shadowStyle]}>
             <RestyleText variant="lg" style={[styles.sectionTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
               Contact Information
             </RestyleText>
@@ -356,10 +364,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
   },
   lastSection: {

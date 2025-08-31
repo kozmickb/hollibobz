@@ -3,7 +3,7 @@ import { View, ScrollView, Pressable, Platform, ImageBackground, StyleSheet } fr
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storage } from '../lib/storage';
 import { Text as RestyleText } from '../components/ui/Text';
 import { useHolidayStore } from '../store/useHolidayStore';
 import { useThemeStore } from '../store/useThemeStore';
@@ -31,18 +31,14 @@ export function TripsScreen() {
   const [checklists, setChecklists] = React.useState<Trip[]>([]);
   const [checklistProgress, setChecklistProgress] = React.useState<Record<string, number>>({});
   const [isHydrated, setIsHydrated] = React.useState(false);
+  const checklistIdSet = React.useMemo(() => new Set((checklists || []).map(t => t.id)), [checklists]);
 
   // Load checklists from trip store
   const loadChecklists = async () => {
     try {
-      // Clean up any orphaned checklists first
-      const currentTimers = useHolidayStore.getState().timers;
-      const activeTimerIds = currentTimers.map(timer => timer.id);
-      await tripStore.cleanupOrphanedChecklists(activeTimerIds);
-      
-      // Then load remaining valid checklists
+      // Load all trips with checklists (keep standalone checklists too)
       const allTrips = await tripStore.getAll();
-      const tripsWithChecklists = allTrips.filter(trip => trip.checklist);
+      const tripsWithChecklists = allTrips.filter(trip => trip.checklist && !trip.archived);
       console.log('Loaded checklists:', tripsWithChecklists.length);
       setChecklists(tripsWithChecklists);
       
@@ -120,6 +116,24 @@ export function TripsScreen() {
   // Debug logging to see trips data and hydration status
   console.log('TripsScreen render - trips data:', trips, 'isHydrated:', isHydrated, 'trips length:', trips?.length);
 
+  // Helper: find a checklist TripId for a timer by exact id match or by destination/title match
+  const getChecklistTripIdForTimer = (timer: Timer): string | null => {
+    if (!timer) return null;
+    // 1) Exact link by id
+    const exact = (checklists || []).find(t => t.id === timer.id && t.checklist);
+    if (exact) return exact.id;
+
+    // 2) Match by timerContext.destination
+    const byContext = (checklists || []).find(t => t.timerContext?.destination?.toLowerCase() === timer.destination.toLowerCase());
+    if (byContext) return byContext.id;
+
+    // 3) Match by trip title containing destination
+    const byTitle = (checklists || []).find(t => (t.title || '').toLowerCase().includes(timer.destination.toLowerCase()));
+    if (byTitle) return byTitle.id;
+
+    return null;
+  };
+
   const handleManualRefresh = async () => {
     console.log('Manual refresh triggered');
     await store._hydrate();
@@ -134,10 +148,10 @@ export function TripsScreen() {
 
   const checkAsyncStorage = async () => {
     try {
-      const keys = await AsyncStorage.getAllKeys();
-      console.log('All AsyncStorage keys:', keys);
+      const keys = await storage.getAllKeys();
+      console.log('All storage keys:', keys);
 
-      const holidayData = await AsyncStorage.getItem('holiday_state_v1');
+      const holidayData = await storage.getItem('holiday_state_v1');
       console.log('Holiday state data:', holidayData);
 
       if (holidayData) {
@@ -373,6 +387,15 @@ export function TripsScreen() {
               <View>
                 {(trips || []).map((trip, index) => {
                   const destinationImage = getDestinationImage(trip.destination);
+                  try {
+                    console.log('[TripsScreen] Image resolve:', {
+                      destination: trip.destination,
+                      image: destinationImage
+                    });
+                  } catch {}
+                  const matchedChecklistTripId = getChecklistTripIdForTimer(trip);
+                  const hasChecklist = !!matchedChecklistTripId;
+                  const tripProgress = matchedChecklistTripId ? (checklistProgress[matchedChecklistTripId] || 0) : 0;
 
                   return (
                     <Pressable
@@ -460,11 +483,50 @@ export function TripsScreen() {
                                 </View>
                               </View>
                             </View>
-                            <Ionicons
-                              name="chevron-forward"
-                              size={24}
-                              color="#FFFFFF"
-                            />
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              {hasChecklist && (
+                                <View style={{
+                                  backgroundColor: isDark ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.15)',
+                                  borderColor: isDark ? 'rgba(16,185,129,0.35)' : 'rgba(5,150,105,0.35)',
+                                  borderWidth: 1,
+                                  borderRadius: 12,
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 4,
+                                  marginRight: 4,
+                                }}>
+                                  <RestyleText variant="xs" color="text" style={{ color: isDark ? '#34D399' : '#065F46' }}>
+                                    {tripProgress}%
+                                  </RestyleText>
+                                </View>
+                              )}
+                              <Pressable
+                                onPress={() => {
+                                  if (hasChecklist && matchedChecklistTripId) {
+                                    navigation.navigate('Checklist', { tripId: matchedChecklistTripId });
+                                  }
+                                }}
+                                disabled={!hasChecklist}
+                                style={{
+                                  backgroundColor: hasChecklist ? (isDark ? '#14B8A6' : '#10B981') : 'rgba(255,255,255,0.15)',
+                                  borderRadius: 14,
+                                  padding: 6,
+                                  opacity: hasChecklist ? 1 : 0.6,
+                                }}
+                                accessibilityLabel={hasChecklist ? 'Open checklist' : 'Checklist not available yet'}
+                                accessibilityRole="button"
+                              >
+                                <Ionicons
+                                  name="checkmark-circle"
+                                  size={18}
+                                  color={hasChecklist ? '#FFFFFF' : 'rgba(255,255,255,0.8)'}
+                                />
+                              </Pressable>
+                              <Ionicons
+                                name="chevron-forward"
+                                size={24}
+                                color="#FFFFFF"
+                              />
+                            </View>
                           </View>
                         </View>
                       </ImageBackground>

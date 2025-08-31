@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { storage } from "../lib/storage";
 
 export interface Timer {
   id: string;
@@ -169,7 +169,11 @@ export const useHolidayStore = create<HolidayState>()(
     }),
     {
       name: "holiday-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => ({
+        getItem: storage.getItem,
+        setItem: storage.setItem,
+        removeItem: storage.removeItem
+      })),
       version: 2,
       migrate: (state: any) => {
         try {

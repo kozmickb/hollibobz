@@ -1,16 +1,16 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { storage } from "../../lib/storage";
 
 const KEY_PREFIX = "dest_meta_v1_";
 
 // Clear cached meta that might have old generic quick facts
 export async function clearLegacyCachedMeta() {
   try {
-    const keys = await AsyncStorage.getAllKeys();
+    const keys = await storage.getAllKeys();
     const metaKeys = keys.filter(key => key.startsWith(KEY_PREFIX));
     
     for (const key of metaKeys) {
       try {
-        const raw = await AsyncStorage.getItem(key);
+        const raw = await storage.getItem(key);
         if (raw) {
           const meta = JSON.parse(raw);
           
@@ -24,7 +24,7 @@ export async function clearLegacyCachedMeta() {
           
           if (hasGenericFacts) {
             console.log('Clearing legacy cached meta for:', key);
-            await AsyncStorage.removeItem(key);
+            await storage.removeItem(key);
           }
         }
       } catch (error) {

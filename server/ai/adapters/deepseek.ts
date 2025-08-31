@@ -1,17 +1,23 @@
 import OpenAI from 'openai';
 import { AIRequest, AIResponse } from '../providerRouter';
 
-// Initialize Deepseek client (uses OpenAI-compatible API)
+// Initialize Deepseek client (uses OpenAI-compatible API; supports root EXPO_ key fallback)
 const client = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
+  apiKey: process.env.DEEPSEEK_API_KEY || process.env.EXPO_PUBLIC_VIBECODE_DEEPSEEK_API_KEY,
   baseURL: 'https://api.deepseek.com',
 });
 
 export async function callDeepseek(request: AIRequest, model: string): Promise<AIResponse> {
   try {
+    // Filter out undefined name properties to match OpenAI API requirements
+    const messages = request.messages.map(msg => {
+      const { name, ...rest } = msg;
+      return name ? { ...rest, name } : rest;
+    });
+
     const response = await client.chat.completions.create({
       model: model,
-      messages: request.messages,
+      messages: messages as any,
       temperature: request.temperature ?? 0.7,
       max_tokens: request.maxTokens ?? 2048,
     });
