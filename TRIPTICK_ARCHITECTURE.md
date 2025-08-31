@@ -23,6 +23,15 @@
 
 ---
 
+## 🔄 Recent Updates (Aug 2025)
+
+- Checklist contextualization: prompts now include trip purpose (`tripType` business/leisure), group size, dates, and destination facts. Implemented in `features/checklist/promptEnhancer.ts` and used by `HollyChatScreen`.
+- Destination image resolver hardened: strict normalization, alias map (e.g., Abu Dhabi variants), and Levenshtein-based fuzzy matching; removed partial substring matches. Implemented in `utils/destinationImages.ts`.
+- Archived Checklists: new `ChecklistArchiveScreen` with restore/delete; `tripStore` gains `archive(id)` and `restore(id)`; archived checklists hidden from active views.
+- Destination typeahead and validation: `AddTimerScreen` suggests destinations while typing and uses `getDestinationInfo` for “Did you mean X?” corrections.
+- UI/Theming: improved contrast for date/time picker (`DateTimeSelector`) and fixed duplicate seed send in chat.
+- Data model: `Timer` supports `tripType?: 'business' | 'leisure'` persisted via `useHolidayStore` and editable in `EditTimerModal`.
+
 ## 📖 Overview
 
 ### What is TripTick?
