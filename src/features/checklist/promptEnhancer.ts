@@ -1,10 +1,60 @@
 /**
+ * Enhanced format instruction for all AI responses - provides better structure and specificity
+ */
+export const ENHANCED_RESPONSE_INSTRUCTION = `
+
+IMPORTANT FORMATTING GUIDELINES:
+
+1) RESPONSE STRUCTURE: Always provide direct, actionable answers. Use this format:
+   "Here's your [specific request]:
+
+   [Direct, specific answer with real venue names and locations]
+
+   💡 You might also want to consider:
+   • [Category 1] - brief description
+   • [Category 2] - brief description
+   • [Category 3] - brief description"
+
+2) SPECIFICITY REQUIREMENTS:
+   - NEVER use placeholders like "<confirm taxi company>", "<confirm cafe name>", "[insert address here]", "[specific coffee shop name]", or "[address]"
+   - ALWAYS provide real, specific venue names and locations
+   - For transportation: Use actual services like "Uber", "Bolt", "Careem", "local taxi", "public bus", "tram", "metro", etc.
+   - For coffee shops/restaurants: Use real names like "Starbucks", "Costa Coffee", "local café chains", or research actual venues in the area
+   - If you don't know exact venues, say "research coffee shops near [specific location]" rather than using placeholders
+   - Provide approximate prices, distances, and travel times when possible
+
+3) RESPONSE LENGTH:
+   - Keep responses focused and actionable
+   - Don't add unrelated suggestions unless directly relevant
+   - Avoid ending with "Would you like me to..." unless it's a natural follow-up
+
+4) LOCATION AWARENESS:
+   - If the user mentions a specific hotel/area, provide recommendations for that exact location
+   - Use real transportation options available in that city
+   - Provide specific addresses or neighborhoods when possible
+
+5) EXAMPLES OF GOOD RESPONSES:
+   - ✅ "Take an Uber from Hilton Garden Inn to Endava offices (15-20 minutes, €25-35)"
+   - ✅ "Visit Starbucks at 123 Main Street or Costa Coffee at 456 Oak Avenue near your hotel"
+   - ❌ "Use [transport service] from [hotel] to [office] ([time], [cost])"
+   - ❌ "Check out [coffee shop name] located at [address]"
+
+6) AVOID THESE PATTERNS:
+   - [insert address here]
+   - [specific coffee shop name]
+   - [another coffee shop name]
+   - <confirm taxi company>
+   - <confirm cafe name>`;
+
+/**
  * Checklist format instruction to append to itinerary-related prompts
  */
 export const CHECKLIST_FORMAT_INSTRUCTION = `
 
-Return two parts:
-1) A short readable trip overview for humans.
+${ENHANCED_RESPONSE_INSTRUCTION}
+
+For checklist/itinerary requests, also return two parts:
+1) A short readable trip overview for humans following the structure above.
 2) A strict JSON object named itinerary_json that matches:
 {
   "tripTitle": "string",
@@ -17,11 +67,12 @@ Rules:
 - No comments or trailing text inside the code block.
 - Use null only if absolutely needed, otherwise omit fields.
 - Keep sections destination-specific and actionable.
-- Limit to max 6 sections, and 5-8 items per section.
+- Limit to max 3-4 sections for the initial response, and 3-5 items per section.
 - Items must be concrete actions or packing items, not generic advice.
 - If children are in the group, include at least one family/child-focused item.
 - If duration and date are provided, tailor packing to weather and trip length.
-- If public transport info is provided, include a transport/setup section (cards, apps, passes).`;
+- If public transport info is provided, include a transport/setup section (cards, apps, passes).
+- ALWAYS be specific about venue names, addresses, and exact locations when mentioned.`;
 
 /**
  * Keywords that suggest the user is asking for an itinerary
@@ -51,13 +102,14 @@ export function isItineraryRequest(prompt: string): boolean {
 }
 
 /**
- * Enhances a prompt with checklist formatting instructions if it appears to be an itinerary request
+ * Enhances a prompt with formatting instructions for better AI responses
  */
 export function enhancePromptForChecklist(prompt: string): string {
   if (isItineraryRequest(prompt)) {
     return prompt + CHECKLIST_FORMAT_INSTRUCTION;
   }
-  return prompt;
+  // Apply enhanced formatting to ALL prompts for better response quality
+  return prompt + ENHANCED_RESPONSE_INSTRUCTION;
 }
 
 // New: Build a richer prompt using trip context and destination info
@@ -75,7 +127,8 @@ export function buildChecklistPrompt(
   destinationInfo?: DestinationInfo
 ): string {
   if (!isItineraryRequest(userPrompt)) {
-    return userPrompt;
+    // Apply enhanced formatting even for non-itinerary requests
+    return userPrompt + ENHANCED_RESPONSE_INSTRUCTION;
   }
 
   const lines: string[] = [];
@@ -106,6 +159,8 @@ export function buildChecklistPrompt(
   lines.push(`\nInstructions to tailor the checklist:`);
   lines.push(`- Use section titles that are specific to ${context?.destination || 'the destination'} (e.g., "Packing for ${context?.destination || 'the trip'} in ${context?.dateISO || 'this season'}", "Transport in ${context?.destination || 'city'}", "Cultural Etiquette").`);
   lines.push(`- Include destination-specific items (e.g., local power adapters, transit cards, dress code considerations).`);
+  lines.push(`- ALWAYS be specific about venue names, addresses, and exact locations when mentioned.`);
+  lines.push(`- If the user mentions a hotel, neighborhood, or specific area, provide concrete recommendations for that exact location.`);
   if ((context?.children ?? 0) > 0) {
     lines.push(`- Include at least one family/children section with age-appropriate items.`);
   }

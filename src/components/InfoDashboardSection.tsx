@@ -4,6 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../store/useThemeStore';
 import { Text as RestyleText } from './ui/Text';
 import { getDestinationInfo, DestinationInfo } from '../api/destination-data';
+import { getCurrentWeather, formatTemperature, getWeatherIcon, WeatherData } from '../api/weather-service';
+import { getTemperatureEstimate } from '../utils/temperatureUtils';
+import { getRandomDestinationTip } from '../utils/destinationTips';
 
 interface InfoItem {
   id: string;
@@ -23,6 +26,7 @@ interface InfoDashboardSectionProps {
   transportation?: string[];
   temperature?: string;
   timezone?: string;
+  tripDate?: Date;
 }
 
 export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
@@ -32,15 +36,21 @@ export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
   bestMonths = ["Year-round"],
   transportation = ["Various"],
   temperature = "15-25°C",
-  timezone = "Local Timezone"
+  timezone = "Local Timezone",
+  tripDate
 }) => {
-  console.log('InfoDashboardSection received destination:', destination);
+  // console.log('InfoDashboardSection received destination:', destination);
   const { isDark } = useThemeStore();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(20));
   const [destinationInfo, setDestinationInfo] = useState<DestinationInfo | null>(null);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
+  const [estimatedTemp, setEstimatedTemp] = useState<string | null>(null);
+  const [destinationTip, setDestinationTip] = useState<string>('');
+
+
 
   useEffect(() => {
     Animated.parallel([
@@ -48,6 +58,8 @@ export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
       Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true })
     ]).start();
   }, []);
+
+
 
   // Fetch destination info when destination changes
   useEffect(() => {
@@ -57,12 +69,42 @@ export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
         return;
       }
       
-      console.log('Fetching destination info for:', destination);
       setIsLoading(true);
       try {
         const info = await getDestinationInfo(destination);
         console.log('Destination info loaded:', info);
         setDestinationInfo(info);
+
+        // Calculate estimated temperature for trip date
+        if (tripDate && info.temperature) {
+          const estimate = getTemperatureEstimate(destination, info.temperature, tripDate);
+          setEstimatedTemp(`${estimate.seasonal} (${estimate.description})`);
+        }
+
+        // Fetch current weather
+        try {
+          const weather = await getCurrentWeather(destination);
+          setCurrentWeather(weather);
+        } catch (error) {
+          console.log('Could not fetch current weather:', error);
+        }
+
+        // Get destination-specific tip
+        try {
+          const tip = getRandomDestinationTip(destination);
+          setDestinationTip(tip.tip);
+        } catch (error) {
+          console.log('Could not get destination tip:', error);
+          // Fallback to destination-specific tip if possible
+          if (destination && destination.toLowerCase().includes('bucharest')) {
+            setDestinationTip('Visit Old Town (Lipscani district) for the best traditional Romanian architecture and dining');
+          } else if (destination && destination.toLowerCase().includes('abu dhabi')) {
+            setDestinationTip('Visit the Grand Mosque - women must wear modest clothing and bring a scarf. Entry is free!');
+          } else {
+            setDestinationTip('Download offline maps and learn basic local phrases before your trip');
+          }
+        }
+
         // If we matched via partial/fuzzy, surface a suggestion banner
         if (info && info.matchType && info.matchType !== 'exact' && info.matchType !== 'default' && info.suggestedName) {
           setSuggestion(info.suggestedName);
@@ -128,9 +170,13 @@ export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
     },
     {
       id: 'temperature',
-      title: 'Temperature',
-      value: displayInfo.temperature,
-      icon: 'thermometer',
+      title: currentWeather ? 'Current Weather' : (tripDate ? 'Temperature Forecast' : 'Temperature'),
+      value: currentWeather
+        ? `${formatTemperature(currentWeather.temp)} (${currentWeather.condition})\n${tripDate && estimatedTemp ? `${estimatedTemp}\n${displayInfo.temperature} (Year-round avg)` : `${displayInfo.temperature} (Year-round avg)`}`
+        : (tripDate && estimatedTemp
+          ? `${estimatedTemp}\n${displayInfo.temperature} (Year-round avg)`
+          : `${displayInfo.temperature} (Year-round avg)`),
+      icon: currentWeather ? getWeatherIcon(currentWeather.condition) : 'thermometer',
       bgColor: isDark ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.1)',
       iconColor: isDark ? '#f87171' : '#dc2626',
       textColor: isDark ? '#f87171' : '#dc2626'
@@ -285,7 +331,7 @@ export const InfoDashboardSection: React.FC<InfoDashboardSectionProps> = ({
               Pro Tip
             </RestyleText>
             <RestyleText variant="xs" color="textMuted">
-              Download offline maps and learn basic phrases before your trip for the best experience!
+              {destinationTip && destinationTip !== '' ? destinationTip : 'Download offline maps and learn basic phrases before your trip for the best experience!'}
             </RestyleText>
           </View>
         </View>

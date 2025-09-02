@@ -21,7 +21,7 @@ export function DestinationContext({ destination, date }: DestinationContextProp
     }}>
       <Text style={{
         fontSize: 14,
-        fontFamily: 'Poppins-SemiBold',
+        fontFamily: 'Questrial-Regular-SemiBold',
         color: isDark ? '#FFFFFF' : '#333333',
         marginBottom: 4,
       }}>
@@ -30,7 +30,7 @@ export function DestinationContext({ destination, date }: DestinationContextProp
       {date && (
         <Text style={{
           fontSize: 12,
-          fontFamily: 'Poppins-Regular',
+          fontFamily: 'Questrial-Regular-Regular',
           color: isDark ? '#CCCCCC' : '#666666',
         }}>
           Travel date: {new Date(date).toLocaleDateString('en-GB', { 
@@ -42,7 +42,7 @@ export function DestinationContext({ destination, date }: DestinationContextProp
       )}
       <Text style={{
         fontSize: 12,
-        fontFamily: 'Poppins-Regular',
+        fontFamily: 'Questrial-Regular-Regular',
         color: isDark ? '#CCCCCC' : '#666666',
         marginTop: 4,
         fontStyle: 'italic',

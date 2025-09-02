@@ -7,11 +7,14 @@ import { HomeStackParamList } from "../navigation/AppNavigator";
 import { useHolidayStore } from "../store/useHolidayStore";
 import { useThemeStore } from "../store/useThemeStore";
 import { ThemedButton } from "../components/ThemedButton";
-import { TripTickLogo } from "../components/TripTickLogo";
+import { OdysyncLogo } from "../components/OdysyncLogo";
 import { DateTimeSelector } from "../components/DateTimeSelector";
+import { FlightLookupModal, FlightInfo } from "../components/FlightLookupModal";
+import { PaywallModal } from "../components/PaywallModal";
 import { Ionicons } from '@expo/vector-icons';
 import { searchDestinations, getDestinationInfo } from "../api/destination-data";
 import { formatDestinationName } from "../utils/destinationImages";
+import { initializeDestinationFactsForTimer } from "../utils/destinationManager";
 
 // Try to import confetti and haptics with fallback
 let ConfettiCannon: any = null;
@@ -44,6 +47,10 @@ export function AddTimerScreen() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [tripType, setTripType] = useState<'business' | 'leisure'>('leisure');
+  const [selectedFlight, setSelectedFlight] = useState<FlightInfo | null>(null);
+  const [showFlightLookup, setShowFlightLookup] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [isPremium, setIsPremium] = useState(false); // Set to false to test paywall functionality
 
   async function updateSuggestions(input: string) {
     const q = input.trim();
@@ -85,15 +92,19 @@ export function AddTimerScreen() {
     }
 
     const iso = selectedDate.toISOString();
-    addTimer({ 
-      destination: destination.trim(), 
-      date: iso, 
-      adults, 
-      children, 
+    addTimer({
+      destination: destination.trim(),
+      date: iso,
+      adults,
+      children,
       duration,
-      tripType
+      tripType,
+      selectedFlight: selectedFlight || undefined
     });
-    
+
+    // Initialize destination facts for daily facts feature
+    initializeDestinationFactsForTimer(destination.trim());
+
     // Trigger confetti celebration
     setShowConfetti(true);
     
@@ -126,15 +137,15 @@ export function AddTimerScreen() {
         }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <TripTickLogo size="lg" />
+              <OdysyncLogo size="lg" />
               <Text
                 style={{
                   color: isDark ? '#FFFFFF' : '#333333',
                   fontSize: 20,
-                  fontFamily: 'Poppins-SemiBold',
+                  fontFamily: 'Questrial-Regular',
                 }}
               >
-                TripTick
+                Odysync
               </Text>
             </View>
             <Pressable
@@ -165,7 +176,7 @@ export function AddTimerScreen() {
             style={{
               color: '#FFFFFF',
               fontSize: 20,
-              fontFamily: 'Poppins-SemiBold',
+              fontFamily: 'Questrial-Regular',
               textAlign: 'center',
               marginBottom: 8,
             }}
@@ -177,7 +188,7 @@ export function AddTimerScreen() {
             style={{
               color: 'rgba(255, 255, 255, 0.9)',
               fontSize: 14,
-              fontFamily: 'Poppins-Medium',
+              fontFamily: 'Questrial-Regular',
               textAlign: 'center',
             }}
           >
@@ -204,7 +215,7 @@ export function AddTimerScreen() {
             <Text
               style={{
                 fontSize: 18,
-                fontFamily: 'Poppins-SemiBold',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#FFFFFF' : '#333333',
                 marginBottom: 8,
               }}
@@ -223,7 +234,7 @@ export function AddTimerScreen() {
                 paddingHorizontal: 16,
                 paddingVertical: 16,
                 fontSize: 16,
-                fontFamily: 'Poppins-Regular',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#FFFFFF' : '#333333',
                 backgroundColor: isDark ? '#2a2a2a' : '#F7F7F7',
               }}
@@ -247,7 +258,7 @@ export function AddTimerScreen() {
                     onPress={() => { setDestination(formatDestinationName(s)); setShowSuggestions(false); }}
                     style={{ paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: isDark ? '#374151' : '#F1F1F1' }}
                   >
-                    <Text style={{ color: isDark ? '#F3F4F6' : '#1F2937', fontFamily: 'Poppins-Medium', fontSize: 14 }}>
+                    <Text style={{ color: isDark ? '#F3F4F6' : '#1F2937', fontFamily: 'Questrial-Regular', fontSize: 14 }}>
                       {formatDestinationName(s)}
                     </Text>
                   </Pressable>
@@ -271,7 +282,7 @@ export function AddTimerScreen() {
             <Text
               style={{
                 fontSize: 18,
-                fontFamily: 'Poppins-SemiBold',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#FFFFFF' : '#333333',
                 marginBottom: 8,
               }}
@@ -283,7 +294,7 @@ export function AddTimerScreen() {
                 <Text
                   style={{
                     fontSize: 14,
-                    fontFamily: 'Poppins-Medium',
+                    fontFamily: 'Questrial-Regular',
                     color: isDark ? '#CCCCCC' : '#666666',
                     marginBottom: 4,
                   }}
@@ -297,7 +308,7 @@ export function AddTimerScreen() {
                   >
                     <Ionicons name="remove" size={20} color={isDark ? '#FFFFFF' : '#333333'} />
                   </Pressable>
-                  <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', color: isDark ? '#FFFFFF' : '#333333' }}>
+                  <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontFamily: 'Questrial-Regular', color: isDark ? '#FFFFFF' : '#333333' }}>
                     {adults}
                   </Text>
                   <Pressable
@@ -312,7 +323,7 @@ export function AddTimerScreen() {
                 <Text
                   style={{
                     fontSize: 14,
-                    fontFamily: 'Poppins-Medium',
+                    fontFamily: 'Questrial-Regular',
                     color: isDark ? '#CCCCCC' : '#666666',
                     marginBottom: 4,
                   }}
@@ -326,7 +337,7 @@ export function AddTimerScreen() {
                   >
                     <Ionicons name="remove" size={20} color={isDark ? '#FFFFFF' : '#333333'} />
                   </Pressable>
-                  <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', color: isDark ? '#FFFFFF' : '#333333' }}>
+                  <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontFamily: 'Questrial-Regular', color: isDark ? '#FFFFFF' : '#333333' }}>
                     {children}
                   </Text>
                   <Pressable
@@ -345,7 +356,7 @@ export function AddTimerScreen() {
             <Text
               style={{
                 fontSize: 18,
-                fontFamily: 'Poppins-SemiBold',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#FFFFFF' : '#333333',
                 marginBottom: 8,
               }}
@@ -365,7 +376,7 @@ export function AddTimerScreen() {
                   alignItems: 'center',
                 }}
               >
-                <Text style={{ fontFamily: 'Poppins-SemiBold', color: isDark ? '#FFFFFF' : '#333333' }}>Leisure</Text>
+                <Text style={{ fontFamily: 'Questrial-Regular', color: isDark ? '#FFFFFF' : '#333333' }}>Leisure</Text>
               </Pressable>
               <Pressable
                 onPress={() => setTripType('business')}
@@ -379,7 +390,7 @@ export function AddTimerScreen() {
                   alignItems: 'center',
                 }}
               >
-                <Text style={{ fontFamily: 'Poppins-SemiBold', color: isDark ? '#FFFFFF' : '#333333' }}>Business</Text>
+                <Text style={{ fontFamily: 'Questrial-Regular', color: isDark ? '#FFFFFF' : '#333333' }}>Business</Text>
               </Pressable>
             </View>
           </View>
@@ -389,7 +400,7 @@ export function AddTimerScreen() {
             <Text
               style={{
                 fontSize: 18,
-                fontFamily: 'Poppins-SemiBold',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#FFFFFF' : '#333333',
                 marginBottom: 8,
               }}
@@ -403,7 +414,7 @@ export function AddTimerScreen() {
               >
                 <Ionicons name="remove" size={20} color={isDark ? '#FFFFFF' : '#333333'} />
               </Pressable>
-              <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontFamily: 'Poppins-SemiBold', color: isDark ? '#FFFFFF' : '#333333' }}>
+              <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontFamily: 'Questrial-Regular', color: isDark ? '#FFFFFF' : '#333333' }}>
                 {duration} day{duration !== 1 ? 's' : ''}
               </Text>
               <Pressable
@@ -415,6 +426,120 @@ export function AddTimerScreen() {
             </View>
           </View>
 
+          {/* Flight Selection */}
+          <View style={{ gap: 8 }}>
+            <Text style={{
+              color: isDark ? '#FFFFFF' : '#333333',
+              fontSize: 16,
+              fontFamily: 'Questrial-Regular',
+              marginBottom: 8,
+            }}>
+              ✈️ Flight Information {!isPremium && '(Premium)'}
+            </Text>
+
+            {selectedFlight ? (
+              <View style={{
+                backgroundColor: isDark ? '#2a2a2a' : '#F0F0F0',
+                borderRadius: 12,
+                padding: 12,
+                borderWidth: 1,
+                borderColor: isDark ? '#555555' : '#E5E5E5',
+              }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <View>
+                    <Text style={{
+                      color: isDark ? '#FFFFFF' : '#333333',
+                      fontSize: 16,
+                      fontFamily: 'Questrial-Regular',
+                    }}>
+                      {selectedFlight.flightNumber}
+                    </Text>
+                    <Text style={{
+                      color: isDark ? '#CCCCCC' : '#666666',
+                      fontSize: 14,
+                      fontFamily: 'Questrial-Regular',
+                    }}>
+                      {selectedFlight.airline}
+                    </Text>
+                  </View>
+                  <Pressable
+                    onPress={() => setSelectedFlight(null)}
+                    style={{
+                      backgroundColor: isDark ? '#444444' : '#E5E5E5',
+                      borderRadius: 12,
+                      padding: 4,
+                    }}
+                  >
+                    <Ionicons name="close" size={16} color={isDark ? '#FFFFFF' : '#333333'} />
+                  </Pressable>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{
+                    color: isDark ? '#CCCCCC' : '#666666',
+                    fontSize: 14,
+                    fontFamily: 'Questrial-Regular',
+                  }}>
+                    {selectedFlight.departureAirport} → {selectedFlight.arrivalAirport}
+                  </Text>
+                  <Text style={{
+                    color: isDark ? '#FFFFFF' : '#333333',
+                    fontSize: 14,
+                    fontFamily: 'Questrial-Regular',
+                  }}>
+                    {new Date(selectedFlight.scheduledDeparture).toLocaleTimeString('en-GB', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  if (isPremium) {
+                    setShowFlightLookup(true);
+                  } else {
+                    setShowPaywall(true);
+                  }
+                }}
+                style={{
+                  backgroundColor: isDark ? '#2a2a2a' : '#F7F7F7',
+                  borderWidth: 2,
+                  borderColor: isDark ? '#555555' : '#E5E5E5',
+                  borderRadius: 12,
+                  borderStyle: 'dashed',
+                  padding: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons
+                  name="add-circle"
+                  size={24}
+                  color={isPremium ? (isDark ? '#5eead4' : '#0d9488') : (isDark ? '#666666' : '#999999')}
+                  style={{ marginBottom: 8 }}
+                />
+                <Text style={{
+                  color: isPremium ? (isDark ? '#5eead4' : '#0d9488') : (isDark ? '#666666' : '#999999'),
+                  fontSize: 16,
+                  fontFamily: 'Questrial-Regular',
+                  textAlign: 'center',
+                }}>
+                  {isPremium ? 'Select Your Flight' : 'Flight Selection (Premium)'}
+                </Text>
+                <Text style={{
+                  color: isDark ? '#999999' : '#666666',
+                  fontSize: 12,
+                  fontFamily: 'Questrial-Regular',
+                  textAlign: 'center',
+                  marginTop: 4,
+                }}>
+                  Track your flight status and get notifications
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
           <View style={{ gap: 12 }}>
             <ThemedButton
               title="🎉 Create Timer"
@@ -423,7 +548,7 @@ export function AddTimerScreen() {
               gradient={true}
               size="lg"
             />
-            
+
             <ThemedButton
               title="Cancel"
               onPress={() => navigation.goBack()}
@@ -448,7 +573,7 @@ export function AddTimerScreen() {
             style={{
               color: '#FFFFFF',
               fontSize: 16,
-              fontFamily: 'Poppins-SemiBold',
+              fontFamily: 'Questrial-Regular',
               marginBottom: 8,
             }}
           >
@@ -458,7 +583,7 @@ export function AddTimerScreen() {
             style={{
               color: 'rgba(255, 255, 255, 0.9)',
               fontSize: 14,
-              fontFamily: 'Poppins-Regular',
+              fontFamily: 'Questrial-Regular',
               lineHeight: 20,
             }}
           >
@@ -492,6 +617,33 @@ export function AddTimerScreen() {
           />
         </>
       ) : null}
+
+      {/* Flight Lookup Modal */}
+      <FlightLookupModal
+        visible={showFlightLookup}
+        onClose={() => setShowFlightLookup(false)}
+        onFlightSelect={(flight) => {
+          setSelectedFlight(flight);
+          setShowFlightLookup(false);
+        }}
+        departureAirport={destination.trim() ? destination.trim().split(',')[0] : undefined}
+        tripDate={selectedDate}
+        isPremium={isPremium}
+        destination={destination.trim()}
+      />
+
+      {/* Paywall Modal */}
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        feature="Flight Selection"
+        description="Select your actual flight and get real-time status updates, delay notifications, and gate information for a seamless travel experience."
+        onUpgrade={() => {
+          console.log('User upgraded to premium');
+          // Here you would handle the upgrade process
+          setIsPremium(true);
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }

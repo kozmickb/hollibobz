@@ -12,7 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { tripStore } from '../lib/tripStore';
 import { Trip } from '../entities/trip';
 import { calculateChecklistProgress } from '../utils/checklistProgress';
-import { getDestinationImage, formatDestinationName } from '../utils/destinationImages';
+import { getDestinationImage, formatDestinationName, testImageMappings } from '../utils/destinationImages';
 
 // Import Timer type from the store
 import type { Timer } from '../store/useHolidayStore';
@@ -101,7 +101,7 @@ export function TripsScreen() {
   }, [trips.length]); // Depend on trips.length to avoid infinite loops
 
   // Preload destination images for better performance (React Native approach)
-  React.useEffect(() => {
+  useEffect(() => {
     if (trips && trips.length > 0) {
       const destinationNames = trips.map(trip => trip.destination);
       // In React Native, we can prefetch images for better performance
@@ -110,6 +110,11 @@ export function TripsScreen() {
         // Image prefetching will happen naturally through ImageBackground
         console.log(`Preloading image for: ${destination} - ${imageUrl}`);
       });
+    }
+
+    // Test image mappings in development
+    if (__DEV__ && trips && trips.length > 0) {
+      testImageMappings();
     }
   }, [trips]);
 
@@ -181,7 +186,7 @@ export function TripsScreen() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <ImageBackground
-            source={require('../../assets/TT logo.png')}
+            source={require('../../assets/odysync _logo.png')}
             style={{
               width: 32,
               height: 32,

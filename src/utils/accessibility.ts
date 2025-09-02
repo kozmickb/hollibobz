@@ -36,7 +36,7 @@ export const hasAdequateContrast = (foreground: string, background: string): boo
 
 // Standard text styles with proper contrast
 export const textStyles = {
-  // Headings - Poppins SemiBold
+  // Headings - Questrial-Regular SemiBold
   h1: {
     fontFamily: theme.fonts.primary.semiBold,
     fontSize: theme.fontSizes['3xl'],
@@ -58,7 +58,7 @@ export const textStyles = {
     color: theme.colors.text,
   } as TextStyle,
   
-  // Body text - Poppins Medium for readability
+  // Body text - Questrial-Regular Medium for readability
   body: {
     fontFamily: theme.fonts.primary.medium,
     fontSize: theme.fontSizes.base,
@@ -73,7 +73,7 @@ export const textStyles = {
     color: theme.colors.textSecondary,
   } as TextStyle,
   
-  // Labels - Poppins SemiBold
+  // Labels - Questrial-Regular SemiBold
   label: {
     fontFamily: theme.fonts.primary.semiBold,
     fontSize: theme.fontSizes.sm,

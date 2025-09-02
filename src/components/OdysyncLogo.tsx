@@ -1,12 +1,12 @@
 import React from 'react';
 import { Image, View, ViewStyle } from 'react-native';
 
-interface TripTickLogoProps {
+interface OdysyncLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
   style?: ViewStyle;
 }
 
-export function TripTickLogo({ size = 'md', style }: TripTickLogoProps) {
+export function OdysyncLogo({ size = 'md', style }: OdysyncLogoProps) {
   const getSizeStyles = () => {
     switch (size) {
       case 'sm':
@@ -29,10 +29,10 @@ export function TripTickLogo({ size = 'md', style }: TripTickLogoProps) {
   return (
     <View style={[style]}>
       <Image
-        source={require('../../assets/TT logo.png')}
+        source={require('../../assets/odysync _logo.png')}
         style={getSizeStyles()}
         resizeMode="contain"
-        accessibilityLabel="TripTick Logo"
+        accessibilityLabel="Odysync Logo"
       />
     </View>
   );

@@ -34,4 +34,7 @@ config.transformer.minifierConfig = {
   },
 };
 
+// Allow require context for better module resolution
+config.transformer.unstable_allowRequireContext = true;
+
 module.exports = withNativeWind(config, { input: './global.css' });

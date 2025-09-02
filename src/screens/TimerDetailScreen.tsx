@@ -26,15 +26,16 @@ import { CountdownRing } from "../components/CountdownRing";
 import { MilestoneBanner } from "../components/MilestoneBanner";
 import { TeaserCard } from "../components/TeaserCard";
 
-// TripTick UI components
+// Odysync UI components
 import { Box } from "../components/ui/Box";
 import { Text as RestyleText } from "../components/ui/Text";
 import { Button } from "../components/ui/Button";
 import { HeroBackground } from "../components/HeroBackground";
-import { TripTickPalette } from "../theme/tokens";
+import { OdysyncPalette } from "../theme/tokens";
 
 import { buildDefaultMeta, DestinationMeta } from "../features/destination/meta";
 import { loadCachedMeta, saveCachedMeta, fetchPexelsBackdrop } from "../features/destination/backdrop";
+import { getDestinationImage } from "../utils/destinationImages";
 import { generateQuickFacts } from "../features/destination/quickFacts";
 import { clearLegacyCachedMeta } from "../features/destination/clearLegacyCache";
 import { 
@@ -144,10 +145,13 @@ export function TimerDetailScreen() {
 
       // Try to ensure we have an imageUrl
       if (!base.imageUrl) {
-        const img = await fetchPexelsBackdrop(dest);
-        if (img.imageUrl) {
-          base.imageUrl = img.imageUrl;
+        try {
+          const imageUrl = getDestinationImage(dest);
+          base.imageUrl = imageUrl;
+          console.log('Loaded destination image for', dest, ':', imageUrl);
           if (mounted) setMeta({ ...base });
+        } catch (error) {
+          console.log('Failed to load destination image for', dest, ':', error);
         }
       }
 
@@ -274,7 +278,7 @@ export function TimerDetailScreen() {
         <Ionicons name="timer-outline" size={48} color="#999999" />
         <Text style={{
           fontSize: 18,
-          fontFamily: 'Poppins-Medium',
+          fontFamily: 'Questrial-Regular',
           color: isDark ? '#CCCCCC' : '#666666',
           textAlign: 'center',
           marginTop: 16,
@@ -331,7 +335,7 @@ export function TimerDetailScreen() {
       
       await Share.share({
         url: uri,
-        message: `Counting down to ${timer.destination}! #TripTick`,
+        message: `Counting down to ${timer.destination}! #Odysync`,
       });
     } catch (error) {
       console.log('Error sharing:', error);
@@ -362,13 +366,13 @@ export function TimerDetailScreen() {
       {/* Hero Section */}
       <ViewShot ref={heroShareRef} options={{ format: 'png', quality: 0.9, width: 1080, height: 1920 }}>
         <Box position="relative" height={300}>
-          {/* HeroBackground with TripTick styling */}
+          {/* HeroBackground with Odysync styling */}
           <HeroBackground type="peaks" height={300} />
           
           {/* Backdrop with gradient overlay */}
           <Backdrop destination={timer.destination} imageUrl={meta?.imageUrl} />
           <LinearGradient
-            colors={['transparent', TripTickPalette.scrim]}
+            colors={['transparent', OdysyncPalette.scrim]}
             style={{
               position: 'absolute',
               top: 0,
@@ -467,7 +471,7 @@ export function TimerDetailScreen() {
               opacity={0.6}
               textAlign="right"
             >
-              Made with TripTick
+              Made with Odysync
             </RestyleText>
           </Box>
         </Box>
@@ -704,12 +708,12 @@ export function TimerDetailScreen() {
                   key={f.id}
                   onPress={() => tellMeMore(f.query)}
                   style={{
-                    backgroundColor: colorScheme === 'dark' ? TripTickPalette.surface : '#FFFFFF',
+                    backgroundColor: colorScheme === 'dark' ? OdysyncPalette.surface : '#FFFFFF',
                     borderRadius: 20,
                     paddingHorizontal: 16,
                     paddingVertical: 8,
                     borderWidth: 1,
-                    borderColor: TripTickPalette.navy500,
+                    borderColor: OdysyncPalette.navy500,
                   }}
                 >
                   <RestyleText variant="sm" color="text" fontWeight="medium">

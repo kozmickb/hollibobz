@@ -23,7 +23,7 @@ export const EditTimerModal: React.FC<EditTimerModalProps> = ({
   currentDestination,
   currentDate,
 }) => {
-  console.log('EditTimerModal props:', { visible, timerId, currentDestination, currentDate });
+      // console.log('EditTimerModal props:', { visible, timerId, currentDestination, currentDate });
   const { isDark } = useThemeStore();
   const { removeTimer, archiveTimer, updateTimer } = useHolidayStore();
   const navigation = useNavigation();

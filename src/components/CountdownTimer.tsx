@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text } from "react-native";
 import { FlipDigit } from "./FlipDigit";
+import { useThemeStore } from "../store/useThemeStore";
 
 interface CountdownTimerProps {
   targetDate: Date;
@@ -15,6 +16,7 @@ interface TimeLeft {
 }
 
 export function CountdownTimer({ targetDate, compact = false }: CountdownTimerProps) {
+  const { isDark } = useThemeStore();
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
@@ -46,11 +48,11 @@ export function CountdownTimer({ targetDate, compact = false }: CountdownTimerPr
 
   if (compact) {
     return (
-      <View className="items-end">
-        <Text className="text-2xl font-bold text-slate-800">
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: isDark ? '#f1f5f9' : '#1e293b' }}>
           {timeLeft.days}
         </Text>
-        <Text className="text-sm text-slate-500">
+        <Text style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#64748b' }}>
           {timeLeft.days === 1 ? "day" : "days"}
         </Text>
       </View>

@@ -1,7 +1,7 @@
 import { dark as evaDark, light as evaLight } from '@eva-design/eva';
-import { TripTickPalette } from './tokens';
+import { OdysyncPalette } from './tokens';
 
-const palette = TripTickPalette;
+const palette = OdysyncPalette;
 
 // Dark theme mapping
 export const darkKittenTheme = {

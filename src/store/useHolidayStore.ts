@@ -29,6 +29,18 @@ export type Timer = {
   children: number;
   duration: number;  // Number of days
   tripType?: 'business' | 'leisure';
+  selectedFlight?: {
+    flightNumber: string;
+    airline: string;
+    departureAirport: string;
+    arrivalAirport: string;
+    scheduledDeparture: string;
+    scheduledArrival: string;
+    status: string;
+    aircraft?: string;
+    terminal?: string;
+    gate?: string;
+  };
   // Gamification fields
   streak: number;
   xp: number;
@@ -37,12 +49,41 @@ export type Timer = {
   lastCheckIn: string; // ISO string
 };
 
-type AddInput = { 
-  destination: string; 
-  date: string; 
-  adults: number; 
-  children: number; 
-  duration: number; 
+type AddInput = {
+  destination: string;
+  date: string;
+  adults: number;
+  children: number;
+  duration: number;
+  tripType?: 'business' | 'leisure';
+  selectedFlight?: {
+    flightNumber: string;
+    airline: string;
+    departureAirport: string;
+    arrivalAirport: string;
+    scheduledDeparture: string;
+    scheduledArrival: string;
+    status: string;
+    aircraft?: string;
+    terminal?: string;
+    gate?: string;
+  };
+};
+
+type UpdateInput = {
+  id: string;
+  selectedFlight?: {
+    flightNumber: string;
+    airline: string;
+    departureAirport: string;
+    arrivalAirport: string;
+    scheduledDeparture: string;
+    scheduledArrival: string;
+    status: string;
+    aircraft?: string;
+    terminal?: string;
+    gate?: string;
+  };
 };
 
 type Badge = {
@@ -68,7 +109,7 @@ type State = {
   };
   isHydrated: boolean;
   addTimer: (input: AddInput) => void;
-  updateTimer: (id: string, updates: Partial<Pick<Timer, 'destination' | 'date'>>) => Promise<void>;
+  updateTimer: (id: string, updates: Partial<Pick<Timer, 'destination' | 'date' | 'selectedFlight'>>) => Promise<void>;
   archiveTimer: (id: string) => void;
   restoreTimer: (id: string) => void;
   removeTimer: (id: string) => Promise<void>; // hard delete - now async

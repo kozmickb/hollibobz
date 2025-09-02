@@ -19,7 +19,7 @@ export function Backdrop(props: { destination: string; imageUrl?: string }) {
         <Text style={{
           color: '#FFFFFF',
           fontSize: 36,
-          fontFamily: 'Poppins-Bold',
+          fontFamily: 'Questrial-Regular-Bold',
         }}>
           {initials || "?"}
         </Text>
@@ -41,7 +41,7 @@ export function Backdrop(props: { destination: string; imageUrl?: string }) {
           <Text style={{
             color: '#FFFFFF',
             fontSize: 20,
-            fontFamily: 'Poppins-SemiBold',
+            fontFamily: 'Questrial-Regular-SemiBold',
           }}>
             {props.destination}
           </Text>

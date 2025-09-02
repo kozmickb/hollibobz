@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, Platform, ImageBackground } from "react-native";
+import React, { useState, useEffect, useMemo } from "react";
+import { View, Text, ScrollView, Pressable, Platform, ImageBackground, Image } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -9,11 +9,12 @@ import { useThemeStore } from "../store/useThemeStore";
 import { Ionicons } from '@expo/vector-icons';
 import { Animated } from 'react-native';
 import { fetchPexelsBackdrop } from "../features/destination/backdrop";
-import { formatDestinationName } from "../utils/destinationImages";
+import { formatDestinationName, getDestinationImage } from "../utils/destinationImages";
 
-// TripTick UI components
+// Odysync UI components
 import { Text as RestyleText, SafeText } from "../components/ui/Text";
 import { CustomAlert } from "../components/CustomAlert";
+import { DataFreshnessIndicator } from "../components/DataFreshnessIndicator";
 
 // Import features
 import { daysUntil } from "../features/countdown/logic";
@@ -52,6 +53,27 @@ export function HomeScreen() {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(20));
   const [backgroundImages, setBackgroundImages] = useState<{[key: string]: string}>({});
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [forceRender, setForceRender] = useState(0);
+
+
+
+  // Removed force reload to prevent infinite loop
+
+  // Debug background images state - commented out to reduce console noise
+  // useEffect(() => {
+  //   if (Object.keys(backgroundImages).length > 0) {
+  //     console.log('[HomeScreen] 🗂️ Current background images state:', Object.keys(backgroundImages));
+  //     Object.entries(backgroundImages).forEach(([dest, url]) => {
+  //       if (url.includes('picsum.photos')) {
+  //         console.warn(`[HomeScreen] ⚠️ ${dest} is using fallback image:`, url);
+  //       } else {
+  //         console.log(`[HomeScreen] ✅ ${dest} has proper image:`, url.substring(0, 60) + '...');
+  //       }
+  //     });
+  //   }
+  // }, [backgroundImages]);
+  const [tripsLastUpdated, setTripsLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -74,29 +96,40 @@ export function HomeScreen() {
     return () => clearInterval(timer);
   }, [fadeAnim, slideAnim]);
 
-  // Load background images for destinations
+  // Update trips last updated timestamp when timers change
   useEffect(() => {
-    const loadBackgroundImages = async () => {
-      const images: {[key: string]: string} = {};
-      for (const timer of timers) {
-        if (!backgroundImages[timer.destination]) {
-          try {
-            const result = await fetchPexelsBackdrop(timer.destination);
-            if (result.imageUrl) {
-              images[timer.destination] = result.imageUrl;
-            }
-          } catch (error) {
-            console.log('Failed to load background image for', timer.destination);
-          }
-        }
-      }
-      if (Object.keys(images).length > 0) {
-        setBackgroundImages(prev => ({ ...prev, ...images }));
-      }
-    };
+    if (timers.length > 0) {
+      setTripsLastUpdated(new Date());
+    }
+  }, [timers.length]); // Only depend on timer count, not the entire timers array
 
-    loadBackgroundImages();
-  }, [timers]);
+  // Memoize destinations list to prevent unnecessary re-renders
+  const destinationsList = useMemo(() => {
+    return timers.map(t => t.destination).sort();
+  }, [timers.length]); // Only depend on timer count
+
+  // Load background images for destinations - only when destinations change
+  useEffect(() => {
+    if (timers.length === 0) return;
+
+    const newImages: {[key: string]: string} = {};
+    // Load images for all destinations
+    destinationsList.forEach(destination => {
+      try {
+        const imageUrl = getDestinationImage(destination);
+        if (imageUrl) {
+          newImages[destination] = imageUrl;
+        }
+      } catch (error) {
+        console.error('[HomeScreen] ❌ Failed to load background image for', destination, ':', error);
+      }
+    });
+
+    if (Object.keys(newImages).length > 0) {
+      setBackgroundImages(prev => ({ ...prev, ...newImages }));
+      setImagesLoaded(true); // Mark images as loaded
+    }
+  }, [destinationsList]); // Only reload when destinations change
 
   const handleDeleteTimer = (timerId: string) => {
     setTimerToDelete(timerId);
@@ -154,7 +187,7 @@ export function HomeScreen() {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <ImageBackground
-              source={require('../../assets/TT logo.png')}
+              source={require('../../assets/odysync _logo.png')}
               style={{
                 width: 32,
                 height: 32,
@@ -165,7 +198,7 @@ export function HomeScreen() {
               resizeMode="cover"
             />
             <RestyleText variant="xl" color="text" fontWeight="bold">
-              TripTick
+              Odysync
             </RestyleText>
           </View>
           
@@ -395,30 +428,62 @@ export function HomeScreen() {
                           padding: 16,
                         }}
                       >
-                        {backgroundImages[trip.destination] ? (
-                          <ImageBackground
-                            source={{ uri: backgroundImages[trip.destination] }}
-                            style={{
+                        {(() => {
+                          const destination = trip.destination;
+                          const imageUrl = backgroundImages[destination];
+                          
+                          // Images are working - debug logs removed to prevent loops
+
+                          // Show image if available, or placeholder if still loading
+                          return (imageUrl || !imagesLoaded) ? (
+                            <View style={{
                               width: "100%",
                               height: 128,
                               borderRadius: 12,
                               marginBottom: 12,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                            resizeMode="cover"
-                          >
-                            <View style={{ 
-                              position: 'absolute', 
-                              top: 0, 
-                              left: 0, 
-                              right: 0, 
-                              bottom: 0, 
-                              backgroundColor: 'rgba(0,0,0,0.3)',
-                              borderRadius: 12,
-                            }} />
-                            <Ionicons name="location" size={32} color="#FFFFFF" style={{ zIndex: 1 }} />
-                          </ImageBackground>
+                              overflow: 'hidden',
+                              position: 'relative',
+                              backgroundColor: 'transparent'
+                            }}>
+                              {imageUrl ? (
+                                <div
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    backgroundImage: `url(${imageUrl})`,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    backgroundRepeat: 'no-repeat',
+                                    borderRadius: '12px'
+                                  }}
+                                  title={`Background image for ${destination}`}
+                                />
+                              ) : (
+                                <View style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  backgroundColor: 'rgba(5, 150, 105, 0.3)',
+                                  borderRadius: 12,
+                                  justifyContent: 'center',
+                                  alignItems: 'center'
+                                }}>
+                                  <Text style={{ color: '#FFFFFF', opacity: 0.7 }}>Loading...</Text>
+                                </View>
+                              )}
+
+                              <View style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: 'rgba(0,0,0,0.3)',
+                                borderRadius: 12,
+                              }} />
+                              <Ionicons name="location" size={32} color="#FFFFFF" style={{ position: 'absolute', zIndex: 1, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
+                              
+
+                            </View>
                         ) : (
                           <View
                             style={{
@@ -433,7 +498,8 @@ export function HomeScreen() {
                           >
                             <Ionicons name="location" size={32} color="#FFFFFF" />
                           </View>
-                        )}
+                        );
+                        })()}
                         <RestyleText variant="md" color="text" fontWeight="semibold" marginBottom={1}>
                           {formatDestinationName(trip.destination)}
                         </RestyleText>
@@ -521,9 +587,18 @@ export function HomeScreen() {
               marginBottom: 24,
             }}
           >
-            <RestyleText variant="md" color="text" fontWeight="semibold" marginBottom={4}>
-              Your Travel Progress
-            </RestyleText>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+              <RestyleText variant="md" color="text" fontWeight="semibold">
+                Your Travel Progress
+              </RestyleText>
+              {tripsLastUpdated && (
+                <DataFreshnessIndicator
+                  lastUpdated={tripsLastUpdated}
+                  dataType="trip data"
+                  size="sm"
+                />
+              )}
+            </View>
             <View style={{ gap: 16 }}>
               <View>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>

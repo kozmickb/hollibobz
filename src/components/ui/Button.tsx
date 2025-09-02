@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button as KittenButton, ButtonProps as KittenButtonProps } from '@ui-kitten/components';
 import { LinearGradient } from 'expo-linear-gradient';
-import { TripTickPalette } from '../../theme/tokens';
+import { OdysyncPalette } from '../../theme/tokens';
 import { Box } from './Box';
 
 interface ButtonProps extends Omit<KittenButtonProps, 'appearance'> {
@@ -20,7 +20,7 @@ export const Button: React.FC<ButtonProps> = ({
       case 'primary':
         return (
           <LinearGradient
-            colors={[TripTickPalette.yellow400, TripTickPalette.orange500]}
+            colors={[OdysyncPalette.yellow400, OdysyncPalette.orange500]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={{ borderRadius: 12 }}
@@ -50,8 +50,8 @@ export const Button: React.FC<ButtonProps> = ({
             appearance="outline"
             style={[
               {
-                backgroundColor: TripTickPalette.navy700,
-                borderColor: TripTickPalette.navy500,
+                backgroundColor: OdysyncPalette.navy700,
+                borderColor: OdysyncPalette.navy500,
                 borderRadius: 12,
                 paddingVertical: 12,
                 paddingHorizontal: 24,

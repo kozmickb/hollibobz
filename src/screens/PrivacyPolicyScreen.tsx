@@ -52,7 +52,7 @@ export function PrivacyPolicyScreen() {
               Introduction
             </RestyleText>
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              At TripTick, we are committed to protecting your privacy and ensuring the security of your personal information.
+              At Odysync, we are committed to protecting your privacy and ensuring the security of your personal information.
               This Privacy Policy explains how we collect, use, and safeguard your data when you use our travel planning application.
             </RestyleText>
           </View>
@@ -105,7 +105,7 @@ export function PrivacyPolicyScreen() {
             </RestyleText>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              Your information is used exclusively to provide and improve the TripTick experience:
+              Your information is used exclusively to provide and improve the Odysync experience:
             </RestyleText>
 
             <View style={styles.bulletList}>
@@ -165,7 +165,7 @@ export function PrivacyPolicyScreen() {
             </RestyleText>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              TripTick integrates with the following third-party services for enhanced functionality:
+              Odysync integrates with the following third-party services for enhanced functionality:
             </RestyleText>
 
             <View style={styles.subsection}>
@@ -258,7 +258,7 @@ export function PrivacyPolicyScreen() {
             </RestyleText>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              TripTick is designed for users of all ages. We do not knowingly collect personal information from children under 13.
+              Odysync is designed for users of all ages. We do not knowingly collect personal information from children under 13.
               If you are a parent or guardian and believe your child has provided us with personal information, please contact us.
             </RestyleText>
           </View>
@@ -271,7 +271,7 @@ export function PrivacyPolicyScreen() {
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
               We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy
-              within the app. Your continued use of TripTick after changes become effective constitutes acceptance of the updated policy.
+              within the app. Your continued use of Odysync after changes become effective constitutes acceptance of the updated policy.
             </RestyleText>
           </View>
 
@@ -288,12 +288,12 @@ export function PrivacyPolicyScreen() {
             <View style={styles.contactInfo}>
               <Ionicons name="mail" size={18} color={isDark ? '#60a5fa' : '#2563eb'} />
               <RestyleText variant="sm" style={[styles.contactText, { color: isDark ? '#60a5fa' : '#2563eb' }]}>
-                privacy@triptick.app
+                privacy@odeysync.app
               </RestyleText>
             </View>
 
             <RestyleText variant="xs" style={[styles.disclaimer, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
-              Thank you for trusting TripTick with your travel planning needs. We are committed to protecting your privacy and providing you with the best travel planning experience possible.
+              Thank you for trusting Odysync with your travel planning needs. We are committed to protecting your privacy and providing you with the best travel planning experience possible.
             </RestyleText>
           </View>
         </View>

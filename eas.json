@@ -11,6 +11,7 @@
         "disabled": true
       },
       "env": {
+        "APP_ENV": "development",
         "EXPO_NO_CACHE": "1",
         "EXPO_SKIP_CACHE": "1",
         "CI": "1",
@@ -31,6 +32,7 @@
         "simulator": false
       },
       "env": {
+        "APP_ENV": "preview",
         "EXPO_NO_CACHE": "1",
         "EXPO_SKIP_CACHE": "1",
         "CI": "1",
@@ -52,6 +54,7 @@
         "image": "latest"
       },
       "env": {
+        "APP_ENV": "production",
         "EXPO_NO_CACHE": "1",
         "EXPO_SKIP_CACHE": "1",
         "CI": "1",

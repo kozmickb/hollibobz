@@ -8,7 +8,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { useThemeStore } from '../store/useThemeStore';
-import { TripTickPalette } from '../theme/tokens';
+import { OdysyncPalette } from '../theme/tokens';
 
 interface FlipDigitProps {
   value: number;
@@ -34,7 +34,7 @@ const getSizeStyles = (size: string) => {
 export const FlipDigit: React.FC<FlipDigitProps> = ({
   value,
   size = 'md',
-  color = TripTickPalette.textOnNavy,
+  color = OdysyncPalette.textOnNavy,
 }) => {
   const { reduceMotion } = useThemeStore();
   const flipValue = useSharedValue(0);
@@ -79,10 +79,10 @@ export const FlipDigit: React.FC<FlipDigitProps> = ({
             ...sizeStyles,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: TripTickPalette.surface,
+            backgroundColor: OdysyncPalette.surface,
             borderRadius: 8,
             borderWidth: 1,
-            borderColor: TripTickPalette.navy500,
+            borderColor: OdysyncPalette.navy500,
             overflow: 'hidden',
           },
           animatedStyle,

@@ -12,15 +12,16 @@ import { PaperProvider } from 'react-native-paper';
 import { ThemeProvider } from '@shopify/restyle';
 import { AppNavigator } from "./src/navigation/AppNavigator";
 import { useFonts } from "./src/hooks/useFonts";
-import { TripTickLogo } from "./src/components/TripTickLogo";
+import { OdysyncLogo } from "./src/components/OdysyncLogo";
 import { useThemeStore } from "./src/store/useThemeStore";
-import { TripTickPalette } from "./src/theme/tokens";
+import { OdysyncPalette } from "./src/theme/tokens";
 import { UserStorageManager } from "./src/lib/userStorage";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 
 // New imports for production hardening
 import { initPurchases } from "./src/api/purchases";
 import { Analytics, initSentry } from "./src/lib/monitoring";
+import { runRuntimeGuards } from "./src/config/env";
 
 /*
 IMPORTANT NOTICE: DO NOT REMOVE
@@ -47,6 +48,9 @@ const openai_api_key = Constants.expoConfig.extra.apikey;
 SplashScreen.preventAutoHideAsync();
 
 export default function App() {
+  // Run runtime guards at the earliest safe point
+  runRuntimeGuards();
+  
   const { fontsLoaded, fontError } = useFonts();
   const { colorScheme, restyleTheme, kittenTheme, paperTheme, reinitializeTheme } = useThemeStore();
   
@@ -162,7 +166,7 @@ export default function App() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <LinearGradient
-          colors={[TripTickPalette.orange500, TripTickPalette.yellow400]}
+          colors={[OdysyncPalette.orange500, OdysyncPalette.yellow400]}
           style={{ 
             flex: 1, 
             width: '100%', 
@@ -170,7 +174,7 @@ export default function App() {
             alignItems: 'center' 
           }}
         >
-          <TripTickLogo size="2xl" style={{ marginBottom: 24 }} />
+          <OdysyncLogo size="2xl" style={{ marginBottom: 24 }} />
           <ActivityIndicator size="large" color="#FFFFFF" />
           <Text style={{
             color: '#FFFFFF',
@@ -179,7 +183,7 @@ export default function App() {
             marginTop: 16,
             textAlign: 'center',
           }}>
-            Loading TripTick...
+            Loading Odysync...
           </Text>
         </LinearGradient>
       </View>

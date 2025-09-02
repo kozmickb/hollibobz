@@ -4,9 +4,9 @@ import { storage, STORAGE_KEYS as SECURE_KEYS, migrateFromAsyncStorage } from '.
 
 // Storage keys for organized data
 export const STORAGE_KEYS = {
-  userProfile: 'triptick:user:profile:v2',
-  trips: 'triptick:trips:v2',
-  checklists: 'triptick:checklists:v2',
+  userProfile: 'odysync:user:profile:v2',
+  trips: 'odysync:trips:v2',
+  checklists: 'odysync:checklists:v2',
   // Legacy keys for migration
   legacyTrips: 'triptick:trips',
   legacyHolidays: 'holiday_state_v1',
@@ -264,16 +264,16 @@ export class UserStorageManager {
   // Get storage usage statistics
   async getStorageStats(): Promise<{
     totalKeys: number;
-    triptickKeys: number;
+    odysyncKeys: number;
     estimatedSize: string;
   }> {
     try {
       const allKeys = await storage.getAllKeys();
-      const triptickKeys = allKeys.filter(key => key.startsWith('triptick:'));
+      const odysyncKeys = allKeys.filter(key => key.startsWith('odysync:'));
 
-      // Estimate size by getting all triptick data
+      // Estimate size by getting all odysync data
       let totalSize = 0;
-      for (const key of triptickKeys) {
+      for (const key of odysyncKeys) {
         const data = await storage.getItem(key);
         if (data) {
           totalSize += data.length;
@@ -282,14 +282,14 @@ export class UserStorageManager {
 
       return {
         totalKeys: allKeys.length,
-        triptickKeys: triptickKeys.length,
+        odysyncKeys: odysyncKeys.length,
         estimatedSize: `${(totalSize / 1024).toFixed(2)} KB`,
       };
     } catch (error) {
       console.error('Error getting storage stats:', error);
       return {
         totalKeys: 0,
-        triptickKeys: 0,
+        odysyncKeys: 0,
         estimatedSize: '0 KB',
       };
     }

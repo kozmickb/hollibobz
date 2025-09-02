@@ -29,7 +29,7 @@ export function PrivacySecurityScreen() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `triptick-data-export-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `odysync-data-export-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
         Alert.alert('Export Complete', 'Your data has been downloaded as a JSON file.');
@@ -215,7 +215,7 @@ export function PrivacySecurityScreen() {
           type: 'chevron',
           onPress: () => {
             // Replace with your actual support email
-            const email = 'privacy@triptick.app'; // TODO: Update with your actual support email
+            const email = 'privacy@odysync.app'; // TODO: Update with your actual support email
             const url = `mailto:${email}?subject=Privacy Question`;
             Linking.canOpenURL(url).then(supported => {
               if (supported) {

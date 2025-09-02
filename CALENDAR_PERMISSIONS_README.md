@@ -1,6 +1,6 @@
 # Calendar Permissions Implementation
 
-This document explains the safe calendar permissions implementation for the TripTick Expo app.
+This document explains the safe calendar permissions implementation for the Odeysync Expo app.
 
 ## Overview
 

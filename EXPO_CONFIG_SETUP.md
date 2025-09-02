@@ -31,12 +31,12 @@ The app now uses `app.config.ts` instead of `app.json` for better environment va
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `APP_NAME` | App display name | `TripTick` | No |
-| `SLUG` | Expo slug | `triptick` | No |
+| `APP_NAME` | App display name | `Odeysync` | No |
+| `SLUG` | Expo slug | `odeysync` | No |
 | `OWNER` | Expo username | `<your-expo-username>` | Yes |
 | `PROJECT_ID` | EAS project ID | `<REPLACE_WITH_REAL_PROJECT_ID>` | Yes |
-| `IOS_BUNDLE_ID` | iOS bundle identifier | `com.triptick.app` | No |
-| `ANDROID_PACKAGE` | Android package name | `com.triptick.app` | No |
+| `IOS_BUNDLE_ID` | iOS bundle identifier | `com.appeningnow.odeysync` | No |
+| `ANDROID_PACKAGE` | Android package name | `com.appeningnow.odeysync` | No |
 
 ## Setup Instructions
 

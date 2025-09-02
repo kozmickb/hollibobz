@@ -41,10 +41,10 @@ export const theme = {
   
   fonts: {
     primary: {
-      regular: 'Poppins-Regular',
-      medium: 'Poppins-Medium', 
-      semiBold: 'Poppins-SemiBold',
-      bold: 'Poppins-Bold',
+      regular: 'Questrial-Regular',
+      medium: 'Questrial-Regular', 
+      semiBold: 'Questrial-Regular',
+      bold: 'Questrial-Regular',
     },
     secondary: {
       regular: 'PlayfairDisplay-Regular',

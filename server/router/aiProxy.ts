@@ -14,7 +14,8 @@ const aiProxySchema = z.object({
   userId: z.string().optional(),
 });
 
-export const aiProxy = Router().post("/ai-proxy", async (req, res) => {
+const router = Router();
+router.post("/ai-proxy", async (req, res) => {
   try {
     const parsed = aiProxySchema.safeParse(req.body);
     if (!parsed.success) {
@@ -35,3 +36,5 @@ export const aiProxy = Router().post("/ai-proxy", async (req, res) => {
     });
   }
 });
+
+export const aiProxy = router;

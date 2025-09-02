@@ -135,7 +135,11 @@ export default function Checklist({ doc, storageKey = `checklist:${doc.tripTitle
   const styles = getStyles(isDark);
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      showsVerticalScrollIndicator={true}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title} accessibilityLiveRegion="polite">
@@ -234,7 +238,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Poppins-Bold',
+    fontFamily: 'Questrial-Regular',
     color: isDark ? '#F3F4F6' : '#1F2937',
     marginBottom: 16,
   },
@@ -254,7 +258,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   progressLabel: {
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'Questrial-Regular',
     color: isDark ? '#D1D5DB' : '#6B7280',
     marginTop: 4,
   },
@@ -276,7 +280,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   exportButtonText: {
     color: 'white',
     fontSize: 14,
-    fontFamily: 'Poppins-Medium',
+    fontFamily: 'Questrial-Regular',
   },
   section: {
     marginBottom: 16,
@@ -298,7 +302,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'Questrial-Regular',
     color: isDark ? '#F3F4F6' : '#1F2937',
     flex: 1,
   },
@@ -329,7 +333,7 @@ const getStyles = (isDark: boolean) => StyleSheet.create({
   },
   itemText: {
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Questrial-Regular',
     color: isDark ? '#F3F4F6' : '#1F2937',
     flex: 1,
     lineHeight: 22,

@@ -52,7 +52,7 @@ export function TermsOfServiceScreen() {
               Agreement to Terms
             </RestyleText>
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              By downloading, installing, or using TripTick, you agree to be bound by these Terms of Service.
+              By downloading, installing, or using Odysync, you agree to be bound by these Terms of Service.
               If you do not agree to these terms, please do not use the application.
             </RestyleText>
           </View>
@@ -64,7 +64,7 @@ export function TermsOfServiceScreen() {
             </RestyleText>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              TripTick is a travel planning application that provides:
+              Odysync is a travel planning application that provides:
             </RestyleText>
 
             <View style={styles.bulletList}>
@@ -119,7 +119,7 @@ export function TermsOfServiceScreen() {
             </RestyleText>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              You agree to use TripTick only for lawful purposes and in accordance with these terms:
+              You agree to use Odysync only for lawful purposes and in accordance with these terms:
             </RestyleText>
 
             <View style={styles.bulletList}>
@@ -170,7 +170,7 @@ export function TermsOfServiceScreen() {
               <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
                 • AI suggestions are not guaranteed to be accurate or complete{'\n'}
                 • Always verify important travel information from official sources{'\n'}
-                • TripTick is not responsible for decisions made based on AI recommendations
+                • Odysync is not responsible for decisions made based on AI recommendations
               </RestyleText>
             </View>
 
@@ -193,7 +193,7 @@ export function TermsOfServiceScreen() {
             </RestyleText>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              TripTick may integrate with third-party services:
+              Odysync may integrate with third-party services:
             </RestyleText>
 
             <View style={styles.subsection}>
@@ -201,7 +201,7 @@ export function TermsOfServiceScreen() {
                 Calendar Integration
               </RestyleText>
               <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-                Optional calendar access requires your explicit permission. TripTick only adds events you create.
+                Optional calendar access requires your explicit permission. Odysync only adds events you create.
               </RestyleText>
             </View>
 
@@ -222,7 +222,7 @@ export function TermsOfServiceScreen() {
             </RestyleText>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              • TripTick and its content are protected by copyright and trademark laws{'\n'}
+                              • Odysync and its content are protected by copyright and trademark laws{'\n'}
               • You may not copy, modify, or distribute app content without permission{'\n'}
               • User-generated content remains your property{'\n'}
               • We respect the intellectual property rights of others
@@ -238,14 +238,14 @@ export function TermsOfServiceScreen() {
             <View style={styles.highlightBox}>
               <Ionicons name="warning" size={20} color={isDark ? '#f59e0b' : '#d97706'} />
               <RestyleText variant="sm" style={[styles.highlightText, { color: isDark ? '#f59e0b' : '#d97706' }]}>
-                TripTick is provided "as is" without warranties of any kind. We do not guarantee uninterrupted service.
+                Odysync is provided "as is" without warranties of any kind. We do not guarantee uninterrupted service.
               </RestyleText>
             </View>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
               • Travel information is for general guidance only{'\n'}
               • Always check official sources for current requirements{'\n'}
-              • TripTick is not liable for travel disruptions or changes{'\n'}
+              • Odysync is not liable for travel disruptions or changes{'\n'}
               • Users assume all risks associated with travel planning
             </RestyleText>
           </View>
@@ -257,7 +257,7 @@ export function TermsOfServiceScreen() {
             </RestyleText>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              To the maximum extent permitted by law, TripTick shall not be liable for any indirect, incidental,
+              To the maximum extent permitted by law, Odysync shall not be liable for any indirect, incidental,
               special, or consequential damages arising from your use of the application. Our total liability
               shall not exceed the amount paid for the app (if any).
             </RestyleText>
@@ -270,7 +270,7 @@ export function TermsOfServiceScreen() {
             </RestyleText>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              • You may stop using TripTick at any time{'\n'}
+              • You may stop using Odysync at any time{'\n'}
               • We reserve the right to terminate service for violations{'\n'}
               • Data deletion upon account termination is your responsibility{'\n'}
               • Some provisions survive termination
@@ -296,7 +296,7 @@ export function TermsOfServiceScreen() {
             </RestyleText>
 
             <RestyleText variant="sm" style={[styles.paragraph, { color: isDark ? '#d1d5db' : '#374151' }]}>
-              We may update these terms from time to time. Continued use of TripTick after changes
+              We may update these terms from time to time. Continued use of Odysync after changes
               become effective constitutes acceptance of the updated terms. Major changes will be
               communicated through the app.
             </RestyleText>
@@ -315,12 +315,12 @@ export function TermsOfServiceScreen() {
             <View style={styles.contactInfo}>
               <Ionicons name="mail" size={18} color={isDark ? '#60a5fa' : '#2563eb'} />
               <RestyleText variant="sm" style={[styles.contactText, { color: isDark ? '#60a5fa' : '#2563eb' }]}>
-                legal@triptick.app
+                legal@odeysync.app
               </RestyleText>
             </View>
 
             <RestyleText variant="xs" style={[styles.disclaimer, { color: isDark ? '#9ca3af' : '#6b7280' }]}>
-              By using TripTick, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
+              By using Odysync, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
             </RestyleText>
           </View>
         </View>

@@ -301,7 +301,7 @@ const destinationData: Record<string, DestinationInfo> = {
     languages: ['Romanian', 'English'],
     bestMonths: ['Apr', 'May', 'Sep', 'Oct'],
     transportation: ['Metro', 'Bus', 'Tram', 'Taxi'],
-    temperature: '0-30°C',
+    temperature: '-5-30°C', // Updated to reflect Bucharest's continental climate
     timezone: 'EET/EEST (UTC+2/+3)',
     population: '1.7M',
     capital: 'Bucharest',

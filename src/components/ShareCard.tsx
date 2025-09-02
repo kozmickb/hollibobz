@@ -3,7 +3,7 @@ import { View, Text, ImageBackground } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { TripTickLogo } from './TripTickLogo';
+import { OdysyncLogo } from './OdysyncLogo';
 import { getRingColor, getGradientColors } from '../utils/proximityTheme';
 
 interface ShareCardProps {
@@ -60,7 +60,7 @@ export function ShareCard({ destination, daysLeft, imageUrl, size = 400 }: Share
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         {/* Logo */}
         <View style={{ marginBottom: 20 }}>
-          <TripTickLogo size={40} />
+          <OdysyncLogo size={40} />
         </View>
 
         {/* Countdown Ring */}
@@ -102,7 +102,7 @@ export function ShareCard({ destination, daysLeft, imageUrl, size = 400 }: Share
           }}>
             <Text style={{
               fontSize: size * 0.1,
-              fontFamily: 'Poppins-Bold',
+              fontFamily: 'Questrial-Regular',
               color: '#FFFFFF',
               textAlign: 'center',
             }}>
@@ -110,7 +110,7 @@ export function ShareCard({ destination, daysLeft, imageUrl, size = 400 }: Share
             </Text>
             <Text style={{
               fontSize: size * 0.025,
-              fontFamily: 'Poppins-Medium',
+              fontFamily: 'Questrial-Regular',
               color: 'rgba(255,255,255,0.8)',
               textAlign: 'center',
             }}>
@@ -122,7 +122,7 @@ export function ShareCard({ destination, daysLeft, imageUrl, size = 400 }: Share
         {/* Destination text */}
         <Text style={{
           fontSize: size * 0.06,
-          fontFamily: 'Poppins-Bold',
+          fontFamily: 'Questrial-Regular',
           color: '#FFFFFF',
           textAlign: 'center',
           marginBottom: 8,
@@ -134,7 +134,7 @@ export function ShareCard({ destination, daysLeft, imageUrl, size = 400 }: Share
         </Text>
         <Text style={{
           fontSize: size * 0.08,
-          fontFamily: 'Poppins-Bold',
+          fontFamily: 'Questrial-Regular',
           color: '#FFFFFF',
           textAlign: 'center',
           textShadowColor: 'rgba(0,0,0,0.5)',
@@ -155,10 +155,10 @@ export function ShareCard({ destination, daysLeft, imageUrl, size = 400 }: Share
           <Ionicons name="airplane" size={16} color="#FFFFFF" />
           <Text style={{
             fontSize: size * 0.025,
-            fontFamily: 'Poppins-Medium',
+            fontFamily: 'Questrial-Regular',
             color: 'rgba(255,255,255,0.8)',
           }}>
-            TripTick
+            Odysync
           </Text>
         </View>
       </View>

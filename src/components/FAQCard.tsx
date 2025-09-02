@@ -32,7 +32,7 @@ export function FAQCard(props: { title: string; onPress: () => void }) {
       <Text style={{
         color: isDark ? '#FFFFFF' : '#333333',
         fontSize: 16,
-        fontFamily: 'Poppins-SemiBold',
+        fontFamily: 'Questrial-Regular-SemiBold',
         marginBottom: 8,
       }}>
         {props.title}
@@ -41,7 +41,7 @@ export function FAQCard(props: { title: string; onPress: () => void }) {
         <Text style={{
           color: '#4ECDC4',
           fontSize: 14,
-          fontFamily: 'Poppins-Medium',
+          fontFamily: 'Questrial-Regular-Medium',
         }}>
           Tell me more →
         </Text>

@@ -128,7 +128,7 @@ export const useThemeStore = create<ThemeState>()(
       };
     },
     {
-      name: 'triptick-theme-storage-v2', // Changed name to clear old persisted state
+      name: 'odysync-theme-storage-v2', // Changed name to clear old persisted state
       storage: createJSONStorage(() => ({
         getItem: storage.getItem,
         setItem: storage.setItem,

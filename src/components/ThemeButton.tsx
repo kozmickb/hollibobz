@@ -52,7 +52,7 @@ export function ThemeButton() {
       />
       <Text style={{
         fontSize: 12,
-        fontFamily: 'Poppins-Medium',
+        fontFamily: 'Questrial-Regular-Medium',
         color: isDark ? '#F3F4F6' : '#EA580C',
         textTransform: 'capitalize',
       }}>

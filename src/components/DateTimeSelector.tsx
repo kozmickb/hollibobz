@@ -98,7 +98,7 @@ function DesktopDatePicker({
             
             <Text style={{
               fontSize: 18,
-              fontFamily: 'Poppins-SemiBold',
+              fontFamily: 'Questrial-Regular-SemiBold',
               color: isDark ? '#FFFFFF' : '#333333',
             }}>
               {format(currentMonth, 'MMMM yyyy')}
@@ -118,7 +118,7 @@ function DesktopDatePicker({
               <View key={day} style={{ flex: 1, alignItems: 'center' }}>
                 <Text style={{
                   fontSize: 12,
-                  fontFamily: 'Poppins-Medium',
+                  fontFamily: 'Questrial-Regular-Medium',
                   color: isDark ? '#CCCCCC' : '#666666',
                 }}>
                   {day}
@@ -160,7 +160,7 @@ function DesktopDatePicker({
                 >
                   <Text style={{
                     fontSize: 14,
-                    fontFamily: 'Poppins-Regular',
+                    fontFamily: 'Questrial-Regular-Regular',
                     color: isSelected 
                       ? '#FFFFFF'
                       : isCurrentMonth 
@@ -195,7 +195,7 @@ function DesktopDatePicker({
             >
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Poppins-Medium',
+                fontFamily: 'Questrial-Regular-Medium',
                 color: isDark ? '#FFFFFF' : '#333333',
               }}>
                 Cancel
@@ -213,7 +213,7 @@ function DesktopDatePicker({
             >
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Poppins-Medium',
+                fontFamily: 'Questrial-Regular-Medium',
                 color: '#FFFFFF',
               }}>
                 OK
@@ -278,7 +278,7 @@ function DesktopTimePicker({
         }}>
           <Text style={{
             fontSize: 18,
-            fontFamily: 'Poppins-SemiBold',
+            fontFamily: 'Questrial-Regular-SemiBold',
             color: isDark ? '#FFFFFF' : '#333333',
             textAlign: 'center',
             marginBottom: 20,
@@ -308,7 +308,7 @@ function DesktopTimePicker({
                 >
                   <Text style={{
                     fontSize: 16,
-                    fontFamily: 'Poppins-Regular',
+                    fontFamily: 'Questrial-Regular-Regular',
                     color: hours === i ? '#FFFFFF' : (isDark ? '#FFFFFF' : '#333333'),
                     textAlign: 'center',
                   }}>
@@ -320,7 +320,7 @@ function DesktopTimePicker({
 
             <Text style={{
               fontSize: 24,
-              fontFamily: 'Poppins-Bold',
+              fontFamily: 'Questrial-Regular-Bold',
               color: isDark ? '#FFFFFF' : '#333333',
               marginHorizontal: 16,
             }}>
@@ -343,7 +343,7 @@ function DesktopTimePicker({
                 >
                   <Text style={{
                     fontSize: 16,
-                    fontFamily: 'Poppins-Regular',
+                    fontFamily: 'Questrial-Regular-Regular',
                     color: minutes === i ? '#FFFFFF' : (isDark ? '#FFFFFF' : '#333333'),
                     textAlign: 'center',
                   }}>
@@ -373,7 +373,7 @@ function DesktopTimePicker({
             >
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Poppins-Medium',
+                fontFamily: 'Questrial-Regular-Medium',
                 color: isDark ? '#FFFFFF' : '#333333',
               }}>
                 Cancel
@@ -391,7 +391,7 @@ function DesktopTimePicker({
             >
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Poppins-Medium',
+                fontFamily: 'Questrial-Regular-Medium',
                 color: '#FFFFFF',
               }}>
                 OK
@@ -454,7 +454,7 @@ export function DateTimeSelector({
       <Text
         style={{
           fontSize: 18,
-          fontFamily: 'Poppins-SemiBold',
+          fontFamily: 'Questrial-Regular-SemiBold',
           color: isDark ? '#FFFFFF' : '#333333',
           marginBottom: 8,
         }}
@@ -486,7 +486,7 @@ export function DateTimeSelector({
         <Text
           style={{
             fontSize: 16,
-            fontFamily: 'Poppins-Regular',
+            fontFamily: 'Questrial-Regular-Regular',
             color: isDark ? '#FFFFFF' : '#333333',
           }}
         >
@@ -523,7 +523,7 @@ export function DateTimeSelector({
           <Text
             style={{
               fontSize: 16,
-              fontFamily: 'Poppins-Regular',
+              fontFamily: 'Questrial-Regular-Regular',
               color: isDark ? '#FFFFFF' : '#333333',
             }}
           >
@@ -540,7 +540,7 @@ export function DateTimeSelector({
       <Text
         style={{
           fontSize: 14,
-          fontFamily: 'Poppins-Regular',
+          fontFamily: 'Questrial-Regular-Regular',
           color: isDark ? '#B0B0B0' : '#666666',
           marginTop: 8,
         }}

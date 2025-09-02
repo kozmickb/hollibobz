@@ -19,7 +19,7 @@ export function ProfileScreen() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [storageStats, setStorageStats] = useState<{
     totalKeys: number;
-    triptickKeys: number;
+    odeysyncKeys: number;
     estimatedSize: string;
   } | null>(null);
   
@@ -40,7 +40,9 @@ export function ProfileScreen() {
 
   const loadUserProfile = async () => {
     try {
+      console.log('Loading user profile...');
       const profile = await userManager.getProfile();
+      console.log('User profile loaded:', profile);
       setUserProfile(profile);
     } catch (error) {
       console.error('Failed to load user profile:', error);
@@ -67,7 +69,7 @@ export function ProfileScreen() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `triptick-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `odeysync-backup-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
         URL.revokeObjectURL(url);
       } else {
@@ -253,14 +255,12 @@ export function ProfileScreen() {
           subtitle: userProfile ? `${userProfile.stats.tripsCreated} trips created` : 'Loading...',
           type: 'chevron',
           onPress: () => {
+            console.log('Profile Information pressed', { userProfile: !!userProfile });
             if (userProfile) {
-              Alert.alert(
-                'Your Statistics',
-                `Trips Created: ${userProfile.stats.tripsCreated}\n` +
-                `Checklists Completed: ${userProfile.stats.checklistsCompleted}\n` +
-                `Items Checked: ${userProfile.stats.itemsChecked}\n` +
-                `Member Since: ${new Date(userProfile.stats.joinedDate).toLocaleDateString()}`
-              );
+              navigation.navigate('ProfileInformation');
+            } else {
+              console.log('User profile not loaded yet');
+              Alert.alert('Loading', 'Profile data is still loading...');
             }
           },
         },
@@ -313,13 +313,13 @@ export function ProfileScreen() {
         {
           icon: 'information-circle',
           title: 'Storage Info',
-          subtitle: storageStats ? `${storageStats.triptickKeys} items` : 'Loading...',
+          subtitle: storageStats ? `${storageStats.odysyncKeys} items` : 'Loading...',
           type: 'chevron',
           onPress: () => {
             if (storageStats) {
               Alert.alert(
                 'Storage Information',
-                `TripTick Data: ${storageStats.triptickKeys} items\n` +
+                `Odysync Data: ${storageStats.odysyncKeys} items\n` +
                 `Estimated Size: ${storageStats.estimatedSize}\n` +
                 `Total Device Keys: ${storageStats.totalKeys}`
               );
@@ -332,6 +332,21 @@ export function ProfileScreen() {
           subtitle: 'Permanently delete all data',
           type: 'chevron',
           onPress: handleClearData,
+        },
+      ],
+    },
+    {
+      title: 'Travel Tools',
+      items: [
+        {
+          icon: 'airplane',
+          title: 'Airport Schedules',
+          subtitle: 'Check flight arrivals & departures',
+          type: 'chevron',
+          onPress: () => {
+            console.log('Airport Schedules pressed');
+            navigation.navigate('AirportSchedules');
+          },
         },
       ],
     },
@@ -360,6 +375,8 @@ export function ProfileScreen() {
     },
   ];
 
+  console.log('ProfileScreen rendering', { userProfile: !!userProfile, storageStats: !!storageStats });
+
   return (
     <View style={{ flex: 1, backgroundColor: isDark ? "#1a1a1a" : "#fefefe" }}>
       {/* Header */}
@@ -378,7 +395,7 @@ export function ProfileScreen() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <ImageBackground
-            source={require('../../assets/TT logo.png')}
+            source={require('../../assets/odysync _logo.png')}
             style={{
               width: 32,
               height: 32,
@@ -517,14 +534,18 @@ export function ProfileScreen() {
               {section.items.map((item, itemIndex) => (
                 <Pressable
                   key={item.title}
-                  onPress={item.onPress}
-                  style={{
+                  onPress={() => {
+                    console.log('Pressable pressed:', item.title);
+                    item.onPress?.();
+                  }}
+                  style={({ pressed }) => [{
                     flexDirection: 'row',
                     alignItems: 'center',
                     padding: 16,
                     borderBottomWidth: itemIndex < section.items.length - 1 ? 1 : 0,
                     borderBottomColor: isDark ? "#4b5563" : "#e5e7eb",
-                  }}
+                    backgroundColor: pressed ? (isDark ? "#4b5563" : "#f9fafb") : 'transparent',
+                  }]}
                 >
                   <View style={{
                     width: 40,
@@ -551,14 +572,7 @@ export function ProfileScreen() {
                     </RestyleText>
                   </View>
                   
-                  {item.type === 'toggle' ? (
-                    <Switch
-                      value={item.value}
-                      onValueChange={item.onPress}
-                      trackColor={{ false: isDark ? "#4b5563" : "#d1d5db", true: "#fbbf24" }}
-                      thumbColor={item.value ? "#ffffff" : "#ffffff"}
-                    />
-                  ) : item.type === 'switch' ? (
+                  {item.type === 'switch' ? (
                     <Switch
                       value={item.switchValue}
                       onValueChange={item.onSwitchChange}

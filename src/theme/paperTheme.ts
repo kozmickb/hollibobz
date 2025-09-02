@@ -1,7 +1,7 @@
 import { MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
-import { TripTickPalette } from './tokens';
+import { OdysyncPalette } from './tokens';
 
-const palette = TripTickPalette;
+const palette = OdysyncPalette;
 
 // Dark theme for Paper
 export const darkPaperTheme = {

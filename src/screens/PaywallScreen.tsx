@@ -46,7 +46,7 @@ export function PaywallScreen() {
           <Ionicons name="diamond" size={64} color="#be5cff" />
         </View>
         <RestyleText variant="xl" style={[styles.title, { color: isDark ? '#f9fafb' : '#111827' }]}>
-          Upgrade to TripTick Plus
+          Upgrade to Odysync Plus
         </RestyleText>
         <RestyleText variant="md" style={[styles.tagline, { color: isDark ? '#d1d5db' : '#6b7280' }]}>
           Unlock the full potential of your travel planning
@@ -96,7 +96,7 @@ export function PaywallScreen() {
       <View style={styles.pricingContainer}>
         <View style={[styles.pricingCard, { backgroundColor: isDark ? '#1f2937' : '#ffffff' }, pricingShadowStyle]}>
           <RestyleText variant="lg" style={[styles.pricingTitle, { color: isDark ? '#f9fafb' : '#111827' }]}>
-            TripTick Plus
+            Odeysync Plus
           </RestyleText>
           <View style={styles.priceContainer}>
             <RestyleText variant="xl" style={[styles.price, { color: '#be5cff' }]}>

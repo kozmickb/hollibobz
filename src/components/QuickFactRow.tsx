@@ -15,7 +15,7 @@ export function QuickFactRow(props: { label: string; value: string }) {
       <Text style={{
         color: isDark ? '#CCCCCC' : '#666666',
         fontSize: 14,
-        fontFamily: 'Poppins-Regular',
+        fontFamily: 'Questrial-Regular-Regular',
         flex: 0.35,
       }}>
         {props.label}
@@ -23,7 +23,7 @@ export function QuickFactRow(props: { label: string; value: string }) {
       <Text style={{
         color: isDark ? '#FFFFFF' : '#333333',
         fontSize: 14,
-        fontFamily: 'Poppins-Medium',
+        fontFamily: 'Questrial-Regular-Medium',
         flex: 0.65,
         textAlign: 'right',
       }}>

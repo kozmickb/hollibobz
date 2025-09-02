@@ -1,4 +1,4 @@
-# TripTick - Travel Planning Application Architecture & Context Document
+# Odeysync - Travel Planning Application Architecture & Context Document
 
 ## 📋 Table of Contents
 
@@ -23,7 +23,17 @@
 
 ---
 
-## 🔄 Recent Updates (Aug 2025)
+## 🔄 Recent Updates (Jan 2025)
+
+- **AI Response Formatting Overhaul**: Completely redesigned AI prompt system with `ENHANCED_RESPONSE_INSTRUCTION` to eliminate placeholders and provide specific, actionable responses. Updated `features/checklist/promptEnhancer.ts` and `HollyChatScreen.tsx`.
+- **Server Dependencies Update**: Upgraded Express (v4.18.2→v4.21.2), @types/express (v4.17.21→v4.17.23), @types/node (v20.10.5→v24.3.0), Zod (v3.22.4→v4.1.5), and TypeScript (v5.3.3→v5.9.2).
+- **Asset Path Resolution**: Fixed logo asset paths to match actual filenames (`odysync _logo.png` with space) across all components and configuration files.
+- **Express Compatibility**: Resolved path-to-regexp compatibility issues by downgrading from Express v5 to stable v4.21.2.
+- **Package.json Scripts**: Added `dev` script alias for `expo start` to improve developer experience.
+- **Storage Key Migration**: Updated AsyncStorage keys from `triptick:` to `odeysync:` prefix for consistency.
+- **Destination Data Integration**: Enhanced AI prompts with real-time destination information including currency, languages, transportation, and weather data.
+
+## 🔄 Previous Updates (Aug 2025)
 
 - Checklist contextualization: prompts now include trip purpose (`tripType` business/leisure), group size, dates, and destination facts. Implemented in `features/checklist/promptEnhancer.ts` and used by `HollyChatScreen`.
 - Destination image resolver hardened: strict normalization, alias map (e.g., Abu Dhabi variants), and Levenshtein-based fuzzy matching; removed partial substring matches. Implemented in `utils/destinationImages.ts`.
@@ -34,9 +44,9 @@
 
 ## 📖 Overview
 
-### What is TripTick?
+### What is Odeysync?
 
-TripTick is a comprehensive travel planning application designed to help users organize and manage their trips efficiently. The app combines trip planning tools, checklists, countdown timers, and AI-powered assistance to create a seamless travel planning experience.
+Odeysync is a comprehensive travel planning application designed to help users organize and manage their trips efficiently. The app combines trip planning tools, checklists, countdown timers, and AI-powered assistance to create a seamless travel planning experience.
 
 ### Core Mission
 
@@ -128,37 +138,41 @@ TripTick is a comprehensive travel planning application designed to help users o
 
 ### Core Framework
 - **React Native 0.79.5** - Cross-platform mobile development
-- **Expo SDK 53+** - Managed React Native workflow
-- **TypeScript 5.8+** - Type-safe development
+- **React 19.0.0** - Latest React with concurrent features
+- **Expo SDK 53.0.22** - Managed React Native workflow
+- **TypeScript 5.9.2** - Type-safe development (updated from 5.8+)
 
 ### Navigation & Routing
-- **@react-navigation/native** - Navigation framework
-- **@react-navigation/native-stack** - Stack navigation
-- **@react-navigation/bottom-tabs** - Bottom tab navigation
+- **@react-navigation/native 7.1.6** - Navigation framework
+- **@react-navigation/native-stack 7.3.2** - Stack navigation
+- **@react-navigation/bottom-tabs 7.3.10** - Bottom tab navigation
 
 ### State Management
-- **Zustand** - Lightweight state management
-- **AsyncStorage** - Local data persistence
+- **Zustand 5.0.4** - Lightweight state management
+- **AsyncStorage** - Local data persistence with odeysync: key prefix
 - **React Context** - Theme and configuration
+- **MMKV** - High-performance encrypted storage
 
 ### UI & Styling
-- **@shopify/restyle** - Type-safe styling system
-- **@expo/vector-icons** - Icon library
-- **React Native Reanimated** - Animations
-- **NativeWind** - Tailwind CSS for React Native
-- **Custom Theme System** - Consistent styling
+- **@shopify/restyle 2.4.5** - Type-safe styling system
+- **@expo/vector-icons 14.1.0** - Icon library
+- **React Native Reanimated 3.17.4** - Advanced animations
+- **NativeWind 4.1.23** - Tailwind CSS for React Native
+- **Custom Theme System** - Consistent dark/light theme support
 
 ### Development Tools
 - **Expo CLI** - Development and build tools
-- **ESLint** - Code linting
+- **ESLint 9.25.0** - Code linting
 - **Prettier** - Code formatting
-- **TypeScript** - Type checking
+- **TypeScript 5.9.2** - Advanced type checking
+- **Babel 7.25.2** - JavaScript transpilation
 
 ### Backend & Server
-- **Node.js 18+** - Server runtime
-- **Express.js** - Web framework
-- **TypeScript** - Server-side type safety
-- **CORS** - Cross-origin resource sharing
+- **Node.js 24.3.0** - Latest server runtime (updated from 18+)
+- **Express.js 4.21.2** - Stable web framework (v4, not v5)
+- **TypeScript 5.9.2** - Server-side type safety
+- **CORS 2.8.5** - Cross-origin resource sharing
+- **Zod 4.1.5** - Runtime type validation (updated from v3)
 
 ### Monetization & Analytics
 - **RevenueCat** - Subscription management
@@ -292,7 +306,7 @@ server/                  # Backend AI proxy server
 
 ### Data Storage Strategy
 
-TripTick uses a **safe AsyncStorage adapter** with guards and fallbacks for reliable local persistence:
+Odeysync uses a **safe AsyncStorage adapter** with guards and fallbacks for reliable local persistence:
 
 #### Client-Side Storage (Safe Adapter System)
 ```
@@ -484,10 +498,13 @@ Analytics ← Error Handling ← State Persistence ← User Notification
 - **Subscription Gating:** Free tier limited to 1 trip
 
 ### 2. Intelligent Planning
-- **Holly Bobz AI Assistant:** Conversational travel planning with quota management
-- **Smart Recommendations:** Destination-specific suggestions
-- **Dynamic Checklists:** Context-aware task management
+- **Holly Bobz AI Assistant:** Conversational travel planning with enhanced response formatting
+- **Specific Recommendations:** Real venue names, addresses, and transportation options (no placeholders)
+- **Enhanced Prompt System:** `ENHANCED_RESPONSE_INSTRUCTION` provides structured, actionable responses
+- **Destination Integration:** Real-time destination data (currency, languages, transport, weather)
+- **Dynamic Checklists:** Context-aware task management with JSON parsing
 - **Usage Tracking:** Monthly limits with upgrade prompts
+- **Multi-Provider AI:** Cost-optimized routing between Deepseek, OpenAI, and Grok
 
 ### 3. Organization Tools
 - **Custom Checklists:** User-created and template-based
@@ -1118,8 +1135,8 @@ eas build --platform android --profile production
 
 ```typescript
 export default {
-  name: 'TripTick',
-  slug: 'triptick',
+  name: 'Odeysync',
+  slug: 'odeysync',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/app-icon.png',
@@ -1129,7 +1146,7 @@ export default {
     backgroundColor: '#FF6B6B'
   },
   ios: {
-    bundleIdentifier: 'com.triptick.app',
+    bundleIdentifier: 'com.appeningnow.odeysync',
     buildNumber: '1.0.0',
     infoPlist: {
       NSCalendarsUsageDescription: 'We use your calendar to show and add trip events.',
@@ -1139,7 +1156,7 @@ export default {
     }
   },
   android: {
-    package: 'com.triptick.app',
+    package: 'com.appeningnow.odeysync',
     versionCode: 1,
     permissions: [
       'READ_CALENDAR',
@@ -2720,7 +2737,17 @@ cd server && npm install
 
 ---
 
-*This document is maintained by the TripTick development team and should be updated with any significant architectural changes or new features.*
+*This document is maintained by the Odeysync development team and should be updated with any significant architectural changes or new features.*
 
-**Last Updated:** August 2025
-**Document Version:** 2.3.0 (iOS Build Fixes & Dependencies Update)
+**Last Updated:** January 2025
+**Document Version:** 2.4.0 (AI Enhancement & Architecture Modernization)
+
+---
+
+### Version History
+- **v2.4.0 (Jan 2025)**: AI Response Formatting Overhaul, Server Dependencies Update, Express v4 Compatibility, Asset Path Resolution
+- **v2.3.0 (Aug 2025)**: iOS Build Fixes & Dependencies Update
+- **v2.2.0 (Jul 2025)**: Destination Integration & AI Provider Optimization
+- **v2.1.0 (Jun 2025)**: RevenueCat Integration & Subscription Management
+- **v2.0.0 (May 2025)**: React Native 0.79.5 Upgrade & Performance Optimization
+- **v1.0.0 (Apr 2025)**: Initial Release with Core Features

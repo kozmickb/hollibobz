@@ -8,14 +8,14 @@ interface DestinationInputProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
-  className?: string;
+  style?: object;
 }
 
 export function DestinationInput({
   value,
   onChangeText,
   placeholder = "e.g., Paris, France",
-  className = "",
+  style = {},
 }: DestinationInputProps) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -53,28 +53,48 @@ export function DestinationInput({
   };
 
   return (
-    <View className="relative">
-      <View className="relative">
+    <View style={{ position: 'relative' }}>
+      <View style={{ position: 'relative' }}>
         <TextInput
           value={value}
           onChangeText={onChangeText}
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={placeholder}
-          className={`bg-slate-100 rounded-lg px-4 py-3 pr-12 text-slate-800 ${className}`}
+          style={{
+            backgroundColor: isDark ? '#374151' : '#f1f5f9',
+            borderRadius: 8,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            paddingRight: 48,
+            color: isDark ? '#f1f5f9' : '#1e293b',
+            fontSize: 16,
+            ...style
+          }}
           placeholderTextColor="#94a3b8"
           autoCapitalize="words"
           autoCorrect={false}
         />
-        <View className="absolute right-3 top-3">
-          <Ionicons name="location" size={20} color="#64748b" />
+        <View style={{ position: 'absolute', right: 12, top: 12 }}>
+          <Ionicons name="location" size={20} color={isDark ? '#9ca3af' : '#64748b'} />
         </View>
       </View>
 
       {showSuggestions && suggestions.length > 0 && (
-        <View className="absolute top-full left-0 right-0 z-50 mt-1">
+        <View style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4 }}>
           <ScrollView
-            className="bg-white rounded-lg shadow-lg border border-slate-200 max-h-48"
+            style={{
+              backgroundColor: isDark ? '#1f2937' : 'white',
+              borderRadius: 8,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              elevation: 8,
+              borderWidth: 1,
+              borderColor: isDark ? '#374151' : '#e2e8f0',
+              maxHeight: 192,
+            }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
@@ -82,10 +102,21 @@ export function DestinationInput({
               <Pressable
                 key={index}
                 onPress={() => handleSuggestionPress(suggestion)}
-                className="flex-row items-center px-4 py-3 border-b border-slate-100 last:border-b-0"
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: isDark ? '#374151' : '#f1f5f9'
+                }}
               >
                 <Ionicons name="location-outline" size={16} color="#64748b" />
-                <Text className="text-slate-700 ml-3 flex-1">{suggestion}</Text>
+                <Text style={{ 
+                  color: isDark ? '#d1d5db' : '#374151', 
+                  marginLeft: 12, 
+                  flex: 1 
+                }}>{suggestion}</Text>
                 {value.toLowerCase() === suggestion.toLowerCase() && (
                   <Ionicons name="checkmark" size={16} color="#3b82f6" />
                 )}
@@ -95,8 +126,15 @@ export function DestinationInput({
             {value.length > 0 && !suggestions.some(s => 
               s.toLowerCase().includes(value.toLowerCase())
             ) && (
-              <View className="px-4 py-3 bg-blue-50">
-                <Text className="text-blue-700 text-sm">
+              <View style={{
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(239, 246, 255, 1)',
+              }}>
+                <Text style={{
+                  color: isDark ? '#60a5fa' : '#1d4ed8',
+                  fontSize: 12,
+                }}>
                   💡 Tip: Try popular destinations like "Paris, France" or "Tokyo, Japan"
                 </Text>
               </View>

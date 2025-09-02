@@ -1,7 +1,7 @@
 import { createTheme } from '@shopify/restyle';
-import { TripTickPalette } from './tokens';
+import { OdysyncPalette } from './tokens';
 
-const palette = TripTickPalette;
+const palette = OdysyncPalette;
 
 // Define colors explicitly to ensure they're always available
 const colors = {

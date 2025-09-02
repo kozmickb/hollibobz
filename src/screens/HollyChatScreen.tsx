@@ -18,6 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { ChatStackParamList } from '../navigation/AppNavigator';
 import { useThemeStore } from '../store/useThemeStore';
+import { useFonts } from '../hooks/useFonts';
 import { ThemeButton } from '../components/ThemeButton';
 import { useEntitlements } from '../hooks/useEntitlements';
 import { checkAndIncrementAI } from '../hooks/useAIQuota';
@@ -29,6 +30,7 @@ import { sendAIThroughProxy } from '../api/chat-service';
 import { AIMessage } from '../types/ai';
 import ChecklistMessage from '../features/checklist/ChecklistMessage';
 import * as ChecklistPrompt from '../features/checklist/promptEnhancer';
+import { ENHANCED_RESPONSE_INSTRUCTION } from '../features/checklist/promptEnhancer';
 import { getDestinationInfo } from '../api/destination-data';
 import { tripStore } from '../lib/tripStore';
 import { generateTripId, createTripFromChecklist, extractTripTitleFromPrompt } from '../utils/tripHelpers';
@@ -51,6 +53,7 @@ export function HollyChatScreen() {
   const navigation = useNavigation<HollyChatNav>();
   const route = useRoute<HollyChatRoute>();
   const { isDark } = useThemeStore();
+  const { fontsLoaded } = useFonts();
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -262,7 +265,7 @@ export function HollyChatScreen() {
       conversationHistory.push({ role: 'user', content: enrichedContent });
 
       // Add context about the trip if available
-      let systemPrompt = "You are Holly Bobz, a friendly and knowledgeable AI travel assistant. You help users plan amazing trips with personalized advice, insider tips, and detailed recommendations. Be enthusiastic, helpful, and provide practical travel advice.\n\nRules for checklists and itineraries:\n- Be specific and destination-aware. Avoid generic phrasing like 'get a meal' or 'book transport'.\n- Use concrete, actionable items that a user can do next.\n- If accommodation, neighborhoods, venues, or bookings have been mentioned earlier in the conversation, incorporate them.\n- Do NOT invent names. If a specific name is uncertain, use a clear placeholder (e.g., '<confirm hotel restaurant name>') or make the next-step explicit (e.g., 'choose and book a restaurant near Al Zahiyah').\n- Tailor to group (adults/children), trip purpose (business vs leisure), duration, season/date, and local norms (e.g., dress code).\n- Prefer sections such as Packing, Transport setup, Day-of logistics, Documents/Payments, Local etiquette, and a purpose-specific section (e.g., Meetings for business, Attractions for leisure).";
+      let systemPrompt = "You are Holly Bobz, a friendly and knowledgeable AI travel assistant. You help users plan amazing trips with personalized advice, insider tips, and detailed recommendations. Be enthusiastic, helpful, and provide practical travel advice.\n\n" + ENHANCED_RESPONSE_INSTRUCTION;
       
       if (route.params?.context?.destination) {
         const context = route.params.context;
@@ -689,7 +692,7 @@ The best trips are the ones that teach you something new!`
             </View>
             <Text style={{
               fontSize: 18,
-              fontFamily: 'Poppins-Bold',
+              fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
               color: isDark ? '#F3F4F6' : '#1F2937',
             }}>
               Holly
@@ -735,7 +738,7 @@ The best trips are the ones that teach you something new!`
               </View>
               <Text style={{
                 fontSize: 20,
-                fontFamily: 'Poppins-Bold',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#F3F4F6' : '#1F2937',
                 marginBottom: 8,
                 textAlign: 'center',
@@ -744,7 +747,7 @@ The best trips are the ones that teach you something new!`
               </Text>
               <Text style={{
                 fontSize: 16,
-                fontFamily: 'Poppins-Regular',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#9CA3AF' : '#6B7280',
                 textAlign: 'center',
                 lineHeight: 24,
@@ -782,7 +785,7 @@ The best trips are the ones that teach you something new!`
                 {message.role === 'user' ? (
                   <Text style={{
                     fontSize: 16,
-                    fontFamily: 'Poppins-Regular',
+                    fontFamily: 'Questrial-Regular',
                     color: isDark ? '#A78BFA' : '#8B5CF6',
                     lineHeight: 24,
                   }}>
@@ -790,57 +793,109 @@ The best trips are the ones that teach you something new!`
                   </Text>
                 ) : (
                   <>
-                    <Markdown style={{
+
+                    <Markdown 
+                      mergeStyle={false}
+                      style={{
                       body: {
                         fontSize: 16,
-                        fontFamily: 'Poppins-Regular',
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
                         color: isDark ? '#F3F4F6' : '#1F2937',
                         lineHeight: 24,
+                        fontWeight: 'normal',
+                      },
+                      text: {
+                        fontSize: 16,
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
+                        color: isDark ? '#F3F4F6' : '#1F2937',
+                        lineHeight: 24,
+                        fontWeight: 'normal',
                       },
                       heading1: {
                         fontSize: 20,
-                        fontFamily: 'Poppins-Bold',
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
                         color: isDark ? '#F3F4F6' : '#1F2937',
                         marginTop: 8,
                         marginBottom: 4,
+                        fontWeight: 'bold',
                       },
                       heading2: {
                         fontSize: 18,
-                        fontFamily: 'Poppins-Bold',
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
                         color: isDark ? '#F3F4F6' : '#1F2937',
                         marginTop: 8,
                         marginBottom: 4,
+                        fontWeight: 'bold',
                       },
                       heading3: {
                         fontSize: 16,
-                        fontFamily: 'Poppins-Bold',
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
                         color: isDark ? '#F3F4F6' : '#1F2937',
                         marginTop: 8,
                         marginBottom: 4,
+                        fontWeight: 'bold',
                       },
                       strong: {
-                        fontFamily: 'Poppins-Bold',
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
                         color: isDark ? '#F3F4F6' : '#1F2937',
+                        fontWeight: 'bold',
                       },
                       em: {
-                        fontFamily: 'Poppins-Italic',
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
                         color: isDark ? '#F3F4F6' : '#1F2937',
+                        fontStyle: 'italic',
                       },
                       bullet_list: {
                         marginTop: 4,
                         marginBottom: 4,
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
                       },
                       ordered_list: {
                         marginTop: 4,
                         marginBottom: 4,
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
                       },
                       list_item: {
                         marginTop: 2,
                         marginBottom: 2,
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
+                        fontSize: 16,
+                        color: isDark ? '#F3F4F6' : '#1F2937',
+                        lineHeight: 24,
                       },
                       paragraph: {
                         marginTop: 4,
                         marginBottom: 4,
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
+                        fontSize: 16,
+                        color: isDark ? '#F3F4F6' : '#1F2937',
+                        lineHeight: 24,
+                      },
+                      link: {
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
+                        fontSize: 16,
+                        color: isDark ? '#A78BFA' : '#8B5CF6',
+                        lineHeight: 24,
+                        textDecorationLine: 'underline',
+                      },
+                      code_inline: {
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'monospace',
+                        fontSize: 14,
+                        backgroundColor: isDark ? '#374151' : '#F3F4F6',
+                        color: isDark ? '#F3F4F6' : '#1F2937',
+                        paddingHorizontal: 4,
+                        paddingVertical: 2,
+                        borderRadius: 4,
+                      },
+                      blockquote: {
+                        fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
+                        fontSize: 16,
+                        color: isDark ? '#9CA3AF' : '#6B7280',
+                        paddingLeft: 12,
+                        borderLeftWidth: 4,
+                        borderLeftColor: isDark ? '#374151' : '#E5E7EB',
+                        fontStyle: 'italic',
+                        lineHeight: 24,
                       },
                     }}>
                       {/* Remove JSON blocks from display content */}
@@ -911,7 +966,7 @@ Rules:
                           />
                           <Text style={{
                             fontSize: 16,
-                            fontFamily: 'Poppins-SemiBold',
+                            fontFamily: 'Questrial-Regular',
                             color: '#FFFFFF',
                           }}>
                             Open Checklist
@@ -923,7 +978,7 @@ Rules:
                 )}
                 <Text style={{
                   fontSize: 12,
-                  fontFamily: 'Poppins-Regular',
+                  fontFamily: 'Questrial-Regular',
                   color: message.role === 'user'
                     ? (isDark ? '#C4B5FD' : '#A78BFA')
                     : (isDark ? '#9CA3AF' : '#6B7280'),
@@ -976,7 +1031,7 @@ Rules:
                   </Animated.View>
                   <Text style={{
                     fontSize: 14,
-                    fontFamily: 'Poppins-Medium',
+                    fontFamily: 'Questrial-Regular',
                     color: isDark ? '#A78BFA' : '#8B5CF6',
                     flex: 1,
                   }}>
@@ -1057,7 +1112,7 @@ Rules:
                   paddingVertical: 12,
                   paddingTop: 12,
                   fontSize: 16,
-                  fontFamily: 'Poppins-Regular',
+                  fontFamily: 'Questrial-Regular',
                   color: isDark ? '#F3F4F6' : '#1F2937',
                   minHeight: 24,
                   maxHeight: 76,

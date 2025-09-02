@@ -4,6 +4,7 @@ import Checklist from "./Checklist";
 import { extractJsonBlock } from "./itineraryParser";
 import { validateChecklistDoc } from "./validate";
 import { useThemeStore } from "../../store/useThemeStore";
+import { useFonts } from "../../hooks/useFonts";
 
 type Props = { 
   messageContent: string; 
@@ -12,6 +13,7 @@ type Props = {
 
 export default function ChecklistMessage({ messageContent, onRegenerateRequest }: Props) {
   const { isDark } = useThemeStore();
+  const { fontsLoaded } = useFonts();
   
   const doc = useMemo(() => {
     const block = extractJsonBlock(messageContent);
@@ -35,7 +37,8 @@ export default function ChecklistMessage({ messageContent, onRegenerateRequest }
       }}>
         <Text style={{
           fontSize: 14,
-          fontFamily: 'Poppins-Medium',
+          fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
+          fontWeight: '600',
           color: isDark ? '#FED7AA' : '#EA580C',
           marginBottom: 8,
         }}>
@@ -43,7 +46,7 @@ export default function ChecklistMessage({ messageContent, onRegenerateRequest }
         </Text>
         <Text style={{
           fontSize: 14,
-          fontFamily: 'Poppins-Regular',
+          fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
           color: isDark ? '#FED7AA' : '#9A3412',
           lineHeight: 20,
           marginBottom: 12,
@@ -64,7 +67,8 @@ export default function ChecklistMessage({ messageContent, onRegenerateRequest }
             <Text style={{
               color: 'white',
               fontSize: 14,
-              fontFamily: 'Poppins-Medium',
+              fontFamily: fontsLoaded ? 'Questrial-Regular' : 'System',
+              fontWeight: '600',
             }}>
               Generate Checklist
             </Text>

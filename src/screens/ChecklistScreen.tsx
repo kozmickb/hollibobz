@@ -212,7 +212,7 @@ export default function ChecklistScreen() {
             paddingVertical: 4,
             marginRight: 8,
           }}>
-            <Text style={{ color: isDark ? '#34D399' : '#065F46', fontFamily: 'Poppins-SemiBold' }}>Checklist</Text>
+            <Text style={{ color: isDark ? '#34D399' : '#065F46', fontFamily: 'Questrial-Regular' }}>Checklist</Text>
           </View>
         )}
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -306,15 +306,16 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'Questrial-Regular',
   },
   headerSubtitle: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Questrial-Regular',
     marginTop: 2,
   },
   content: {
     flex: 1,
+    minHeight: 0, // Ensures proper scrolling
   },
   centered: {
     flex: 1,
@@ -324,7 +325,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 16,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Questrial-Regular',
   },
   errorCard: {
     padding: 24,
@@ -338,7 +339,7 @@ const styles = StyleSheet.create({
   },
   errorTitle: {
     fontSize: 18,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'Questrial-Regular',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -354,13 +355,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'Questrial-Regular',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 14,
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Questrial-Regular',
     marginBottom: 24,
     textAlign: 'center',
     lineHeight: 20,
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'Questrial-Regular',
   },
   buttonSecondary: {
     paddingHorizontal: 24,
@@ -383,6 +384,6 @@ const styles = StyleSheet.create({
   },
   buttonSecondaryText: {
     fontSize: 16,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'Questrial-Regular',
   },
 });

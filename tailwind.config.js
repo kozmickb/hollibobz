@@ -45,10 +45,10 @@ module.exports = {
         }
       },
       fontFamily: {
-        'poppins': ['Poppins-Regular'],
-        'poppins-medium': ['Poppins-Medium'],
-        'poppins-semibold': ['Poppins-SemiBold'],
-        'poppins-bold': ['Poppins-Bold'],
+        'questrial': ['Questrial-Regular'],
+        'questrial-medium': ['Questrial-Regular'],
+        'questrial-semibold': ['Questrial-Regular'],
+        'questrial-bold': ['Questrial-Regular'],
         'playfair': ['PlayfairDisplay-Regular'],
         'playfair-medium': ['PlayfairDisplay-Medium'],
         'playfair-semibold': ['PlayfairDisplay-SemiBold'],

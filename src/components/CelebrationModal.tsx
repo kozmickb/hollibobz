@@ -161,22 +161,22 @@ export function CelebrationModal({
 
   return (
     <Modal transparent visible={visible} animationType="none">
-      <View className="flex-1 bg-black/50 justify-center items-center">
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' }}>
         {/* Confetti Animation */}
-        <View className="absolute inset-0 justify-start items-center">
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-start', alignItems: 'center' }}>
           {Array.from({ length: 15 }).map((_, index) => (
             <ConfettiPiece key={index} delay={index * 100} />
           ))}
         </View>
         
-        <Animated.View style={containerStyle} className="items-center">
+        <Animated.View style={[containerStyle, { alignItems: 'center' }]}>
           {/* Success Content */}
-          <View className="bg-white rounded-3xl p-8 mx-8 items-center shadow-2xl">
-            <Animated.View style={pulseStyle} className="bg-green-100 rounded-full p-4 mb-4">
-              <Text className="text-4xl">🎉</Text>
+          <View style={{ backgroundColor: 'white', borderRadius: 24, padding: 32, marginHorizontal: 32, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 20 }}>
+            <Animated.View style={[pulseStyle, { backgroundColor: '#dcfce7', borderRadius: 50, padding: 16, marginBottom: 16 }]}>
+              <Text style={{ fontSize: 32 }}>🎉</Text>
             </Animated.View>
             
-            <Animated.View style={textStyle} className="items-center">
+            <Animated.View style={[textStyle, { alignItems: 'center' }]}>
               <Text style={[textStyles.h2, { textAlign: 'center', marginBottom: 8 }]} {...accessibilityProps.text}>
                 Timer Created!
               </Text>

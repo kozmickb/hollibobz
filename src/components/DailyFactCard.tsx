@@ -10,18 +10,20 @@ import Animated, {
   Extrapolate,
 } from "react-native-reanimated";
 import { useHolidayStore } from "../state/holidayStore";
+import { useCurrentDestinationFacts } from "../utils/destinationManager";
+import { useThemeStore } from "../store/useThemeStore";
 import * as Haptics from "expo-haptics";
 
 export function DailyFactCard() {
-  const { getTodaysFact, markFactAsViewed, currentDestination, saveFact } = useHolidayStore();
+  const { markFactAsViewed, saveFact } = useHolidayStore();
+  const { currentDestination, todaysFact, hasFacts } = useCurrentDestinationFacts();
+  const { isDark } = useThemeStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  
+
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
   const flipRotation = useSharedValue(0);
-  
-  const todaysFact = getTodaysFact();
   
   if (!todaysFact || !currentDestination) {
     return null;
@@ -86,13 +88,26 @@ export function DailyFactCard() {
   }));
 
   return (
-    <View className="p-6">
-      <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-lg font-bold text-slate-800">
+    <View style={{ padding: 24 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <Text style={{ 
+          fontSize: 18, 
+          fontWeight: 'bold', 
+          color: isDark ? '#f1f5f9' : '#1e293b' 
+        }}>
           Daily Fact
         </Text>
-        <View className="bg-blue-100 rounded-full px-3 py-1">
-          <Text className="text-blue-700 text-sm font-medium">
+        <View style={{
+          backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+          borderRadius: 16,
+          paddingHorizontal: 12,
+          paddingVertical: 4,
+        }}>
+          <Text style={{
+            color: isDark ? '#60a5fa' : '#2563eb',
+            fontSize: 12,
+            fontWeight: '500',
+          }}>
             {new Date().toLocaleDateString("en-US", { 
               month: "short", 
               day: "numeric" 

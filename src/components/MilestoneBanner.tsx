@@ -32,7 +32,7 @@ export function MilestoneBanner({ label }: MilestoneBannerProps) {
       <View style={{ flex: 1 }}>
         <Text style={{
           fontSize: 16,
-          fontFamily: 'Poppins-SemiBold',
+          fontFamily: 'Questrial-Regular-SemiBold',
           color: isDark ? '#4ade80' : '#16a34a',
           marginBottom: 4,
         }}>
@@ -41,7 +41,7 @@ export function MilestoneBanner({ label }: MilestoneBannerProps) {
         
         <Text style={{
           fontSize: 14,
-          fontFamily: 'Poppins-Medium',
+          fontFamily: 'Questrial-Regular-Medium',
           color: isDark ? '#86efac' : '#15803d',
           marginBottom: 6,
         }}>
@@ -50,7 +50,7 @@ export function MilestoneBanner({ label }: MilestoneBannerProps) {
         
         <Text style={{
           fontSize: 13,
-          fontFamily: 'Poppins-Regular',
+          fontFamily: 'Questrial-Regular-Regular',
           color: isDark ? '#bbf7d0' : '#166534',
           lineHeight: 18,
         }}>

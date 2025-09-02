@@ -1,4 +1,4 @@
-export const TripTickPalette = {
+export const OdysyncPalette = {
   // Core midnight navies (sampled from our brand comps)
   navy900: '#07235C',
   navy800: '#152756',

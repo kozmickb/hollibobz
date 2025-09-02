@@ -7,6 +7,8 @@ import { HomeScreen } from "../screens/HomeScreen";
 import { TripsScreen } from "../screens/TripsScreen";
 import { HollyChatScreen } from "../screens/HollyChatScreen";
 import { ProfileScreen } from "../screens/ProfileScreen";
+import { ProfileInformationScreen } from "../screens/ProfileInformationScreen";
+import { AirportSchedulesScreen } from "../screens/AirportSchedulesScreen";
 import { PrivacySecurityScreen } from "../screens/PrivacySecurityScreen";
 import { PrivacyPolicyScreen } from "../screens/PrivacyPolicyScreen";
 import { TermsOfServiceScreen } from "../screens/TermsOfServiceScreen";
@@ -52,6 +54,8 @@ export type ChatStackParamList = {
 
 export type ProfileStackParamList = {
   Profile: undefined;
+  ProfileInformation: undefined;
+  AirportSchedules: undefined;
   PrivacySecurity: undefined;
   PrivacyPolicy: undefined;
   TermsOfService: undefined;
@@ -123,6 +127,8 @@ function ProfileStackNavigator() {
   return (
     <ProfileStack.Navigator>
       <ProfileStack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+      <ProfileStack.Screen name="ProfileInformation" component={ProfileInformationScreen} options={{ headerShown: false }} />
+      <ProfileStack.Screen name="AirportSchedules" component={AirportSchedulesScreen} options={{ headerShown: false }} />
       <ProfileStack.Screen name="PrivacySecurity" component={PrivacySecurityScreen} options={{ headerShown: false }} />
       <ProfileStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={{ headerShown: false }} />
       <ProfileStack.Screen name="TermsOfService" component={TermsOfServiceScreen} options={{ headerShown: false }} />
@@ -179,7 +185,7 @@ export function AppNavigator() {
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontFamily: 'Poppins-Medium',
+          fontFamily: 'Questrial-Regular',
         },
         headerShown: false,
       })}

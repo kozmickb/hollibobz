@@ -12,7 +12,8 @@ const usageSchema = z.object({
   proLimit: z.number().optional(),
 });
 
-export const usageRouter = Router().post("/usage", (req, res) => {
+const router = Router();
+router.post("/usage", (req, res) => {
   try {
     const parsed = usageSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -44,6 +45,8 @@ export const usageRouter = Router().post("/usage", (req, res) => {
     });
   } catch (error: any) {
     console.error('Usage tracking error:', error);
-    res.status(500).json({ error: "Usage tracking failed" });
+    res.status(500).json({ error: "Usage tracking failed"     });
   }
 });
+
+export const usageRouter = router;

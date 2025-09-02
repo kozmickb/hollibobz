@@ -5,10 +5,10 @@ export const getFontFamily = (
   fontType: 'primary' | 'secondary' = 'primary'
 ) => {
   const primary = {
-    regular: 'Poppins-Regular',
-    medium: 'Poppins-Medium',
-    semibold: 'Poppins-SemiBold',
-    bold: 'Poppins-Bold',
+    regular: 'Questrial-Regular',
+    medium: 'Questrial-Regular',
+    semibold: 'Questrial-Regular',
+    bold: 'Questrial-Regular',
   };
 
   const secondary = {

@@ -118,7 +118,7 @@ export function TimerCard({ timerId, onPress, showProgress = true }: TimerCardPr
             <View style={{ flex: 1 }}>
               <Text style={{
                 fontSize: 18,
-                fontFamily: 'Poppins-Bold',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#FFFFFF' : '#333333',
                 marginBottom: 2,
               }}>
@@ -126,7 +126,7 @@ export function TimerCard({ timerId, onPress, showProgress = true }: TimerCardPr
               </Text>
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Poppins-Regular',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#CCCCCC' : '#666666',
               }}>
                 {new Date(timer.date).toLocaleDateString()}
@@ -144,7 +144,7 @@ export function TimerCard({ timerId, onPress, showProgress = true }: TimerCardPr
           >
             <Text style={{
               fontSize: 48,
-              fontFamily: 'Poppins-Bold',
+              fontFamily: 'Questrial-Regular',
               color: isDark ? '#FF6B6B' : '#FF6B6B',
               textAlign: 'center',
             }}>
@@ -152,7 +152,7 @@ export function TimerCard({ timerId, onPress, showProgress = true }: TimerCardPr
             </Text>
             <Text style={{
               fontSize: 16,
-              fontFamily: 'Poppins-Medium',
+              fontFamily: 'Questrial-Regular',
               color: isDark ? '#CCCCCC' : '#666666',
               textAlign: 'center',
             }}>
@@ -182,7 +182,7 @@ export function TimerCard({ timerId, onPress, showProgress = true }: TimerCardPr
               </View>
               <Text style={{
                 fontSize: 12,
-                fontFamily: 'Poppins-Regular',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#CCCCCC' : '#666666',
                 textAlign: 'center',
                 marginTop: 4,
@@ -197,14 +197,14 @@ export function TimerCard({ timerId, onPress, showProgress = true }: TimerCardPr
             <View style={{ alignItems: 'center' }}>
               <Text style={{
                 fontSize: 16,
-                fontFamily: 'Poppins-Bold',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#FF6B6B' : '#FF6B6B',
               }}>
                 {timer.streak || 0}
               </Text>
               <Text style={{
                 fontSize: 12,
-                fontFamily: 'Poppins-Regular',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#CCCCCC' : '#666666',
               }}>
                 Streak
@@ -213,14 +213,14 @@ export function TimerCard({ timerId, onPress, showProgress = true }: TimerCardPr
             <View style={{ alignItems: 'center' }}>
               <Text style={{
                 fontSize: 16,
-                fontFamily: 'Poppins-Bold',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#4ECDC4' : '#4ECDC4',
               }}>
                 {timer.xp || 0}
               </Text>
               <Text style={{
                 fontSize: 12,
-                fontFamily: 'Poppins-Regular',
+                fontFamily: 'Questrial-Regular',
                 color: isDark ? '#CCCCCC' : '#666666',
               }}>
                 XP

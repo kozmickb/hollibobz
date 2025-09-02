@@ -29,7 +29,7 @@ export function TeaserCard({ title, body, onMore }: TeaserCardProps) {
         />
         <Text style={{
           fontSize: 16,
-          fontFamily: 'Poppins-SemiBold',
+          fontFamily: 'Questrial-Regular-SemiBold',
           color: isDark ? '#FFFFFF' : '#1F2937',
           flex: 1,
         }}>
@@ -39,7 +39,7 @@ export function TeaserCard({ title, body, onMore }: TeaserCardProps) {
       
       <Text style={{
         fontSize: 14,
-        fontFamily: 'Poppins-Regular',
+        fontFamily: 'Questrial-Regular-Regular',
         color: isDark ? '#D1D5DB' : '#4B5563',
         lineHeight: 20,
         marginBottom: 16,
@@ -67,7 +67,7 @@ export function TeaserCard({ title, body, onMore }: TeaserCardProps) {
         <Text style={{
           color: '#FFFFFF',
           fontSize: 14,
-          fontFamily: 'Poppins-SemiBold',
+          fontFamily: 'Questrial-Regular-SemiBold',
           marginRight: 6,
         }}>
           Tell me more
