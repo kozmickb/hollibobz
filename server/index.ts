@@ -1,6 +1,9 @@
 import express from "express";
-import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
 import dotenv from "dotenv";
+import { corsMiddleware } from "./src/middleware/cors";
+import healthRouter from "./src/routes/health";
 import { aiProxy } from "./router/aiProxy";
 import { usageRouter } from "./router/usage";
 import { airportsRouter } from "./routes/api/airports";
@@ -18,27 +21,17 @@ console.log('   - PORT:', process.env.PORT || 'undefined');
 console.log('   - NODE_ENV:', process.env.NODE_ENV || 'undefined');
 
 const app = express();
-const PORT = process.env.PORT || 8787;
+const PORT = Number(process.env.PORT) || 3000;
 
-// Middleware
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? ['https://yourapp.com'] // Replace with your production domain
-    : ['http://localhost:8081', 'http://127.0.0.1:8081'], // Allow Expo dev server
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-rapidapi-key', 'x-rapidapi-host']
-}));
-app.use(express.json({ limit: '10mb' }));
+// Production hardening middleware
+app.set("trust proxy", 1);
+app.use(helmet());
+app.use(morgan("combined"));
+app.use(express.json({ limit: "2mb" }));
+app.use(corsMiddleware());
 
-// Health check
-app.get("/health", (_, res) => res.json({
-  ok: true,
-  timestamp: new Date().toISOString(),
-  version: "1.0.0"
-}));
-
-// API routes
+// API routes FIRST
+app.use("/api", healthRouter);
 app.use(aiProxy);
 app.use(usageRouter);
 app.use("/api/airports", airportsRouter);
@@ -60,6 +53,5 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Odysync AI Server running on port ${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`API listening on ${PORT} (env=${process.env.NODE_ENV || "unknown"})`);
 });
