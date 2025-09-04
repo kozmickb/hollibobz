@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "commonjs",
+    "target": "es2019",
+    "module": "esnext",
     "lib": ["ES2020"],
-    "outDir": "./dist",
-    "rootDir": "./",
+    "outDir": "dist",
+    "rootDir": ".",
+    "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -15,7 +16,14 @@
     "sourceMap": true
   },
   "include": [
-    "**/*.ts"
+    "src/**/*.ts",
+    "index.ts",
+    "router/**/*.ts",
+    "routes/**/*.ts",
+    "ai/**/*.ts",
+    "db/**/*.ts",
+    "middleware/**/*.ts",
+    "providers/**/*.ts"
   ],
   "exclude": [
     "node_modules",

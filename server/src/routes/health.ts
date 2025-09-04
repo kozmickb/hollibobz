@@ -5,14 +5,12 @@ const prisma = new PrismaClient();
 const router = Router();
 
 router.get("/health", async (_req, res) => {
-  const payload: any = { ok: true, time: new Date().toISOString(), env: process.env.NODE_ENV };
   try {
+    // Simple DB round-trip
     await prisma.$queryRaw`SELECT 1`;
-    payload.db = "ok";
-    res.json(payload);
-  } catch (e) {
-    payload.db = "fail";
-    res.status(500).json(payload);
+    res.json({ ok: true, db: "ok", env: process.env.NODE_ENV || "development" });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e?.message ?? "db error" });
   }
 });
 

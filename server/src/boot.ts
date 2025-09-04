@@ -4,21 +4,24 @@ function run(cmd: string) {
   execSync(cmd, { stdio: "inherit", env: process.env });
 }
 
-(async () => {
+async function main() {
   try {
     console.log("[boot] prisma migrate deploy…");
-    run("npx prisma migrate deploy --schema=prisma/schema.prisma");
+    run("npx prisma migrate deploy");
   } catch (e) {
-    console.warn("[boot] migrate deploy failed, attempting db push (one-time fallback) …");
-    try {
-      run("npx prisma db push --schema=prisma/schema.prisma --accept-data-loss");
-    } catch (e2) {
-      console.error("[boot] prisma failed:", e2);
-      process.exit(1);
-    }
+    console.warn("[boot] migrate deploy failed, attempting db push …");
+    run("npx prisma db push --accept-data-loss");
   }
 
   console.log("[boot] starting API…");
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require("./index.js");
-})();
+  // Works for both CJS and ESM builds:
+  const entry = new URL("../dist/index.js", import.meta.url).pathname;
+  await import("node:path").then(({ resolve }) => import("node:url").then(({ pathToFileURL }) =>
+    import(pathToFileURL(resolve(entry)).href)
+  ));
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
