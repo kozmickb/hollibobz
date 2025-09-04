@@ -2,28 +2,33 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Prisma on Alpine
+# Needed for Prisma & native deps on Alpine
 RUN apk add --no-cache libc6-compat openssl
 
-# Make npm deterministic for the peer-dep conflict
+# Make npm deterministic and avoid peer-dep explosions
 RUN npm config set legacy-peer-deps true \
  && npm config set fund false \
  && npm config set audit false
 
-# Install only the backend deps
+# Install only backend deps; copy prisma FIRST so postinstall can find schema
 COPY server/package*.json ./
+# optional but recommended, if you committed it:
+COPY server/.npmrc ./
+# ensure schema exists before npm ci triggers postinstall prisma generate
+COPY server/prisma ./prisma
+
 RUN npm ci
 
-# Copy backend source
+# Copy the rest of the backend source
 COPY server/ ./
 
-# Generate Prisma client with explicit schema path
+# Generate Prisma client explicitly (safe to run twice)
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
 # Build TS -> dist
 RUN npm run build
 
-# Remove dev deps but keep the resolved tree
+# Prune dev deps for lean runtime
 RUN npm prune --omit=dev
 
 # ---- Runtime stage ----
