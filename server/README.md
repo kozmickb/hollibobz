@@ -24,6 +24,17 @@
 - **Start Command**: `npm run start:railway`
 - **Health Check Path**: `/api/health`
 
+### Railway (Dockerfile) Deploy
+
+Railway will automatically detect the `server/Dockerfile` and use it for building and deploying the service. This approach uses a multi-stage Docker build with Node 20, ensuring:
+
+- **Build Stage**: Installs all dependencies (including dev dependencies) and compiles TypeScript to `dist/`
+- **Runtime Stage**: Uses only production dependencies and includes the Prisma CLI for migrations
+- **Prisma Schema**: Located at `prisma/schema.prisma` and used consistently across all Prisma commands
+- **Start Command**: Runs the resilient boot sequence that executes `prisma migrate deploy` with fallback to `prisma db push --accept-data-loss` before starting the server
+
+The Dockerfile approach provides deterministic builds and eliminates Nixpacks-related issues.
+
 ### Railway Deployment Commands
 
 ```bash
