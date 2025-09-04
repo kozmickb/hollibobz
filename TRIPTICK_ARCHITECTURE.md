@@ -25,6 +25,7 @@
 
 ## 🔄 Recent Updates (Jan 2025)
 
+- **Production-Ready Server Architecture**: Transformed the server into a production-ready Railway deployment with automatic Prisma migrations, DB-aware health checks, environment-based CORS configuration, and security hardening with Helmet and Morgan. Added Railway boot script that runs migrations before starting the server, with fallback to `db push` for one-time setup.
 - **Production Security & Telemetry**: Implemented comprehensive production safety with runtime guards that block HTTP connections in production builds. Added environment-driven telemetry initialization for Sentry and PostHog that only activates in production when proper keys are provided. Created centralized API client with automatic authentication and error handling.
 - **Client API Helpers & UI Integration**: Added comprehensive client-side API helpers for flight resolution, airport schedules, and itinerary ingestion. Implemented anonymous user ID system with persistent storage. Added Trip Actions card to TimerDrilldownScreen with premium-gated buttons for Add Flight, Upload Itinerary, and Airport Schedule features.
 - **Build Environment Documentation**: Added comprehensive README section with Railway server deployment and EAS mobile build setup instructions. Includes environment variable checklists, CLI commands, and quick deployment workflows for both server and mobile app builds.
@@ -383,13 +384,25 @@ src/
     ├── themes.ts        # Theme definitions
     └── ...
 
-server/                  # Backend AI proxy server
-├── index.ts            # Express server entry point
-├── package.json        # Server dependencies
+server/                  # Production-ready backend server
+├── index.ts            # Express server entry point with security hardening
+├── src/
+│   ├── boot.ts         # Railway deployment script with Prisma migrations
+│   ├── middleware/
+│   │   └── cors.ts     # Environment-based CORS configuration
+│   └── routes/
+│       └── health.ts   # DB-aware health check endpoint
+├── package.json        # Server dependencies with Railway scripts
 ├── tsconfig.json       # TypeScript configuration
+├── prisma/
+│   └── schema.prisma   # Database schema with env("DATABASE_URL")
 ├── router/
 │   ├── aiProxy.ts      # AI proxy endpoint with provider selection
 │   └── usage.ts        # Usage tracking and quota management
+├── routes/api/         # API endpoints
+│   ├── airports.ts     # Airport schedule endpoints
+│   ├── flights.ts      # Flight resolution endpoints
+│   └── ingest.ts       # Document processing endpoints
 └── ai/
     ├── providerRouter.ts # Cheapest-first AI provider selection
     └── adapters/
@@ -1274,17 +1287,20 @@ npm start -- --tunnel
 # Navigate to server directory
 cd server
 
-# Install server dependencies
+# Install server dependencies (includes Prisma generation)
 npm install
 
 # Start server in development mode
 npm run dev
 
+# Build server for production
+npm run build
+
 # Start server in production mode
 npm run start
 
-# Build server for production
-npm run build
+# Railway deployment (runs migrations then starts server)
+npm run start:railway
 ```
 
 #### Environment Setup
@@ -1299,11 +1315,48 @@ EXPO_PUBLIC_POSTHOG_KEY=your_posthog_key
 SENTRY_DSN=your_sentry_dsn
 
 # Server environment variables
+DATABASE_URL=postgresql://username:password@host:port/database
+APP_ENV=development
+ALLOWED_ORIGINS=http://localhost:8081,http://127.0.0.1:8081
 OPENAI_API_KEY=your_openai_key
 DEEPSEEK_API_KEY=your_deepseek_key
 XAI_API_KEY=your_grok_key
 PORT=3000
 ```
+
+### Production Deployment
+
+#### Railway Server Deployment
+The server is now production-ready with automatic migrations and health checks:
+
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login and link project
+railway login
+cd server
+railway link
+
+# Set environment variables
+railway variables set DATABASE_URL="${{Postgres.DATABASE_URL}}"
+railway variables set APP_ENV="production"
+railway variables set ALLOWED_ORIGINS="https://hollibobz-production.up.railway.app,https://expo.dev"
+
+# Deploy (automatically runs: npm ci → npm run build → npm run start:railway)
+railway up
+
+# Verify deployment
+curl https://your-app.railway.app/api/health
+# Returns: {"ok":true,"time":"...","env":"production","db":"ok"}
+```
+
+#### Server Production Features
+- **Automatic Migrations**: Boot script runs `prisma migrate deploy` before starting
+- **Health Monitoring**: `/api/health` endpoint with database connectivity check
+- **Security Hardening**: Helmet, Morgan logging, CORS allowlist
+- **Environment-Based Config**: Development vs production CORS and security settings
+- **Railway Integration**: Optimized for Railway's deployment pipeline
 
 ### Build Process
 
