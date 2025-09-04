@@ -9,13 +9,14 @@
     "schema": "prisma/schema.prisma"
   },
   "scripts": {
-    "postinstall": "prisma generate",
-    "build": "tsc",
+    "clean": "rimraf dist || true",
+    "build": "npm run clean && tsc",
     "start": "node dist/index.js",
     "start:railway": "node dist/boot.js",
+    "postinstall": "prisma generate",
     "dev": "ts-node index.ts",
     "serve": "node dist/index.js",
-    "migrate:dev": "prisma migrate dev",
+    "migrate:dev": "prisma migrate dev --name init",
     "migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
@@ -35,7 +36,6 @@
     "node-fetch": "^3.3.2",
     "openai": "^4.104.0",
     "pdf-parse": "^1.1.1",
-    "prisma": "6.15.0",
     "zod": "^4.1.5"
   },
   "devDependencies": {
@@ -44,6 +44,8 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^24.3.0",
     "@types/pdf-parse": "^1.1.5",
+    "prisma": "6.15.0",
+    "rimraf": "^5.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   }

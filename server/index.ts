@@ -1,9 +1,9 @@
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
+import cors from "cors";
+import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
-import { corsMiddleware } from "./src/middleware/cors";
-import healthRouter from "./src/routes/health";
 import { aiProxy } from "./router/aiProxy";
 import { usageRouter } from "./router/usage";
 import { airportsRouter } from "./routes/api/airports";
@@ -21,17 +21,52 @@ console.log('   - PORT:', process.env.PORT || 'undefined');
 console.log('   - NODE_ENV:', process.env.NODE_ENV || 'undefined');
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const prisma = new PrismaClient();
 
-// Production hardening middleware
-app.set("trust proxy", 1);
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+
+// CORS allowlist via env: CORS_ORIGIN="https://example.com,https://app.example.com"
+const allowlist = (process.env.CORS_ORIGIN ?? "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean);
+const corsOptions = allowlist.length
+  ? {
+      origin(origin: string | undefined, cb: (err: Error | null, ok?: boolean) => void) {
+        if (!origin || allowlist.includes(origin)) return cb(null, true);
+        cb(new Error("Not allowed by CORS"));
+      },
+      credentials: true,
+    }
+  : {};
+
 app.use(helmet());
 app.use(morgan("combined"));
-app.use(express.json({ limit: "2mb" }));
-app.use(corsMiddleware());
+app.use(express.json());
+app.use(cors(corsOptions));
 
-// API routes FIRST
-app.use("/api", healthRouter);
+// Health: verifies DB connectivity and returns JSON
+app.get("/api/health", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({
+      ok: true,
+      db: "ok",
+      time: new Date().toISOString(),
+      env: process.env.NODE_ENV ?? "development",
+      commit: process.env.RAILWAY_GIT_COMMIT_SHA ?? null,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      ok: false,
+      db: "error",
+      error: err?.message ?? String(err),
+      time: new Date().toISOString(),
+    });
+  }
+});
+
+// (Keep any existing routes below this comment)
 app.use(aiProxy);
 app.use(usageRouter);
 app.use("/api/airports", airportsRouter);
@@ -53,5 +88,5 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`API listening on ${PORT} (env=${process.env.NODE_ENV || "unknown"})`);
+  console.log(`API listening on :${PORT}`);
 });

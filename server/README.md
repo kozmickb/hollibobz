@@ -57,3 +57,31 @@ The API provides a health check endpoint at `/api/health` that returns JSON with
 - **Client Generation**: Automatic via `postinstall` script
 - **Dependencies**: Exact versions `@prisma/client: "6.15.0"` and `prisma: "6.15.0"`
 - **Migrations**: Automatic deployment on Railway startup
+
+## Railway production notes
+
+- Root Directory: `server`
+- Install: `npm ci`
+- Build: `npm run build`
+- Start: `npm run start:railway`
+- Health Check Path: `/api/health`
+
+On boot, the service runs:
+1) `prisma migrate deploy --schema prisma/schema.prisma`
+2) falls back to `prisma db push --accept-data-loss` if needed
+3) starts `dist/index.js` via `dist/boot.js`
+
+Ensure `DATABASE_URL` points to the **Private/Internal** Railway Postgres URL in the same project.
+
+## PowerShell smoke tests for your URL
+
+```powershell
+# Replace with your service URL (API service), not the web app
+$api = "https://hollibobz-production.up.railway.app"
+
+# Health check (should return JSON)
+irm "$api/api/health"
+
+# Example endpoint (replace path with a real one from your app)
+# irm "$api/api/airports/LHR/schedule?durationMinutes=60"
+```

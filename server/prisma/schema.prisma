@@ -10,6 +10,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Ping {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}
+
 // Usage tracking models
 model UsageMeter {
   id             String   @id @default(cuid())
