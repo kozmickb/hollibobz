@@ -1,0 +1,66 @@
+# Node modules
+node_modules
+*/node_modules
+
+# Build outputs
+dist
+*/dist
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+README*
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Expo/React Native files (not needed for server)
+app.json
+app.config.ts
+App.tsx
+src/
+assets/
+babel.config.js
+metro.config.js
+react-native.config.js
+tailwind.config.js
+nativewind-env.d.ts
+global.css
+
+# Other projects
+drilldownpage/
+tiptrickmp/
+magicpath-project/
+MVP/
+MVP 2/
+
+# Patches
+patches/
+
+# Scripts
+*.ps1
+*.sh
+!railway-start.sh
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
