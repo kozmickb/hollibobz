@@ -2,91 +2,59 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { PrismaClient } from "@prisma/client";
-import dotenv from "dotenv";
-import { aiProxy } from "./router/aiProxy";
-import { usageRouter } from "./router/usage";
-import { airportsRouter } from "./routes/api/airports";
-import { flightsRouter } from "./routes/api/flights";
-import { ingestRouter } from "./routes/api/ingest";
-
-// Load environment variables from server directory
-const envPath = require('path').resolve(__dirname, '.env');
-console.log('🔧 Loading .env from:', envPath);
-dotenv.config({ path: envPath });
-
-console.log('🔧 Environment Loading Debug:');
-console.log('   - AVIATIONSTACK_API_KEY:', process.env.AVIATIONSTACK_API_KEY ? process.env.AVIATIONSTACK_API_KEY.substring(0, 10) + '...' : 'undefined');
-console.log('   - PORT:', process.env.PORT || 'undefined');
-console.log('   - NODE_ENV:', process.env.NODE_ENV || 'undefined');
 
 const app = express();
 const prisma = new PrismaClient();
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const PORT = Number(process.env.PORT ?? 3000);
+const SERVICE_NAME = process.env.SERVICE_NAME ?? "odysync";
+const CORS_ORIGIN = (process.env.CORS_ORIGIN ?? "").split(",").map(s => s.trim()).filter(Boolean);
 
-// CORS allowlist via env: CORS_ORIGIN="https://example.com,https://app.example.com"
-const allowlist = (process.env.CORS_ORIGIN ?? "")
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
-const corsOptions = allowlist.length
-  ? {
-      origin(origin: string | undefined, cb: (err: Error | null, ok?: boolean) => void) {
-        if (!origin || allowlist.includes(origin)) return cb(null, true);
-        cb(new Error("Not allowed by CORS"));
-      },
-      credentials: true,
-    }
-  : {};
-
+// middleware
 app.use(helmet());
-app.use(morgan("combined"));
-app.use(express.json());
-app.use(cors(corsOptions));
+app.use(express.json({ limit: "1mb" }));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(rateLimit({ windowMs: 60_000, limit: 120 }));
+app.disable("x-powered-by");
 
-// Health: verifies DB connectivity and returns JSON
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || CORS_ORIGIN.length === 0) return cb(null, true);
+    return CORS_ORIGIN.some(a => origin.endsWith(a)) ? cb(null, true) : cb(new Error("CORS blocked"), false);
+  },
+  credentials: true,
+}));
+
+// health
 app.get("/api/health", async (_req, res) => {
+  const start = Date.now();
+  let db = { connected: false, latency_ms: null as number | null, error: null as string | null };
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.status(200).json({
-      ok: true,
-      db: "ok",
-      time: new Date().toISOString(),
-      env: process.env.NODE_ENV ?? "development",
-      commit: process.env.RAILWAY_GIT_COMMIT_SHA ?? null,
-    });
-  } catch (err: any) {
-    res.status(500).json({
-      ok: false,
-      db: "error",
-      error: err?.message ?? String(err),
-      time: new Date().toISOString(),
-    });
+    db.connected = true;
+    db.latency_ms = Date.now() - start;
+  } catch (e: any) {
+    db.error = e?.message ?? "unknown";
   }
-});
 
-// (Keep any existing routes below this comment)
-app.use(aiProxy);
-app.use(usageRouter);
-app.use("/api/airports", airportsRouter);
-app.use("/api/flights", flightsRouter);
-app.use("/api/ingest", ingestRouter);
-
-// Error handling middleware
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Server error:', error);
-  res.status(500).json({
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? error.message : undefined
+  res.status(200).json({
+    status: db.connected ? "ok" : "degraded",
+    service: SERVICE_NAME,
+    version: process.env.npm_package_version,
+    uptime_s: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    db,
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// example root
+app.get("/", (_req, res) => {
+  res.status(200).send("OK");
 });
 
+// start server
 app.listen(PORT, () => {
-  console.log(`API listening on :${PORT}`);
+  console.log(`🚀 ${SERVICE_NAME} listening on :${PORT}`);
 });
