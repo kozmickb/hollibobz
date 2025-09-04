@@ -8,4 +8,4 @@ cmds = ["cd server && npm ci"]
 cmds = ["cd server && npm run build"]
 
 [start]
-cmd = "chmod +x deploy.sh && ./deploy.sh"
+cmd = "chmod +x railway-start.sh && ./railway-start.sh"
