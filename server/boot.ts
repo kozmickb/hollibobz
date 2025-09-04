@@ -1,8 +1,9 @@
 /* Boot sequence for Railway: run migrations with fallback, then start the server */
 import { execSync } from "node:child_process";
+import { Logger } from "./src/logger";
 
 const run = (cmd: string) => {
-  console.log(`$ ${cmd}`);
+  Logger.info("Executing command", { command: cmd });
   execSync(cmd, { stdio: "inherit", env: process.env });
 };
 
@@ -17,21 +18,26 @@ const waitForDb = async () => {
       // quick no-op query by generating client then letting app handle the ping
       return;
     } catch {
-      console.log(`DB not ready yet... (${i + 1}/${max})`);
+      Logger.info("DB not ready yet", { attempt: i + 1, max });
       await new Promise(r => setTimeout(r, delayMs));
     }
   }
-  console.warn("Proceeding even though DB readiness could not be confirmed.");
+  Logger.warn("Proceeding even though DB readiness could not be confirmed");
 };
 
 (async () => {
+  Logger.info("Starting boot sequence", { 
+    nodeEnv: process.env.NODE_ENV,
+    gitCommit: process.env.GIT_COMMIT 
+  });
+
   await waitForDb();
 
   try {
     run("npx prisma migrate deploy --schema=./prisma/schema.prisma");
-    console.log("✅ Prisma migrations applied.");
+    Logger.info("Prisma migrations applied successfully");
   } catch (e) {
-    console.warn("⚠️ migrate deploy failed. Falling back to `prisma db push`.");
+    Logger.warn("Migrate deploy failed, falling back to db push", { error: e });
     run("npx prisma db push --accept-data-loss --schema=./prisma/schema.prisma");
   }
 

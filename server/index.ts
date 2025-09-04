@@ -4,57 +4,123 @@ import morgan from "morgan";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import { PrismaClient } from "@prisma/client";
+import { requestIdMiddleware } from "./src/middleware/requestId";
+import { register, httpRequestDuration } from "./src/metrics";
+import { Logger } from "./src/logger";
 
 const app = express();
 const prisma = new PrismaClient();
 
 const PORT = Number(process.env.PORT ?? 3000);
 const SERVICE_NAME = process.env.SERVICE_NAME ?? "odysync";
-const CORS_ORIGIN = (process.env.CORS_ORIGIN ?? "").split(",").map(s => s.trim()).filter(Boolean);
+const CORS_ORIGINS = (process.env.CORS_ORIGINS ?? "").split(",").map(s => s.trim()).filter(Boolean);
+const METRICS_TOKEN = process.env.METRICS_TOKEN;
+const GIT_COMMIT = process.env.GIT_COMMIT;
 
-// middleware
+// Request ID middleware (must be first)
+app.use(requestIdMiddleware);
+
+// Security middleware
 app.use(helmet());
-app.use(express.json({ limit: "1mb" }));
-app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
-app.use(rateLimit({ windowMs: 60_000, limit: 120 }));
 app.disable("x-powered-by");
 
+// Body parsing
+app.use(express.json({ limit: "1mb" }));
+
+// Logging
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+
+// Rate limiting with custom response
+const limiter = rateLimit({ 
+  windowMs: 60_000, 
+  limit: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ error: "rate_limited" });
+  }
+});
+app.use(limiter);
+
+// CORS with allowlist
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || CORS_ORIGIN.length === 0) return cb(null, true);
-    return CORS_ORIGIN.some(a => origin.endsWith(a)) ? cb(null, true) : cb(new Error("CORS blocked"), false);
+    if (!origin || CORS_ORIGINS.length === 0) {
+      // In production, default to no CORS if no origins specified
+      if (process.env.NODE_ENV === "production") {
+        return cb(new Error("CORS blocked"), false);
+      }
+      return cb(null, true);
+    }
+    return CORS_ORIGINS.some(a => origin.endsWith(a)) ? cb(null, true) : cb(new Error("CORS blocked"), false);
   },
   credentials: true,
 }));
 
-// health
-app.get("/api/health", async (_req, res) => {
-  const start = Date.now();
-  let db = { connected: false, latency_ms: null as number | null, error: null as string | null };
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    db.connected = true;
-    db.latency_ms = Date.now() - start;
-  } catch (e: any) {
-    db.error = e?.message ?? "unknown";
+// Metrics endpoint with authentication
+app.get("/api/metrics", (req, res) => {
+  if (!METRICS_TOKEN) {
+    return res.status(401).json({ error: "metrics not configured" });
   }
 
-  res.status(200).json({
-    status: db.connected ? "ok" : "degraded",
-    service: SERVICE_NAME,
-    version: process.env.npm_package_version,
-    uptime_s: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString(),
-    db,
-  });
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ") || authHeader.slice(7) !== METRICS_TOKEN) {
+    return res.status(401).json({ error: "unauthorized" });
+  }
+
+  res.setHeader('Content-Type', 'text/plain; version=0.0.4');
+  res.send(register.metrics());
 });
 
-// example root
-app.get("/", (_req, res) => {
+// Health endpoint with improved payload
+app.get("/api/health", async (req, res) => {
+  const start = Date.now();
+  let db = { ok: false, latencyMs: null as number | null };
+  
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    db.ok = true;
+    db.latencyMs = Date.now() - start;
+  } catch (e: any) {
+    Logger.error("Health check DB error", { error: e?.message }, req.requestId);
+  }
+
+  const response = {
+    ok: db.ok,
+    uptimeSec: Math.floor(process.uptime()),
+    commit: GIT_COMMIT,
+    db,
+    timestamp: new Date().toISOString()
+  };
+
+  res.status(db.ok ? 200 : 503).json(response);
+});
+
+// Root endpoint
+app.get("/", (req, res) => {
   res.status(200).send("OK");
 });
 
-// start server
+// Request duration metrics middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = (Date.now() - start) / 1000;
+    httpRequestDuration
+      .labels(req.method, req.route?.path || req.path, res.statusCode.toString())
+      .observe(duration);
+  });
+  
+  next();
+});
+
+// Start server
 app.listen(PORT, () => {
-  console.log(`🚀 ${SERVICE_NAME} listening on :${PORT}`);
+  Logger.info("Server started", { 
+    port: PORT, 
+    service: SERVICE_NAME,
+    nodeEnv: process.env.NODE_ENV,
+    gitCommit: GIT_COMMIT 
+  });
 });

@@ -26,6 +26,7 @@
 ## 🔄 Recent Updates (Jan 2025)
 
 - **Production-Ready Server Architecture**: Transformed the server into a production-ready Railway deployment with automatic Prisma migrations, DB-aware health checks, environment-based CORS configuration, and security hardening with Helmet and Morgan. Added Railway boot script that runs migrations before starting the server, with fallback to `db push` for one-time setup. Prisma schema properly configured under `server/prisma/` with exact version dependencies and proper TypeScript build configuration.
+- **Advanced Monitoring & Observability**: Implemented comprehensive production monitoring with Prometheus metrics endpoint (`/api/metrics`) with Bearer token authentication, request ID middleware with UUID generation for distributed tracing, structured JSON logging with secret sanitization, and enhanced health checks with database latency measurement. Added GitHub Actions CI workflow for automated testing and validation.
 - **Production Security & Telemetry**: Implemented comprehensive production safety with runtime guards that block HTTP connections in production builds. Added environment-driven telemetry initialization for Sentry and PostHog that only activates in production when proper keys are provided. Created centralized API client with automatic authentication and error handling.
 - **Client API Helpers & UI Integration**: Added comprehensive client-side API helpers for flight resolution, airport schedules, and itinerary ingestion. Implemented anonymous user ID system with persistent storage. Added Trip Actions card to TimerDrilldownScreen with premium-gated buttons for Add Flight, Upload Itinerary, and Airport Schedule features.
 - **Build Environment Documentation**: Added comprehensive README section with Railway server deployment and EAS mobile build setup instructions. Includes environment variable checklists, CLI commands, and quick deployment workflows for both server and mobile app builds.
@@ -386,10 +387,13 @@ src/
 
 server/                  # Production-ready backend server
 ├── index.ts            # Express server entry point with security hardening
+├── boot.ts             # Railway deployment script with Prisma migrations
 ├── src/
-│   ├── boot.ts         # Railway deployment script with Prisma migrations
 │   ├── middleware/
-│   │   └── cors.ts     # Environment-based CORS configuration
+│   │   ├── cors.ts     # Environment-based CORS configuration
+│   │   └── requestId.ts # Request ID middleware with UUID generation
+│   ├── metrics.ts      # Prometheus metrics configuration
+│   └── logger.ts       # Structured JSON logging with secret sanitization
 │   └── routes/
 │       └── health.ts   # DB-aware health check endpoint
 ├── package.json        # Server dependencies with Railway scripts
@@ -1290,6 +1294,10 @@ cd server
 # Install server dependencies (includes Prisma generation)
 npm install
 
+# Run CI checks locally
+npm run build
+npx prisma validate --schema=./prisma/schema.prisma
+
 # Start server in development mode
 npm run dev
 
@@ -1330,7 +1338,7 @@ PORT=3000
 ### Production Deployment
 
 #### Railway Server Deployment
-The server is now production-ready with automatic migrations and health checks:
+The server is now production-ready with automatic migrations, health checks, and monitoring:
 
 ```bash
 # Install Railway CLI
@@ -1343,26 +1351,36 @@ railway link
 
 # Set environment variables
 railway variables set DATABASE_URL="${{Postgres.DATABASE_URL}}"
-railway variables set APP_ENV="production"
-railway variables set ALLOWED_ORIGINS="https://hollibobz-production.up.railway.app,https://expo.dev"
+railway variables set NODE_ENV="production"
+railway variables set CORS_ORIGINS="https://hollibobz-production.up.railway.app,https://expo.dev"
+railway variables set METRICS_TOKEN="your-secure-metrics-token"
+railway variables set GIT_COMMIT="${{RAILWAY_GIT_COMMIT_SHA}}"
 
 # Deploy (automatically runs: npm ci → npm run build → npm run start:railway)
 railway up
 
 # Verify deployment
 curl https://your-app.railway.app/api/health
-# Returns: {"ok":true,"db":"ok","env":"production"}
+# Returns: {"ok":true,"uptimeSec":123,"commit":"abc123","db":{"ok":true,"latencyMs":15},"timestamp":"2025-01-27T10:30:00.000Z"}
+
+# Test metrics endpoint
+curl -H "Authorization: Bearer your-metrics-token" https://your-app.railway.app/api/metrics
+# Returns: Prometheus metrics in text/plain format
 ```
 
 #### Server Production Features
 - **Automatic Migrations**: Boot script runs `prisma migrate deploy` before starting
 - **Fallback Migration**: If migrations fail, falls back to `prisma db push --accept-data-loss`
-- **Health Monitoring**: `/api/health` endpoint with database connectivity check
-- **Security Hardening**: Helmet, Morgan logging, CORS allowlist
+- **Health Monitoring**: `/api/health` endpoint with database connectivity check and latency measurement
+- **Prometheus Metrics**: `/api/metrics` endpoint with Bearer token authentication
+- **Request Tracing**: Request ID middleware with UUID generation for distributed tracing
+- **Structured Logging**: JSON logging with secret sanitization and request correlation
+- **Security Hardening**: Helmet, Morgan logging, CORS allowlist, rate limiting with custom 429 responses
 - **Environment-Based Config**: Development vs production CORS and security settings
 - **Railway Integration**: Optimized for Railway's deployment pipeline
 - **Prisma Configuration**: Proper schema location and exact version dependencies
 - **TypeScript Build**: ESM modules with proper build configuration
+- **CI/CD**: GitHub Actions workflow for automated testing and validation
 
 ### Build Process
 
