@@ -16,6 +16,7 @@ COPY server/package*.json ./
 COPY server/.npmrc . 2>/dev/null || true
 
 # CRITICAL: Copy Prisma schema BEFORE npm ci so postinstall can find it
+# This ensures the schema exists when postinstall runs prisma generate
 COPY server/prisma ./prisma
 
 # Install deps (postinstall will run and see prisma/schema.prisma)
