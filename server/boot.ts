@@ -1,10 +1,16 @@
 /* Boot sequence for Railway: run migrations with fallback, then start the server */
 import { execSync } from "node:child_process";
 import { Logger } from "./src/logger";
+import { resolve } from "path";
+
+// Ensure we're in the server directory
+const serverDir = resolve(__dirname);
+process.chdir(serverDir);
+Logger.info("Working directory set", { cwd: process.cwd() });
 
 const run = (cmd: string) => {
-  Logger.info("Executing command", { command: cmd });
-  execSync(cmd, { stdio: "inherit", env: process.env });
+  Logger.info("Executing command", { command: cmd, cwd: process.cwd() });
+  execSync(cmd, { stdio: "inherit", env: process.env, cwd: serverDir });
 };
 
 const waitForDb = async () => {
