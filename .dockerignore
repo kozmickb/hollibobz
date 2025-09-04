@@ -3,3 +3,6 @@
 **/.cache
 **/dist
 **/.DS_Store
+
+# Ensure server/prisma is not excluded
+!server/prisma/**
