@@ -47,11 +47,7 @@ export const FLIGHTAWARE_API_KEY = process.env.EXPO_PUBLIC_FLIGHTAWARE_API_KEY |
 export const RAPIDAPI_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY || extra.rapidapiKey || "";
 
 export function runRuntimeGuards() {
-  assertRuntimeSafety({
-    env: APP_ENV,
-    apiBaseUrl: API_BASE_URL,
-    aiProxyUrl: AI_PROXY_URL,
-  });
+  assertRuntimeSafety(APP_ENV, [API_BASE_URL, AI_PROXY_URL]);
 }
 
 // Log the final API_BASE_URL in dev for debugging

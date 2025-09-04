@@ -1,9 +1,13 @@
 // Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require('expo/metro-config');
 const { withNativeWind } = require('nativewind/metro');
+const exclusionList = require("metro-config/src/defaults/exclusionList");
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
+
+// Block server folders from Metro bundling
+config.resolver.blacklistRE = exclusionList([/server\/.*/, /prisma\/.*/, /migrations\/.*/]);
 
 // Disable watchman to avoid file watching issues
 config.resolver.useWatchman = false;

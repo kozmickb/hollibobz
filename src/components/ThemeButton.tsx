@@ -52,7 +52,8 @@ export function ThemeButton() {
       />
       <Text style={{
         fontSize: 12,
-        fontFamily: 'Questrial-Regular-Medium',
+        fontFamily: 'Questrial',
+        fontWeight: '500',
         color: isDark ? '#F3F4F6' : '#EA580C',
         textTransform: 'capitalize',
       }}>

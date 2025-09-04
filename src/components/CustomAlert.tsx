@@ -75,7 +75,8 @@ export function CustomAlert({ visible, title, message, buttons, onClose }: Custo
           {/* Title */}
           <Text style={{
             fontSize: 18,
-            fontFamily: 'Questrial-Regular-SemiBold',
+            fontFamily: 'Questrial',
+        fontWeight: '600',
             color: isDark ? '#FFFFFF' : '#333333',
             marginBottom: 12,
             textAlign: 'center',
@@ -86,7 +87,7 @@ export function CustomAlert({ visible, title, message, buttons, onClose }: Custo
           {/* Message */}
           <Text style={{
             fontSize: 16,
-            fontFamily: 'Questrial-Regular-Regular',
+            fontFamily: 'Questrial',
             color: isDark ? '#CCCCCC' : '#666666',
             marginBottom: 24,
             textAlign: 'center',
@@ -119,7 +120,8 @@ export function CustomAlert({ visible, title, message, buttons, onClose }: Custo
                   <Text style={{
                     color: buttonStyle.color,
                     fontSize: 16,
-                    fontFamily: 'Questrial-Regular-Medium',
+                    fontFamily: 'Questrial',
+        fontWeight: '500',
                   }}>
                     {button.text}
                   </Text>

@@ -387,7 +387,8 @@ export function CountdownRing({ percent, daysLeft, showLabel = false }: Props) {
       }}>
         <Text style={{
           fontSize: 36,
-          fontFamily: 'Questrial-Regular-Bold',
+          fontFamily: 'Questrial',
+        fontWeight: '700',
           color: isDark ? '#FFFFFF' : '#333333',
         }}>
           {daysLeft}
@@ -395,7 +396,8 @@ export function CountdownRing({ percent, daysLeft, showLabel = false }: Props) {
         {showLabel ? (
           <Text style={{
             fontSize: 12,
-            fontFamily: 'Questrial-Regular-Medium',
+            fontFamily: 'Questrial',
+            fontWeight: '500',
             color: isDark ? '#94a3b8' : '#64748b',
             textAlign: 'center',
             marginTop: 2,
@@ -405,7 +407,8 @@ export function CountdownRing({ percent, daysLeft, showLabel = false }: Props) {
         ) : (
           <Text style={{
             fontSize: 14,
-            fontFamily: 'Questrial-Regular-Medium',
+            fontFamily: 'Questrial',
+            fontWeight: '500',
             color: isDark ? '#94a3b8' : '#64748b',
           }}>
             {daysLeft === 0 ? "It's go day! 🎉" : daysLeft === 1 ? "day" : "days"}

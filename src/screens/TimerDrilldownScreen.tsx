@@ -22,6 +22,13 @@ import { calculateChecklistProgress } from '../utils/checklistProgress';
 import { EditTimerModal } from '../components/EditTimerModal';
 import { FlightLookupModal, FlightInfo } from '../components/FlightLookupModal';
 import { PaywallModal } from '../components/PaywallModal';
+import { AddFlightForm } from '../components/AddFlightForm';
+import { useEntitlements } from '../hooks/useEntitlements';
+import { resolveFlight } from '../api/flights';
+import { fetchAirportSchedule } from '../api/airports';
+import { ingestItineraryFromFile } from '../api/ingest';
+import * as DocumentPicker from 'expo-document-picker';
+import { trackEvent } from '../lib/telemetry';
 
 type Nav = NativeStackNavigationProp<TripsStackParamList, "TimerDrilldown">;
 type Rt = RouteProp<TripsStackParamList, "TimerDrilldown">;
@@ -50,7 +57,19 @@ export function TimerDrilldownScreen() {
   const [showFlightLookup, setShowFlightLookup] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFlightOptions, setShowFlightOptions] = useState(false);
-  const [isPremium, setIsPremium] = useState(true); // Temporarily set to true to test flight editing
+  const [showItineraryUpload, setShowItineraryUpload] = useState(false);
+  const [showAirportSchedule, setShowAirportSchedule] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAddFlightModal, setShowAddFlightModal] = useState(false);
+  const [showItineraryResults, setShowItineraryResults] = useState(false);
+  const [extractedFlights, setExtractedFlights] = useState<any[]>([]);
+  const [extractedHotels, setExtractedHotels] = useState<any[]>([]);
+  const [selectedFlights, setSelectedFlights] = useState<Set<number>>(new Set());
+  const [selectedHotels, setSelectedHotels] = useState<Set<number>>(new Set());
+  const [airportScheduleData, setAirportScheduleData] = useState<any>(null);
+  
+  // Use real entitlement hook
+  const { hasPro: isPremium, loading: entitlementsLoading } = useEntitlements();
 
   // Find the timer for this ID - MOVED UP to be available for useEffect
   const timer = useMemo(() => {
@@ -313,6 +332,105 @@ export function TimerDrilldownScreen() {
     } else {
       console.log('Opening paywall modal for flight feature');
       setShowPaywall(true);
+    }
+  };
+
+  const handleItineraryUpload = async () => {
+    try {
+      trackEvent('UploadItinerary', { action: 'start', timerId });
+      
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/png', 'image/jpeg', 'text/plain'],
+        copyToCacheDirectory: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setIsLoading(true);
+        const file = result.assets[0];
+        
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('file', {
+          uri: file.uri,
+          type: file.mimeType || 'application/octet-stream',
+          name: file.name || 'document',
+        } as any);
+
+        const response = await ingestItineraryFromFile(formData);
+        
+        if (response.flights && response.flights.length > 0) {
+          setExtractedFlights(response.flights);
+        }
+        if (response.hotels && response.hotels.length > 0) {
+          setExtractedHotels(response.hotels);
+        }
+        
+        setShowItineraryResults(true);
+        trackEvent('UploadItinerary', { action: 'success', flights: response.flights?.length || 0, hotels: response.hotels?.length || 0, timerId });
+      }
+    } catch (error: any) {
+      console.error('Error uploading itinerary:', error);
+      
+      // Check if it's a server limit error
+      if (error.response?.status === 429 || error.response?.status === 403) {
+        setShowPaywall(true);
+        trackEvent('UploadItinerary', { action: 'limit_exceeded', timerId });
+      } else {
+        Alert.alert('Error', 'Failed to process itinerary. Please try again.');
+        trackEvent('UploadItinerary', { action: 'error', error: error.message, timerId });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAirportSchedule = async () => {
+    if (!timer?.selectedFlight?.departureAirport) {
+      Alert.alert('No Flight', 'Please add a flight first to view airport schedules.');
+      return;
+    }
+
+    try {
+      trackEvent('AirportSchedule', { action: 'start', airport: timer?.selectedFlight?.departureAirport, timerId });
+      setIsLoading(true);
+      
+      const durationMinutes = isPremium ? 720 : 240; // 12 hours for premium, 4 hours for free
+      
+      const response = await fetchAirportSchedule(
+        timer?.selectedFlight?.departureAirport || '',
+        { 
+          durationMinutes,
+          direction: 'Both'
+        }
+      );
+
+      if (response.arrivals || response.departures) {
+        setAirportScheduleData(response);
+        setShowAirportSchedule(true);
+        trackEvent('AirportSchedule', { 
+          action: 'success', 
+          airport: timer?.selectedFlight?.departureAirport,
+          arrivals: response.arrivals?.length || 0,
+          departures: response.departures?.length || 0,
+          timerId 
+        });
+      } else {
+        Alert.alert('No Data', 'No schedule data available for this airport.');
+        trackEvent('AirportSchedule', { action: 'no_data', airport: timer?.selectedFlight?.departureAirport, timerId });
+      }
+    } catch (error: any) {
+      console.error('Airport schedule error:', error);
+      
+      // Check if it's a server limit error
+      if (error.response?.status === 429 || error.response?.status === 403) {
+        setShowPaywall(true);
+        trackEvent('AirportSchedule', { action: 'limit_exceeded', airport: timer?.selectedFlight?.departureAirport, timerId });
+      } else {
+        Alert.alert('Schedule Error', 'Failed to fetch airport schedule. Please try again.');
+        trackEvent('AirportSchedule', { action: 'error', error: error.message, airport: timer?.selectedFlight?.departureAirport, timerId });
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -650,6 +768,124 @@ export function TimerDrilldownScreen() {
             </View>
           </Animated.View>
 
+          {/* Trip Actions Card */}
+          <Animated.View
+            style={{
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: isDark ? '#111827' : '#ffffff',
+                borderRadius: 12,
+                padding: 16,
+                borderWidth: 1,
+                borderColor: isDark ? '#1f2937' : '#e5e7eb',
+                marginBottom: 24,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <Ionicons name="add-circle" size={22} color={isDark ? '#5eead4' : '#0d9488'} />
+                <RestyleText variant="md" color="text" fontWeight="semibold">
+                  Trip Actions
+                </RestyleText>
+                {isLoading && (
+                  <Ionicons name="hourglass" size={16} color={isDark ? '#6b7280' : '#9ca3af'} />
+                )}
+              </View>
+
+              <View style={{ gap: 12 }}>
+                {/* Add Flight Button */}
+                <Pressable
+                  onPress={() => {
+                    setShowAddFlightModal(true);
+                  }}
+                  style={{
+                    backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+                    borderRadius: 8,
+                    padding: 12,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <Ionicons 
+                    name="airplane" 
+                    size={20} 
+                    color={isPremium ? (isDark ? '#5eead4' : '#0d9488') : (isDark ? '#6b7280' : '#9ca3af')} 
+                  />
+                  <View style={{ flex: 1 }}>
+                    <RestyleText variant="sm" color="text" fontWeight="medium">
+                      Add Flight
+                    </RestyleText>
+                    <RestyleText variant="xs" color="textMuted">
+                      Resolve flight details by number and date
+                    </RestyleText>
+                  </View>
+                </Pressable>
+
+                {/* Upload Itinerary Button */}
+                <Pressable
+                  onPress={handleItineraryUpload}
+                  disabled={isLoading}
+                  style={{
+                    backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+                    borderRadius: 8,
+                    padding: 12,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <Ionicons 
+                    name="document-text" 
+                    size={20} 
+                    color={isPremium ? (isDark ? '#5eead4' : '#0d9488') : (isDark ? '#6b7280' : '#9ca3af')} 
+                  />
+                  <View style={{ flex: 1 }}>
+                    <RestyleText variant="sm" color="text" fontWeight="medium">
+                      Upload Itinerary
+                    </RestyleText>
+                    <RestyleText variant="xs" color="textMuted">
+                      Extract flights and hotels from documents
+                    </RestyleText>
+                  </View>
+                </Pressable>
+
+                {/* Airport Schedule Button - Only show if there's a flight */}
+                {timer.selectedFlight && (
+                  <Pressable
+                    onPress={handleAirportSchedule}
+                    disabled={isLoading}
+                    style={{
+                      backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+                      borderRadius: 8,
+                      padding: 12,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 12,
+                    }}
+                  >
+                    <Ionicons 
+                      name="time" 
+                      size={20} 
+                      color={isPremium ? (isDark ? '#5eead4' : '#0d9488') : (isDark ? '#6b7280' : '#9ca3af')} 
+                    />
+                    <View style={{ flex: 1 }}>
+                      <RestyleText variant="sm" color="text" fontWeight="medium">
+                        Airport Schedule
+                      </RestyleText>
+                      <RestyleText variant="xs" color="textMuted">
+                        View arrivals and departures for departure airport
+                      </RestyleText>
+                    </View>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          </Animated.View>
+
           {/* Checklist Card (replaces Experience Points for MVP) */}
           <Animated.View
             style={{
@@ -838,7 +1074,7 @@ export function TimerDrilldownScreen() {
         description="Add flight information to your existing trips to track status, delays, and gate information in real-time."
         onUpgrade={() => {
           console.log('User upgraded to premium from timer drilldown');
-          setIsPremium(true);
+          // Premium status will be updated automatically by the entitlement hook
         }}
       />
 
@@ -924,6 +1160,406 @@ export function TimerDrilldownScreen() {
                 </RestyleText>
               </Pressable>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add Flight Modal */}
+      <Modal
+        visible={showAddFlightModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAddFlightModal(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20,
+        }}>
+          <View style={{
+            backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
+            borderRadius: 12,
+            padding: 20,
+            width: '100%',
+            maxWidth: 400,
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <RestyleText variant="lg" color="text" fontWeight="semibold">
+                Add Flight
+              </RestyleText>
+              <Pressable onPress={() => setShowAddFlightModal(false)}>
+                <Ionicons name="close" size={24} color={isDark ? '#9ca3af' : '#6b7280'} />
+              </Pressable>
+            </View>
+
+            <AddFlightForm
+              onSubmit={async (flightData) => {
+                try {
+                  trackEvent('AddFlight', { action: 'start', timerId });
+                  setIsLoading(true);
+                  
+                  const response = await resolveFlight({
+                    airlineIATA: flightData.airlineIATA,
+                    flightNumber: flightData.flightNumber,
+                    departDateLocal: flightData.departDateLocal,
+                    tripId: timerId
+                  });
+
+                  if (response.success) {
+                    // Update timer with flight info
+                    updateTimer(timerId, {
+                      selectedFlight: {
+                        airline: response.flight.carrier,
+                        flightNumber: response.flight.number,
+                        departureAirport: response.flight.depart.iata,
+                        arrivalAirport: response.flight.arrive.iata,
+                        scheduledDeparture: response.flight.depart.timeScheduled || '',
+                        scheduledArrival: response.flight.arrive.timeScheduled || '',
+                        status: response.flight.status
+                      }
+                    });
+                    
+                    setShowAddFlightModal(false);
+                    Alert.alert('Success', 'Flight added to your trip!');
+                    trackEvent('AddFlight', { action: 'success', airline: flightData.airlineIATA, flightNumber: flightData.flightNumber, timerId });
+                  }
+                } catch (error: any) {
+                  console.error('Error adding flight:', error);
+                  
+                  if (error.response?.status === 403 || error.response?.status === 429) {
+                    setShowPaywall(true);
+                    trackEvent('AddFlight', { action: 'limit_exceeded', timerId });
+                  } else {
+                    Alert.alert('Error', 'Failed to add flight. Please try again.');
+                    trackEvent('AddFlight', { action: 'error', error: error.message, timerId });
+                  }
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              isDark={isDark}
+              isLoading={isLoading}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Itinerary Results Modal */}
+      <Modal
+        visible={showItineraryResults}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowItineraryResults(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20,
+        }}>
+          <View style={{
+            backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
+            borderRadius: 12,
+            padding: 20,
+            width: '100%',
+            maxWidth: 500,
+            maxHeight: '80%',
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <RestyleText variant="lg" color="text" fontWeight="semibold">
+                Extracted Items
+              </RestyleText>
+              <Pressable onPress={() => setShowItineraryResults(false)}>
+                <Ionicons name="close" size={24} color={isDark ? '#9ca3af' : '#6b7280'} />
+              </Pressable>
+            </View>
+
+            <ScrollView style={{ maxHeight: 400 }}>
+              {extractedFlights.length > 0 && (
+                <View style={{ marginBottom: 20 }}>
+                  <RestyleText variant="md" color="text" fontWeight="semibold" style={{ marginBottom: 10 }}>
+                    Flights ({extractedFlights.length})
+                  </RestyleText>
+                  {extractedFlights.map((flight, index) => (
+                    <View key={index} style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 12,
+                      backgroundColor: isDark ? '#2d3748' : '#f7fafc',
+                      borderRadius: 8,
+                      marginBottom: 8,
+                    }}>
+                      <Pressable
+                        onPress={() => {
+                          const newSelected = new Set(selectedFlights);
+                          if (newSelected.has(index)) {
+                            newSelected.delete(index);
+                          } else {
+                            newSelected.add(index);
+                          }
+                          setSelectedFlights(newSelected);
+                        }}
+                        style={{ marginRight: 12 }}
+                      >
+                        <Ionicons 
+                          name={selectedFlights.has(index) ? "checkbox" : "square-outline"} 
+                          size={20} 
+                          color={selectedFlights.has(index) ? (isDark ? '#5eead4' : '#0d9488') : (isDark ? '#6b7280' : '#9ca3af')} 
+                        />
+                      </Pressable>
+                      <View style={{ flex: 1 }}>
+                        <RestyleText variant="sm" color="text" fontWeight="medium">
+                          {flight.airlineIATA} {flight.flightNumber}
+                        </RestyleText>
+                        <RestyleText variant="xs" color="textMuted">
+                          {flight.departIATA} → {flight.arriveIATA} • {flight.departDateLocal} {flight.departTimeLocal}
+                        </RestyleText>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {extractedHotels.length > 0 && (
+                <View>
+                  <RestyleText variant="md" color="text" fontWeight="semibold" style={{ marginBottom: 10 }}>
+                    Hotels ({extractedHotels.length})
+                  </RestyleText>
+                  {extractedHotels.map((hotel, index) => (
+                    <View key={index} style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      padding: 12,
+                      backgroundColor: isDark ? '#2d3748' : '#f7fafc',
+                      borderRadius: 8,
+                      marginBottom: 8,
+                    }}>
+                      <Pressable
+                        onPress={() => {
+                          const newSelected = new Set(selectedHotels);
+                          if (newSelected.has(index)) {
+                            newSelected.delete(index);
+                          } else {
+                            newSelected.add(index);
+                          }
+                          setSelectedHotels(newSelected);
+                        }}
+                        style={{ marginRight: 12 }}
+                      >
+                        <Ionicons 
+                          name={selectedHotels.has(index) ? "checkbox" : "square-outline"} 
+                          size={20} 
+                          color={selectedHotels.has(index) ? (isDark ? '#5eead4' : '#0d9488') : (isDark ? '#6b7280' : '#9ca3af')} 
+                        />
+                      </Pressable>
+                      <View style={{ flex: 1 }}>
+                        <RestyleText variant="sm" color="text" fontWeight="medium">
+                          {hotel.name}
+                        </RestyleText>
+                        <RestyleText variant="xs" color="textMuted">
+                          {hotel.city}, {hotel.country} • {hotel.checkInDate} - {hotel.checkOutDate}
+                        </RestyleText>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
+              <Pressable
+                onPress={() => setShowItineraryResults(false)}
+                style={{
+                  flex: 1,
+                  backgroundColor: isDark ? '#4b5563' : '#e5e7eb',
+                  borderRadius: 8,
+                  padding: 16,
+                  alignItems: 'center',
+                }}
+              >
+                <RestyleText variant="md" color="textMuted">
+                  Cancel
+                </RestyleText>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  try {
+                    setIsLoading(true);
+                    
+                    // Add selected flights
+                    for (const index of selectedFlights) {
+                      const flight = extractedFlights[index];
+                      await resolveFlight({
+                        airlineIATA: flight.airlineIATA,
+                        flightNumber: flight.flightNumber,
+                        departDateLocal: flight.departDateLocal,
+                        tripId: timerId
+                      });
+                    }
+                    
+                    // TODO: Add selected hotels to trip
+                    
+                    setShowItineraryResults(false);
+                    Alert.alert('Success', `Added ${selectedFlights.size} flights and ${selectedHotels.size} hotels to your trip!`);
+                  } catch (error: any) {
+                    console.error('Error adding items:', error);
+                    if (error.response?.status === 403 || error.response?.status === 429) {
+                      setShowPaywall(true);
+                    } else {
+                      Alert.alert('Error', 'Failed to add some items. Please try again.');
+                    }
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+                disabled={selectedFlights.size === 0 && selectedHotels.size === 0}
+                style={{
+                  flex: 1,
+                  backgroundColor: (selectedFlights.size > 0 || selectedHotels.size > 0) ? (isDark ? '#0d9488' : '#10b981') : (isDark ? '#4b5563' : '#e5e7eb'),
+                  borderRadius: 8,
+                  padding: 16,
+                  alignItems: 'center',
+                }}
+              >
+                <RestyleText variant="md" color="text" style={{ color: (selectedFlights.size > 0 || selectedHotels.size > 0) ? '#ffffff' : (isDark ? '#9ca3af' : '#6b7280') }}>
+                  Add Selected ({selectedFlights.size + selectedHotels.size})
+                </RestyleText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Airport Schedule Modal */}
+      <Modal
+        visible={showAirportSchedule}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAirportSchedule(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20,
+        }}>
+          <View style={{
+            backgroundColor: isDark ? '#1a1a1a' : '#ffffff',
+            borderRadius: 12,
+            padding: 20,
+            width: '100%',
+            maxWidth: 500,
+            maxHeight: '80%',
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <RestyleText variant="lg" color="text" fontWeight="semibold">
+                Airport Schedule - {timer?.selectedFlight?.departureAirport}
+              </RestyleText>
+              <Pressable onPress={() => setShowAirportSchedule(false)}>
+                <Ionicons name="close" size={24} color={isDark ? '#9ca3af' : '#6b7280'} />
+              </Pressable>
+            </View>
+
+            <ScrollView style={{ maxHeight: 400 }}>
+              {airportScheduleData?.arrivals && airportScheduleData.arrivals.length > 0 && (
+                <View style={{ marginBottom: 20 }}>
+                  <RestyleText variant="md" color="text" fontWeight="semibold" style={{ marginBottom: 10 }}>
+                    Arrivals ({airportScheduleData.arrivals.length})
+                  </RestyleText>
+                  {airportScheduleData.arrivals.map((flight: any, index: number) => (
+                    <View key={index} style={{
+                      padding: 12,
+                      backgroundColor: isDark ? '#2d3748' : '#f7fafc',
+                      borderRadius: 8,
+                      marginBottom: 8,
+                    }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View>
+                          <RestyleText variant="sm" color="text" fontWeight="medium">
+                            {flight.carrier} {flight.number}
+                          </RestyleText>
+                          <RestyleText variant="xs" color="textMuted">
+                            From {flight.depart.iata}
+                          </RestyleText>
+                        </View>
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <RestyleText variant="sm" color="text" fontWeight="medium">
+                            {formatTime(flight.arrive.timeScheduled)}
+                          </RestyleText>
+                          <RestyleText variant="xs" color="textMuted">
+                            {flight.arrive.terminal && `T${flight.arrive.terminal}`} {flight.arrive.gate && `G${flight.arrive.gate}`}
+                          </RestyleText>
+                        </View>
+                      </View>
+                      <View style={{ marginTop: 8 }}>
+                        <RestyleText variant="xs" color="textMuted">
+                          Status: {flight.status}
+                        </RestyleText>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {airportScheduleData?.departures && airportScheduleData.departures.length > 0 && (
+                <View>
+                  <RestyleText variant="md" color="text" fontWeight="semibold" style={{ marginBottom: 10 }}>
+                    Departures ({airportScheduleData.departures.length})
+                  </RestyleText>
+                  {airportScheduleData.departures.map((flight: any, index: number) => (
+                    <View key={index} style={{
+                      padding: 12,
+                      backgroundColor: isDark ? '#2d3748' : '#f7fafc',
+                      borderRadius: 8,
+                      marginBottom: 8,
+                    }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View>
+                          <RestyleText variant="sm" color="text" fontWeight="medium">
+                            {flight.carrier} {flight.number}
+                          </RestyleText>
+                          <RestyleText variant="xs" color="textMuted">
+                            To {flight.arrive.iata}
+                          </RestyleText>
+                        </View>
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <RestyleText variant="sm" color="text" fontWeight="medium">
+                            {formatTime(flight.depart.timeScheduled)}
+                          </RestyleText>
+                          <RestyleText variant="xs" color="textMuted">
+                            {flight.depart.terminal && `T${flight.depart.terminal}`} {flight.depart.gate && `G${flight.depart.gate}`}
+                          </RestyleText>
+                        </View>
+                      </View>
+                      <View style={{ marginTop: 8 }}>
+                        <RestyleText variant="xs" color="textMuted">
+                          Status: {flight.status}
+                        </RestyleText>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
+
+            <Pressable
+              onPress={() => setShowAirportSchedule(false)}
+              style={{
+                backgroundColor: isDark ? '#0d9488' : '#10b981',
+                borderRadius: 8,
+                padding: 16,
+                alignItems: 'center',
+                marginTop: 20,
+              }}
+            >
+              <RestyleText variant="md" color="text" style={{ color: '#ffffff' }}>
+                Close
+              </RestyleText>
+            </Pressable>
           </View>
         </View>
       </Modal>

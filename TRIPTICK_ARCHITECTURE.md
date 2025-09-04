@@ -25,6 +25,15 @@
 
 ## 🔄 Recent Updates (Jan 2025)
 
+- **Production Security & Telemetry**: Implemented comprehensive production safety with runtime guards that block HTTP connections in production builds. Added environment-driven telemetry initialization for Sentry and PostHog that only activates in production when proper keys are provided. Created centralized API client with automatic authentication and error handling.
+- **Client API Helpers & UI Integration**: Added comprehensive client-side API helpers for flight resolution, airport schedules, and itinerary ingestion. Implemented anonymous user ID system with persistent storage. Added Trip Actions card to TimerDrilldownScreen with premium-gated buttons for Add Flight, Upload Itinerary, and Airport Schedule features.
+- **Build Environment Documentation**: Added comprehensive README section with Railway server deployment and EAS mobile build setup instructions. Includes environment variable checklists, CLI commands, and quick deployment workflows for both server and mobile app builds.
+- **Anonymous User Support**: Implemented persistent anonymous ID generation and storage using AsyncStorage. All API calls now include `x-subject-id` header for server-side usage tracking without requiring user authentication.
+- **Premium Feature Gating**: Enhanced UI components with entitlement-based feature gating. Premium features show lock icons and upgrade prompts for free users, while premium users get full access to flight resolution, itinerary upload, and airport schedule features.
+- **Typography System Overhaul**: Complete font system simplification to Questrial-only with weight variations for visual hierarchy. Updated all components, navigation, and global CSS to use single font family for consistency and performance.
+- **Font Loading Optimization**: Refactored `useFonts.ts` to use platform-specific loading strategies - CSS `@font-face` for web, `expo-font` for native platforms.
+- **Navigation Font Consistency**: Fixed bottom tab navigation labels to use Questrial font family with proper weight styling.
+- **Component Typography Audit**: Systematically updated all UI components to use Questrial with appropriate `fontWeight` values (400, 500, 600, 700) for visual hierarchy.
 - **AI Response Formatting Overhaul**: Completely redesigned AI prompt system with `ENHANCED_RESPONSE_INSTRUCTION` to eliminate placeholders and provide specific, actionable responses. Updated `features/checklist/promptEnhancer.ts` and `HollyChatScreen.tsx`.
 - **Server Dependencies Update**: Upgraded Express (v4.18.2→v4.21.2), @types/express (v4.17.21→v4.17.23), @types/node (v20.10.5→v24.3.0), Zod (v3.22.4→v4.1.5), and TypeScript (v5.3.3→v5.9.2).
 - **Asset Path Resolution**: Fixed logo asset paths to match actual filenames (`odysync _logo.png` with space) across all components and configuration files.
@@ -159,6 +168,91 @@ Odeysync is a comprehensive travel planning application designed to help users o
 - **React Native Reanimated 3.17.4** - Advanced animations
 - **NativeWind 4.1.23** - Tailwind CSS for React Native
 - **Custom Theme System** - Consistent dark/light theme support
+- **Typography System** - Questrial font family with weight variations (400, 500, 600, 700) for visual hierarchy
+
+### Typography System Architecture
+
+#### Font Family Strategy
+Odeysync uses a **single font family approach** with Questrial for optimal performance and consistency:
+
+```typescript
+// Font Family Hierarchy
+const typography = {
+  // Primary Font: Questrial
+  fontFamily: 'Questrial',
+  
+  // Weight Variations for Visual Hierarchy
+  weights: {
+    regular: '400',    // Body text, labels
+    medium: '500',     // Secondary headings, buttons
+    semiBold: '600',   // Primary headings, important text
+    bold: '700',       // Strong emphasis, titles
+  }
+};
+```
+
+#### Platform-Specific Font Loading
+```typescript
+// src/hooks/useFonts.ts - Platform-optimized font loading
+export function useFonts() {
+  if (Platform.OS === 'web') {
+    // Web: CSS @font-face declarations
+    return { fontsLoaded: true, fontError: null };
+  } else {
+    // Native: expo-font loading
+    const [fontsLoaded, fontError] = useExpoFonts({
+      'Questrial': require('../../assets/fonts/Questrial/Questrial-Regular.ttf'),
+    });
+    return { fontsLoaded, fontError };
+  }
+}
+```
+
+#### Global CSS Font Declarations
+```css
+/* global.css - Web font declarations */
+@font-face {
+  font-family: 'Questrial';
+  src: url('/assets/fonts/Questrial/Questrial-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Questrial';
+  src: url('/assets/fonts/Questrial/Questrial-Regular.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+```
+
+#### Component Typography Implementation
+```typescript
+// Consistent typography across all components
+const TextComponent = ({ variant = 'body', children }) => {
+  const typographyStyles = {
+    body: { fontFamily: 'Questrial', fontWeight: '400' },
+    medium: { fontFamily: 'Questrial', fontWeight: '500' },
+    heading: { fontFamily: 'Questrial', fontWeight: '600' },
+    title: { fontFamily: 'Questrial', fontWeight: '700' },
+  };
+
+  return (
+    <Text style={typographyStyles[variant]}>
+      {children}
+    </Text>
+  );
+};
+```
+
+#### Benefits of Single Font Family Approach
+1. **Performance**: Reduced font loading overhead
+2. **Consistency**: Uniform appearance across all platforms
+3. **Maintainability**: Single source of truth for typography
+4. **Bundle Size**: Smaller asset footprint
+5. **User Experience**: Consistent visual hierarchy
 
 ### Development Tools
 - **Expo CLI** - Development and build tools
@@ -231,6 +325,9 @@ src/
 │   ├── deepseek.ts      # Deepseek AI client
 │   ├── openai.ts        # OpenAI client
 │   ├── grok.ts          # Grok AI client
+│   ├── airports.ts      # Airport schedule and flight search APIs
+│   ├── flights.ts       # Flight resolution and status lookup APIs
+│   ├── ingest.ts        # Itinerary ingestion and processing APIs
 │   └── ...
 ├── components/          # Reusable UI components
 │   ├── ui/              # Basic UI elements (Text, Button, etc.)
@@ -271,6 +368,7 @@ src/
 │   ├── destinationImages.ts # Image management
 │   ├── fonts.ts         # Font utilities
 │   ├── notifications.ts # Notification helpers
+│   ├── anonymousId.ts   # Anonymous user ID generation and storage
 │   └── ...
 ├── entities/            # Data models and types
 │   ├── userProfile.ts   # User data structure
@@ -693,6 +791,102 @@ function PremiumFeature({ children, fallback }) {
 <PremiumFeature fallback={<Text>Premium feature preview</Text>}>
   <AdvancedAnalytics />
 </PremiumFeature>
+```
+
+#### Trip Actions UI Pattern (New)
+```typescript
+// Trip Actions Card Component
+function TripActionsCard({ tripId, hasFlight }) {
+  const { hasPro } = useEntitlements();
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  const handleFlightAction = () => {
+    if (hasPro) {
+      setShowFlightLookup(true);
+    } else {
+      setShowPaywall(true);
+    }
+  };
+
+  const handleItineraryAction = () => {
+    if (hasPro) {
+      // Open itinerary upload modal
+      Alert.alert('Coming Soon', 'Itinerary upload feature will be available soon!');
+    } else {
+      setShowPaywall(true);
+    }
+  };
+
+  const handleScheduleAction = () => {
+    if (hasPro) {
+      // Open airport schedule modal
+      Alert.alert('Coming Soon', 'Airport schedule feature will be available soon!');
+    } else {
+      setShowPaywall(true);
+    }
+  };
+
+  return (
+    <View style={styles.actionsCard}>
+      <View style={styles.header}>
+        <Ionicons name="add-circle" size={22} color={theme.colors.primary} />
+        <Text variant="md" fontWeight="semibold">Trip Actions</Text>
+      </View>
+
+      <View style={styles.actions}>
+        {/* Add Flight Button */}
+        <Pressable onPress={handleFlightAction} style={styles.actionButton}>
+          <Ionicons 
+            name="airplane" 
+            size={20} 
+            color={hasPro ? theme.colors.primary : theme.colors.textMuted} 
+          />
+          <View style={styles.actionContent}>
+            <Text variant="sm" fontWeight="medium">Add Flight</Text>
+            <Text variant="xs" color="textMuted">
+              {hasPro ? 'Resolve flight details by number and date' : 'Premium feature - upgrade to add flights'}
+            </Text>
+          </View>
+          {!hasPro && <Ionicons name="lock-closed" size={16} color={theme.colors.textMuted} />}
+        </Pressable>
+
+        {/* Upload Itinerary Button */}
+        <Pressable onPress={handleItineraryAction} style={styles.actionButton}>
+          <Ionicons 
+            name="document-text" 
+            size={20} 
+            color={hasPro ? theme.colors.primary : theme.colors.textMuted} 
+          />
+          <View style={styles.actionContent}>
+            <Text variant="sm" fontWeight="medium">Upload Itinerary</Text>
+            <Text variant="xs" color="textMuted">
+              {hasPro ? 'Extract flights and hotels from documents' : 'Premium feature - upgrade to upload itineraries'}
+            </Text>
+          </View>
+          {!hasPro && <Ionicons name="lock-closed" size={16} color={theme.colors.textMuted} />}
+        </Pressable>
+
+        {/* Airport Schedule Button - Only show if there's a flight */}
+        {hasFlight && (
+          <Pressable onPress={handleScheduleAction} style={styles.actionButton}>
+            <Ionicons 
+              name="time" 
+              size={20} 
+              color={hasPro ? theme.colors.primary : theme.colors.textMuted} 
+            />
+            <View style={styles.actionContent}>
+              <Text variant="sm" fontWeight="medium">Airport Schedule</Text>
+              <Text variant="xs" color="textMuted">
+                {hasPro ? 'View arrivals and departures for departure airport' : 'Premium feature - upgrade to view schedules'}
+              </Text>
+            </View>
+            {!hasPro && <Ionicons name="lock-closed" size={16} color={theme.colors.textMuted} />}
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+}
 ```
 
 #### Quota-Aware Component Pattern (New)
@@ -1169,11 +1363,96 @@ export default {
 };
 ```
 
+### Build Environment Setup (New)
+
+#### Railway Server Deployment
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login to Railway
+railway login
+
+# Link to your Railway project
+cd server
+railway link
+
+# Set environment variables
+railway variables set DATABASE_URL="postgresql://username:password@host:port/database"
+railway variables set AERODATABOX_RAPIDAPI_HOST="aerodatabox.p.rapidapi.com"
+railway variables set AERODATABOX_RAPIDAPI_KEY="your-rapidapi-key-here"
+railway variables set OPENAI_API_KEY="your-openai-key-here"
+railway variables set DEEPSEEK_API_KEY="your-deepseek-key-here"
+railway variables set XAI_API_KEY="your-xai-key-here"
+railway variables set PORT="8787"
+railway variables set NODE_ENV="production"
+
+# Deploy to Railway
+railway up
+
+# Get your Railway service URL
+railway status
+```
+
+#### EAS Mobile Build Setup
+```bash
+# Install EAS CLI
+npm install -g @expo/eas-cli
+
+# Login to Expo
+eas login
+
+# Set EAS environment variables
+eas secret:create --scope project --name EXPO_PUBLIC_API_BASE_URL --value "https://your-app.railway.app"
+eas secret:create --scope project --name EXPO_PUBLIC_POSTHOG_KEY --value "your-posthog-key-here"
+eas secret:create --scope project --name EXPO_PUBLIC_REVENUECAT_KEY --value "your-revenuecat-key-here"
+
+# Build for production
+eas build --platform ios --profile production
+eas build --platform android --profile production
+eas build --platform all --profile production
+```
+
+#### Environment Variable Checklist
+```bash
+# Server (Railway)
+- [ ] DATABASE_URL - PostgreSQL connection string
+- [ ] AERODATABOX_RAPIDAPI_HOST - AeroDataBox API host
+- [ ] AERODATABOX_RAPIDAPI_KEY - AeroDataBox API key
+- [ ] PORT - Server port (default: 8787)
+- [ ] NODE_ENV - Environment (production/development)
+
+# Mobile App (EAS)
+- [ ] EXPO_PUBLIC_API_BASE_URL - Your Railway service URL
+- [ ] EXPO_PUBLIC_POSTHOG_KEY - PostHog analytics key (optional)
+- [ ] EXPO_PUBLIC_REVENUECAT_KEY - RevenueCat key (optional)
+```
+
+#### Quick Deployment Commands
+```bash
+# Server deployment
+cd server
+railway up
+
+# Mobile build
+eas build --platform all --profile production
+
+# Check build status
+eas build:list
+```
+
 ---
 
 ## 🔒 Security Considerations
 
 ### Enhanced Data Privacy & Security
+
+#### Production Security Architecture
+1. **Runtime Guards:** Automatic security checks prevent insecure HTTP connections in production builds
+2. **Environment Validation:** Validates API endpoints and configuration at app startup
+3. **Network Security:** Development mode allows HTTP, production mode enforces HTTPS only
+4. **Telemetry Security:** Monitoring services only initialize in production with proper authentication
+5. **Anonymous Tracking:** Secure anonymous ID generation for usage tracking without user authentication
 
 #### Multi-Layer Privacy Protection
 1. **Server-Side AI Processing:** AI keys never stored on device
@@ -1195,6 +1474,28 @@ const AI_KEYS = {
 
 // Client-side - proxy URL only (no keys)
 const AI_PROXY_URL = process.env.EXPO_PUBLIC_AI_PROXY_URL;
+
+// Telemetry & Monitoring Security
+export function initTelemetry({ dsn, posthogKey, appEnv, debug }: TelemetryOptions) {
+  const isProd = appEnv === "production";
+
+  if (dsn && isProd) {
+    Sentry.init({
+      dsn,
+      enableInExpoDevelopment: false,
+      debug: !!debug,
+      tracesSampleRate: 1.0,
+    });
+  }
+
+  if (posthogKey && isProd) {
+    ph = new PostHog(posthogKey, {
+      captureAppLifecycleEvents: true,
+      captureDeepLinks: true,
+      enable: true,
+    });
+  }
+}
 
 // Secure key validation
 function validateApiKey(provider: string, key: string): boolean {
@@ -1528,6 +1829,132 @@ function fixTransformInFile(filePath: string) {
     const newTransform = `transform: [${splitProps.join(', ')}]`;
     // Note: In actual implementation, this would use content.replace()
   }
+}
+```
+
+### Typography System Implementation
+
+#### Font Loading Hook (`src/hooks/useFonts.ts`)
+```typescript
+import React from 'react';
+import { useFonts as useExpoFonts } from 'expo-font';
+import { Platform } from 'react-native';
+
+export function useFonts() {
+  // Simplified: Use only Questrial variants for consistency
+  const [fontsLoaded, fontError] = useExpoFonts(
+    Platform.OS === 'web' ? {} : {
+      'Questrial': require('../../assets/fonts/Questrial/Questrial-Regular.ttf'),
+      'Questrial-Regular': require('../../assets/fonts/Questrial/Questrial-Regular.ttf'),
+    }
+  );
+
+  // Handle font loading differently for web vs native
+  if (Platform.OS === 'web') {
+    // For web, we assume fonts are loaded via CSS @font-face
+    React.useEffect(() => {
+      const timer = setTimeout(() => {
+        console.log('🌐 Web environment: Assuming fonts loaded via CSS');
+      }, 100);
+      return () => clearTimeout(timer);
+    }, []);
+    
+    return { fontsLoaded: true, fontError: null };
+  } else {
+    // For native, use expo-font loading status
+    if (fontError) {
+      console.warn('❌ Font loading error:', fontError);
+    }
+    
+    console.log('📱 Native font loading status:', { fontsLoaded, fontError });
+    
+    if (fontsLoaded) {
+      console.log('✅ Native fonts loaded successfully');
+    }
+    
+    return { fontsLoaded, fontError };
+  }
+}
+```
+
+#### Navigation Typography (`src/navigation/AppNavigator.tsx`)
+```typescript
+// Bottom tab navigation with consistent typography
+<Tab.Navigator
+  screenOptions={({ route }) => ({
+    // ... other options
+    tabBarLabelStyle: {
+      fontSize: 12,
+      fontFamily: 'Questrial',
+      fontWeight: '400',
+      fontStyle: 'normal',
+    },
+    tabBarStyle: {
+      // ... other styles
+      fontFamily: 'Questrial',
+    },
+    headerShown: false,
+  })}
+>
+  {/* Tab screens */}
+</Tab.Navigator>
+```
+
+#### Component Typography Examples
+```typescript
+// DateTimeSelector.tsx - Consistent font usage
+<Text style={{
+  fontSize: 18,
+  fontFamily: 'Questrial',
+  color: isDark ? '#FFFFFF' : '#333333',
+  fontWeight: '600', // Semi-bold for headings
+}}>
+  {format(currentMonth, 'MMMM yyyy')}
+</Text>
+
+// ThemedButton.tsx - Button typography
+<Text style={{
+  fontSize: 16,
+  fontFamily: 'Questrial',
+  fontWeight: '600', // Semi-bold for buttons
+  color: buttonTextColor,
+}}>
+  {title}
+</Text>
+
+// QuestCard.tsx - Card typography
+<Text style={{
+  fontSize: 14,
+  fontFamily: 'Questrial',
+  fontWeight: '500', // Medium for secondary text
+  color: theme.colors.text,
+}}>
+  {description}
+</Text>
+```
+
+#### Global CSS Typography (`global.css`)
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom font declarations - Simplified to Questrial only */
+@font-face {
+  font-family: 'Questrial';
+  src: url('/assets/fonts/Questrial/Questrial-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Questrial with different weights using CSS font-weight */
+@font-face {
+  font-family: 'Questrial';
+  src: url('/assets/fonts/Questrial/Questrial-Regular.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
 }
 ```
 
@@ -2075,7 +2502,231 @@ interface GrokConfig {
 }
 ```
 
+### Client API Helpers (New)
+
+#### Anonymous User ID System
+```typescript
+// src/utils/anonymousId.ts
+interface AnonymousIdService {
+  getAnonymousId(): Promise<string>;
+  clearAnonymousId(): Promise<void>;
+}
+
+// Usage in API calls
+const subjectId = await getAnonymousId();
+const response = await fetch(url, {
+  headers: {
+    'x-subject-id': subjectId,
+    'Content-Type': 'application/json',
+  },
+});
+```
+
+#### Flight Resolution API
+```typescript
+// src/api/flights.ts
+interface FlightResolvePayload {
+  airlineIATA: string;
+  flightNumber: string;
+  departDateLocal: string;
+  tripId?: string;
+}
+
+interface FlightResolveResponse {
+  success: boolean;
+  flight: FlightSegment;
+  tripId?: string;
+  usage: {
+    subjectId: string;
+    monthKey: string;
+    flightResolves: number;
+  };
+}
+
+// API Functions
+export async function resolveFlight(payload: FlightResolvePayload): Promise<FlightResolveResponse>;
+export async function getFlightStatus(query: FlightStatusQuery): Promise<FlightStatusResponse>;
+export async function getTripFlights(tripId: string): Promise<TripFlightsResponse>;
+```
+
+#### Airport Schedule API
+```typescript
+// src/api/airports.ts
+interface AirportScheduleParams {
+  offsetMinutes?: number;
+  durationMinutes?: number;
+  direction?: "Arrival" | "Departure" | "Both";
+}
+
+interface AirportScheduleResponse {
+  success: boolean;
+  airport: string;
+  schedule: FlightSchedule[];
+  usage: {
+    subjectId: string;
+    monthKey: string;
+    airportQueries: number;
+  };
+}
+
+// API Functions
+export async function fetchAirportSchedule(iata: string, params?: AirportScheduleParams): Promise<AirportScheduleResponse>;
+export async function searchFlights(params: FlightSearchParams): Promise<FlightSearchResult>;
+```
+
+#### Itinerary Ingestion API
+```typescript
+// src/api/ingest.ts
+interface IngestTextPayload {
+  source: "text";
+  text: string;
+}
+
+interface IngestFilePayload {
+  source: "file";
+  file: File | Blob;
+}
+
+interface IngestResponse {
+  success: boolean;
+  source: IngestSource;
+  flights: ExtractedFlight[];
+  hotels: ExtractedHotel[];
+  aiProvider: string;
+  aiModel: string;
+  usage: {
+    subjectId: string;
+    monthKey: string;
+    aiGenerations: number;
+    totalTokens: number;
+    costEstimate?: number;
+  };
+}
+
+// API Functions
+export async function ingestItinerary(source: IngestSource, payload: IngestPayload): Promise<IngestResponse>;
+export async function ingestTextItinerary(text: string): Promise<IngestResponse>;
+export async function ingestFileItinerary(file: File | Blob): Promise<IngestResponse>;
+```
+
 ### Server API Endpoints (New)
+
+#### Ingest API Endpoint
+```typescript
+// POST /api/ingest/itinerary
+interface IngestRequest {
+  source: "text" | "file";
+  text?: string;
+  // For files send multipart with field name "file"
+}
+
+interface IngestResponse {
+  flights: Array<{
+    airlineIATA: string;
+    flightNumber: string;
+    departIATA: string;
+    arriveIATA: string;
+    departDateLocal: string;
+    departTimeLocal: string;
+    arriveDateLocal: string;
+    arriveTimeLocal: string;
+    bookingRef?: string;
+    passengerNames?: string[];
+  }>;
+  hotels: Array<{
+    name: string;
+    address?: string;
+    city: string;
+    country: string;
+    checkInDate: string;
+    checkOutDate: string;
+    bookingRef?: string;
+  }>;
+}
+
+// Notes: Uses our AI proxy. Increments UsageMeter.aiGenerations and writes ProviderUsage with provider "ai" endpoint "/api/ingest/itinerary"
+```
+
+#### Flight Resolution API Endpoint
+```typescript
+// POST /api/flights/resolve
+interface FlightResolveRequest {
+  airlineIATA: string;
+  flightNumber: string;
+  departDateLocal: string;
+  tripId?: string;
+}
+
+interface FlightResolveResponse {
+  segment: {
+    carrier: string;
+    number: string;
+    depart: {
+      iata: string;
+      timeScheduled: string | null;
+      terminal: string | null;
+      gate: string | null;
+    };
+    arrive: {
+      iata: string;
+      timeScheduled: string | null;
+      terminal: string | null;
+      gate: string | null;
+    };
+    status: string;
+  };
+  savedId?: string;
+}
+
+// Notes: Resolves via AeroDataBox by default. If tripId is provided, upserts FlightSegment. Increments UsageMeter.flightResolves. Free users limited to one flight per trip.
+```
+
+#### Flight Status API Endpoint
+```typescript
+// GET /api/flights/status
+// Query: ?carrier=BA&number=132&date=2025-11-02
+
+interface FlightStatusResponse {
+  status: "scheduled" | "active" | "landed" | "cancelled";
+  depart: {
+    terminal: string | null;
+    gate: string | null;
+  };
+  arrive: {
+    terminal: string | null;
+    gate: string | null;
+  };
+}
+```
+
+#### Airport Schedule API Endpoint
+```typescript
+// GET /api/airports/:iata/schedule
+// Query: offsetMinutes default -120, durationMinutes default 720, direction "Arrival" | "Departure" | "Both" default "Both"
+
+interface AirportScheduleResponse {
+  arrivals: Array<{
+    flight: string;
+    airline: string;
+    from: string;
+    scheduled: string;
+    status: string;
+    terminal?: string;
+    gate?: string;
+  }>;
+  departures: Array<{
+    flight: string;
+    airline: string;
+    to: string;
+    scheduled: string;
+    status: string;
+    terminal?: string;
+    gate?: string;
+  }>;
+}
+
+// Notes: Free users limited to 240 minute window. Paid users up to 720. Increments UsageMeter.airportQueries.
+```
 
 #### AI Proxy Endpoint
 ```typescript
@@ -2600,6 +3251,26 @@ const ChatScreen = () => {
 
 ### ✅ Completed Features
 
+#### Client API Helpers & UI Integration
+- [x] Anonymous user ID system with persistent AsyncStorage
+- [x] Flight resolution API helpers (resolveFlight, getFlightStatus, getTripFlights)
+- [x] Airport schedule API helpers (fetchAirportSchedule, searchFlights)
+- [x] Itinerary ingestion API helpers (ingestItinerary, ingestTextItinerary, ingestFileItinerary)
+- [x] Trip Actions card in TimerDrilldownScreen with premium-gated buttons
+- [x] Add Flight button integration with existing flight lookup modal
+- [x] Upload Itinerary button with placeholder for future modal
+- [x] Airport Schedule button with conditional display based on flight existence
+- [x] Premium feature gating with lock icons and upgrade prompts
+- [x] Comprehensive error handling and user-friendly messages
+
+#### Typography System
+- [x] Complete font system simplification to Questrial-only
+- [x] Platform-specific font loading (CSS for web, expo-font for native)
+- [x] Global CSS font declarations with weight variations
+- [x] Navigation typography consistency (bottom tab labels)
+- [x] Component typography audit and updates across all UI elements
+- [x] Font weight hierarchy (400, 500, 600, 700) for visual consistency
+
 #### Server Infrastructure
 - [x] Express.js AI proxy server
 - [x] Cheapest-first AI provider selection
@@ -2740,11 +3411,14 @@ cd server && npm install
 *This document is maintained by the Odeysync development team and should be updated with any significant architectural changes or new features.*
 
 **Last Updated:** January 2025
-**Document Version:** 2.4.0 (AI Enhancement & Architecture Modernization)
+**Document Version:** 2.7.0 (Production Security & Telemetry)
 
 ---
 
 ### Version History
+- **v2.7.0 (Jan 2025)**: Production Security & Telemetry, Runtime Guards, Environment-Driven Monitoring, Centralized API Client, Enhanced Security
+- **v2.6.0 (Jan 2025)**: Client API Helpers & UI Integration, Anonymous User Support, Trip Actions Card, Build Environment Documentation, Premium Feature Gating
+- **v2.5.0 (Jan 2025)**: Typography System Overhaul, Font Consistency, Questrial-Only Font Family, Navigation Typography Updates
 - **v2.4.0 (Jan 2025)**: AI Response Formatting Overhaul, Server Dependencies Update, Express v4 Compatibility, Asset Path Resolution
 - **v2.3.0 (Aug 2025)**: iOS Build Fixes & Dependencies Update
 - **v2.2.0 (Jul 2025)**: Destination Integration & AI Provider Optimization

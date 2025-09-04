@@ -1,12 +1,6 @@
-export function assertRuntimeSafety(opts: { env: string; apiBaseUrl?: string; aiProxyUrl?: string }) {
-  const { env, apiBaseUrl, aiProxyUrl } = opts;
+export function assertRuntimeSafety(env: string, urls: Array<string | undefined>) {
   const isDev = env === "development";
-  const bad =
-    (!isDev && apiBaseUrl?.startsWith("http://")) ||
-    (!isDev && aiProxyUrl?.startsWith("http://"));
-  if (bad) {
-    throw new Error(
-      "Refusing to start with insecure http endpoints in non development"
-    );
+  if (!isDev && urls.some(u => typeof u === "string" && u.startsWith("http://"))) {
+    throw new Error("Insecure http URL detected in a non development build");
   }
 }

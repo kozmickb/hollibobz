@@ -142,7 +142,7 @@ export function AddTimerScreen() {
                 style={{
                   color: isDark ? '#FFFFFF' : '#333333',
                   fontSize: 20,
-                  fontFamily: 'Questrial-Regular',
+                  fontFamily: 'Questrial',
                 }}
               >
                 Odysync
@@ -176,7 +176,7 @@ export function AddTimerScreen() {
             style={{
               color: '#FFFFFF',
               fontSize: 20,
-              fontFamily: 'Questrial-Regular',
+              fontFamily: 'Questrial',
               textAlign: 'center',
               marginBottom: 8,
             }}
@@ -188,7 +188,7 @@ export function AddTimerScreen() {
             style={{
               color: 'rgba(255, 255, 255, 0.9)',
               fontSize: 14,
-              fontFamily: 'Questrial-Regular',
+              fontFamily: 'Questrial',
               textAlign: 'center',
             }}
           >
@@ -215,7 +215,8 @@ export function AddTimerScreen() {
             <Text
               style={{
                 fontSize: 18,
-                fontFamily: 'Questrial-Regular',
+                fontFamily: 'Questrial',
+                fontWeight: '600',
                 color: isDark ? '#FFFFFF' : '#333333',
                 marginBottom: 8,
               }}

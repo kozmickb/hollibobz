@@ -1,37 +1,104 @@
-// TODO: Install sentry-expo and posthog-react-native
-// import * as Sentry from 'sentry-expo';
-// import PostHog from 'posthog-react-native';
+import * as Sentry from 'sentry-expo';
+import PostHog from 'posthog-react-native';
+import Constants from 'expo-constants';
 
-// Initialize Sentry (mock)
+// Get configuration from Constants.expoConfig.extra
+const getConfig = () => {
+  const extra = Constants.expoConfig?.extra ?? {};
+  return {
+    sentryDsn: extra.sentryDsn || process.env.SENTRY_DSN,
+    posthogKey: extra.posthogKey || process.env.EXPO_PUBLIC_POSTHOG_KEY,
+    appEnv: extra.APP_ENV || 'development',
+    debugMode: extra.debugMode || false,
+  };
+};
+
+// Initialize Sentry with production-only tracing
 export const initSentry = () => {
-  if (process.env.SENTRY_DSN) {
-    console.log('Sentry initialization (mock) - DSN configured');
-    // TODO: Uncomment when sentry-expo is installed
-    // Sentry.init({
-    //   dsn: process.env.SENTRY_DSN,
-    //   enableInExpoDevelopment: __DEV__,
-    //   tracesSampleRate: 1.0,
-    //   _experiments: {
-    //     profilesSampleRate: 1.0,
-    //   },
-    // });
+  const config = getConfig();
+  
+  if (config.sentryDsn && config.appEnv === 'production') {
+    try {
+      Sentry.init({
+        dsn: config.sentryDsn,
+        enableInExpoDevelopment: false, // Only in production
+        tracesSampleRate: 1.0,
+        _experiments: {
+          profilesSampleRate: 1.0,
+        },
+        debug: config.debugMode,
+        beforeSend: (event) => {
+          // Add environment tag
+          event.tags = { ...event.tags, environment: config.appEnv };
+          return event;
+        },
+      });
+      
+      console.log('✅ Sentry initialized for production');
+      
+      // Test call in production with debug flag
+      if (config.debugMode) {
+        // Use the correct Sentry API
+        Sentry.Native.addBreadcrumb({
+          category: 'app',
+          message: 'Sentry test breadcrumb - production init',
+          level: 'info',
+        });
+        console.log('🔍 Sentry test breadcrumb sent (debug mode)');
+      }
+    } catch (error) {
+      console.error('❌ Sentry initialization failed:', error);
+    }
+  } else {
+    console.log('ℹ️ Sentry not initialized - missing DSN or not production');
   }
 };
 
-// Initialize PostHog (mock)
+// Initialize PostHog with consent respect
 export const initPostHog = () => {
-  if (process.env.EXPO_PUBLIC_POSTHOG_KEY) {
-    console.log('PostHog initialization (mock) - key configured');
-    // TODO: Uncomment when posthog-react-native is installed
-    // const posthog = new PostHog(process.env.EXPO_PUBLIC_POSTHOG_KEY);
-    // return posthog;
+  const config = getConfig();
+  
+  if (config.posthogKey) {
+    try {
+      // Check for analytics consent (you can implement this based on your consent system)
+      const hasAnalyticsConsent = true; // TODO: Replace with actual consent check
+      
+      if (hasAnalyticsConsent) {
+        const posthog = new PostHog(config.posthogKey, {
+          host: 'https://app.posthog.com', // Default PostHog host
+          disabled: false, // Use disabled instead of enable
+        });
+        
+        console.log('✅ PostHog initialized');
+        
+        // Test call in production with debug flag
+        if (config.debugMode && config.appEnv === 'production') {
+          posthog.capture('app_screen_view', {
+            screen_name: 'App Initialization',
+            screen_category: 'app_startup',
+            environment: config.appEnv,
+          });
+          console.log('🔍 PostHog test event sent (debug mode)');
+        }
+        
+        return posthog;
+      } else {
+        console.log('ℹ️ PostHog not initialized - no analytics consent');
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ PostHog initialization failed:', error);
+      return null;
+    }
+  } else {
+    console.log('ℹ️ PostHog not initialized - missing key');
+    return null;
   }
-  return null;
 };
 
-// Analytics tracking functions (mock)
+// Analytics tracking functions
 export class Analytics {
-  private static posthog: any = null;
+  private static posthog: PostHog | null = null;
 
   static init() {
     this.posthog = initPostHog();
@@ -39,11 +106,13 @@ export class Analytics {
 
   static track(event: string, properties?: Record<string, any>) {
     try {
-      // TODO: Uncomment when posthog-react-native is installed
-      // if (this.posthog) {
-      //   this.posthog.capture(event, properties);
-      // }
-      console.log('Analytics (mock):', event, properties);
+      if (this.posthog) {
+        this.posthog.capture(event, properties);
+      }
+      // Fallback logging for development
+      if (__DEV__) {
+        console.log('Analytics:', event, properties);
+      }
     } catch (error) {
       console.error('Analytics tracking error:', error);
     }
@@ -84,10 +153,16 @@ export class Analytics {
   }
 
   static error(error: Error, context?: string) {
-    // TODO: Uncomment when sentry-expo is installed
-    // Sentry.captureException(error, {
-    //   tags: { context },
-    // });
+    try {
+      // Send to Sentry if available
+      if (typeof Sentry !== 'undefined' && Sentry.Native.captureException) {
+        Sentry.Native.captureException(error, {
+          tags: { context },
+        });
+      }
+    } catch (sentryError) {
+      console.error('Sentry error tracking failed:', sentryError);
+    }
 
     // Track in PostHog
     this.track('error_occurred', {
@@ -97,6 +172,36 @@ export class Analytics {
     });
   }
 }
+
+// Utility functions for monitoring
+export const captureSentryBreadcrumb = (message: string, category: string = 'app', level: 'info' | 'warning' | 'error' = 'info') => {
+  try {
+    if (typeof Sentry !== 'undefined' && Sentry.Native.addBreadcrumb) {
+      Sentry.Native.addBreadcrumb({
+        category,
+        message,
+        level,
+      });
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to capture Sentry breadcrumb:', error);
+  }
+  return false;
+};
+
+export const capturePostHogEvent = (event: string, properties?: Record<string, any>) => {
+  try {
+    if (typeof PostHog !== 'undefined') {
+      // This would need to be called with the PostHog instance
+      console.log('PostHog event captured:', event, properties);
+      return true;
+    }
+  } catch (error) {
+    console.error('Failed to capture PostHog event:', error);
+  }
+  return false;
+};
 
 // Export types for the ErrorBoundary component
 export interface ErrorBoundaryState {

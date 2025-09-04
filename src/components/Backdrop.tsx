@@ -19,7 +19,8 @@ export function Backdrop(props: { destination: string; imageUrl?: string }) {
         <Text style={{
           color: '#FFFFFF',
           fontSize: 36,
-          fontFamily: 'Questrial-Regular-Bold',
+          fontFamily: 'Questrial',
+        fontWeight: '700',
         }}>
           {initials || "?"}
         </Text>
@@ -41,7 +42,8 @@ export function Backdrop(props: { destination: string; imageUrl?: string }) {
           <Text style={{
             color: '#FFFFFF',
             fontSize: 20,
-            fontFamily: 'Questrial-Regular-SemiBold',
+            fontFamily: 'Questrial',
+        fontWeight: '600',
           }}>
             {props.destination}
           </Text>

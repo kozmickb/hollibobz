@@ -7,7 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     ...config,
     name: config.name ?? "Odysync",
-    slug: config.slug ?? "odysync",
+    slug: "triptick",
     owner: config.owner ?? "kozmickb",
     scheme: 'odysync',
     version: '1.0.0',
@@ -52,6 +52,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ...config.android,
       package: process.env.ANDROID_PACKAGE ?? "com.appeningnow.odysync",
       permissions: ["READ_CALENDAR", "WRITE_CALENDAR", "CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"],
+      // Android cleartext traffic (only for development)
+      ...(isDev
+        ? {
+            usesCleartextTraffic: true,
+          }
+        : {}),
       adaptiveIcon: {
         foregroundImage: './assets/odysync_icon.png',
         backgroundColor: '#FF6B6B'
@@ -61,6 +67,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       'expo-font',
       'expo-secure-store',
+      'sentry-expo',
       './expo-plugins.js'
     ],
     extra: {
@@ -69,12 +76,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       LAN_IP: "localhost",
       API_BASE_URL: "http://localhost:8787",
       APP_ENV,
-      apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL,
-      aiProxyUrl: process.env.EXPO_PUBLIC_AI_PROXY_URL,
-      posthogKey: process.env.EXPO_PUBLIC_POSTHOG_KEY,
-      revenuecatKey: process.env.EXPO_PUBLIC_REVENUECAT_KEY,
-      sentryDsn: process.env.SENTRY_DSN,
+      apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:8787",
+      aiProxyUrl: process.env.EXPO_PUBLIC_AI_PROXY_URL ?? "http://localhost:8787",
+      posthogKey: process.env.EXPO_PUBLIC_POSTHOG_KEY ?? "",
+      revenuecatKey: process.env.EXPO_PUBLIC_REVENUECAT_KEY ?? "",
+      sentryDsn: process.env.SENTRY_DSN ?? "",
       trialDays: Number(process.env.EXPO_PUBLIC_TRIAL_DAYS ?? "7"),
+      debugMode: process.env.EXPO_PUBLIC_DEBUG_MODE === "true" || false,
     },
     updates: { url: "https://u.expo.dev/62ed6c16-c869-42cd-b91c-c82a9e410526" },
     // Add cache configuration to prevent permission issues

@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import { aiProxy } from "./router/aiProxy";
 import { usageRouter } from "./router/usage";
 import { airportsRouter } from "./routes/api/airports";
+import { flightsRouter } from "./routes/api/flights";
+import { ingestRouter } from "./routes/api/ingest";
 
 // Load environment variables from server directory
 const envPath = require('path').resolve(__dirname, '.env');
@@ -40,6 +42,8 @@ app.get("/health", (_, res) => res.json({
 app.use(aiProxy);
 app.use(usageRouter);
 app.use("/api/airports", airportsRouter);
+app.use("/api/flights", flightsRouter);
+app.use("/api/ingest", ingestRouter);
 
 // Error handling middleware
 app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

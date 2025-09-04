@@ -1,0 +1,12 @@
+server/**
+prisma/**
+docker/**
+**/*.log
+**/.env
+**/.env.*
+**/node_modules/**
+!node_modules/
+!package.json
+!package-lock.json
+!yarn.lock
+!pnpm-lock.yaml

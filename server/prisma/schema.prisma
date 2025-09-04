@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Usage tracking models
+model UsageMeter {
+  id             String   @id @default(cuid())
+  subjectId      String   // User or app identifier
+  monthKey       String   // Format: "YYYY-MM" (e.g., "2025-01")
+  aiGenerations  Int      @default(0)
+  flightResolves Int      @default(0)
+  airportQueries Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([subjectId, monthKey])
+  @@index([subjectId])
+  @@index([monthKey])
+}
+
+model Trial {
+  id         String   @id @default(cuid())
+  subjectId  String   // User identifier
+  startedAt  DateTime
+  endsAt     DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([subjectId])
+  @@index([subjectId])
+  @@index([endsAt])
+}
+
+model ProviderUsage {
+  id         String   @id @default(cuid())
+  provider   String   // e.g., "openai", "amadeus", "aviationstack"
+  endpoint   String   // e.g., "chat/completions", "flights/search"
+  units      Int      // Number of units consumed (tokens, API calls, etc.)
+  costCents  Int      // Cost in cents (integer to avoid floating point issues)
+  subjectId  String?  // Optional user identifier for attribution
+  createdAt  DateTime @default(now())
+
+  @@index([provider])
+  @@index([subjectId])
+  @@index([createdAt])
+}
+
+// Flight and travel models
+model FlightSegment {
+  id             String   @id @default(cuid())
+  tripId         String   // Reference to trip/timer
+  carrier        String   // Airline code (e.g., "EY", "BA")
+  number         String   // Flight number (e.g., "011", "1234")
+  departIATA     String   // Departure airport code
+  arriveIATA     String   // Arrival airport code
+  departTime     DateTime
+  arriveTime     DateTime
+  departTerminal String?
+  departGate     String?
+  arriveTerminal String?
+  arriveGate     String?
+  status         String   // e.g., "On Time", "Delayed", "Cancelled"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([tripId, carrier, number])
+  @@index([tripId])
+  @@index([carrier])
+  @@index([departTime])
+  @@index([status])
+}
+
+model HotelStay {
+  id           String   @id @default(cuid())
+  tripId       String   // Reference to trip/timer
+  name         String   // Hotel name
+  address      String?  // Optional address
+  city         String?  // Optional city
+  country      String?  // Optional country
+  checkInDate  DateTime
+  checkOutDate DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([tripId])
+  @@index([checkInDate])
+  @@index([checkOutDate])
+}

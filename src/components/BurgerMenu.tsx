@@ -80,7 +80,8 @@ export function BurgerMenu({ visible, onClose }: BurgerMenuProps) {
           <View>
             <Text style={{
               fontSize: 28,
-              fontFamily: 'Questrial-Regular-Bold',
+              fontFamily: 'Questrial',
+        fontWeight: '700',
               color: '#FFFFFF',
               marginBottom: 4,
             }}>
@@ -88,7 +89,8 @@ export function BurgerMenu({ visible, onClose }: BurgerMenuProps) {
             </Text>
             <Text style={{
               fontSize: 14,
-              fontFamily: 'Questrial-Regular-Medium',
+              fontFamily: 'Questrial',
+        fontWeight: '500',
               color: 'rgba(255, 255, 255, 0.9)',
             }}>
               Navigate your travel journey

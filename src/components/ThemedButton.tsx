@@ -150,7 +150,8 @@ export function ThemedButton({
               {
                 color: getTextColor(),
                 fontSize: sizeStyles.fontSize,
-                fontFamily: 'Questrial-Regular-SemiBold',
+                fontFamily: 'Questrial',
+                fontWeight: '600',
                 textAlign: 'center',
               },
               textStyle,
@@ -188,7 +189,8 @@ export function ThemedButton({
           {
             color: getTextColor(),
             fontSize: sizeStyles.fontSize,
-            fontFamily: 'Questrial-Regular-SemiBold',
+            fontFamily: 'Questrial',
+            fontWeight: '600',
             textAlign: 'center',
           },
           textStyle,

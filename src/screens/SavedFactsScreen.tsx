@@ -94,7 +94,8 @@ export function SavedFactsScreen() {
           </Pressable>
           <Text style={{
             fontSize: 20,
-            fontFamily: 'Questrial-Regular-Bold',
+            fontFamily: 'Questrial',
+            fontWeight: '700',
             color: isDark ? '#F3F4F6' : '#1F2937',
           }}>
             Saved Facts
@@ -132,7 +133,8 @@ export function SavedFactsScreen() {
           </View>
           <Text style={{
             fontSize: 28,
-            fontFamily: 'Questrial-Regular-Bold',
+            fontFamily: 'Questrial',
+            fontWeight: '700',
             color: isDark ? '#F3F4F6' : '#1F2937',
             textAlign: 'center',
             marginBottom: 8,
@@ -141,7 +143,7 @@ export function SavedFactsScreen() {
           </Text>
           <Text style={{
             fontSize: 16,
-            fontFamily: 'Questrial-Regular-Regular',
+            fontFamily: 'Questrial',
             color: isDark ? '#9CA3AF' : '#6B7280',
             textAlign: 'center',
           }}>
@@ -171,7 +173,8 @@ export function SavedFactsScreen() {
             <View style={{ alignItems: 'center', flex: 1 }}>
               <Text style={{
                 fontSize: 24,
-                fontFamily: 'Questrial-Regular-Bold',
+                fontFamily: 'Questrial',
+                fontWeight: '700',
                 color: isDark ? '#F3F4F6' : '#1F2937',
                 marginBottom: 4,
               }}>
@@ -179,7 +182,7 @@ export function SavedFactsScreen() {
               </Text>
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Questrial-Regular-Regular',
+                fontFamily: 'Questrial',
                 color: isDark ? '#9CA3AF' : '#6B7280',
               }}>
                 Facts Saved
@@ -191,7 +194,8 @@ export function SavedFactsScreen() {
             <View style={{ alignItems: 'center', flex: 1 }}>
               <Text style={{
                 fontSize: 24,
-                fontFamily: 'Questrial-Regular-Bold',
+                fontFamily: 'Questrial',
+                fontWeight: '700',
                 color: isDark ? '#F3F4F6' : '#1F2937',
                 marginBottom: 4,
               }}>
@@ -199,7 +203,7 @@ export function SavedFactsScreen() {
               </Text>
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Questrial-Regular-Regular',
+                fontFamily: 'Questrial',
                 color: isDark ? '#9CA3AF' : '#6B7280',
               }}>
                 Destinations
@@ -212,7 +216,8 @@ export function SavedFactsScreen() {
         <View>
           <Text style={{
             fontSize: 20,
-            fontFamily: 'Questrial-Regular-Bold',
+            fontFamily: 'Questrial',
+            fontWeight: '700',
             color: isDark ? '#F3F4F6' : '#1F2937',
             marginBottom: 16,
           }}>
@@ -261,7 +266,8 @@ export function SavedFactsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{
                     fontSize: 16,
-                    fontFamily: 'Questrial-Regular-Bold',
+                    fontFamily: 'Questrial',
+                    fontWeight: '700',
                     color: isDark ? '#F3F4F6' : '#1F2937',
                     marginBottom: 4,
                   }}>
@@ -279,7 +285,8 @@ export function SavedFactsScreen() {
                     }}>
                       <Text style={{
                         fontSize: 12,
-                        fontFamily: 'Questrial-Regular-Medium',
+                        fontFamily: 'Questrial',
+                        fontWeight: '500',
                         color: isDark ? '#A78BFA' : '#8B5CF6',
                       }}>
                         {fact.category}
@@ -287,7 +294,7 @@ export function SavedFactsScreen() {
                     </View>
                     <Text style={{
                       fontSize: 12,
-                      fontFamily: 'Questrial-Regular-Regular',
+                      fontFamily: 'Questrial',
                       color: isDark ? '#9CA3AF' : '#6B7280',
                     }}>
                       {fact.savedAt}
@@ -298,7 +305,7 @@ export function SavedFactsScreen() {
               
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Questrial-Regular-Regular',
+                fontFamily: 'Questrial',
                 color: isDark ? '#D1D5DB' : '#374151',
                 lineHeight: 20,
               }}>
@@ -322,7 +329,8 @@ export function SavedFactsScreen() {
                 >
                   <Text style={{
                     fontSize: 12,
-                    fontFamily: 'Questrial-Regular-Medium',
+                    fontFamily: 'Questrial',
+                    fontWeight: '500',
                     color: isDark ? '#FB923C' : '#F97316',
                   }}>
                     Share
@@ -358,7 +366,8 @@ export function SavedFactsScreen() {
             </View>
             <Text style={{
               fontSize: 18,
-              fontFamily: 'Questrial-Regular-SemiBold',
+              fontFamily: 'Questrial',
+              fontWeight: '600',
               color: isDark ? '#F3F4F6' : '#1F2937',
               marginBottom: 8,
               textAlign: 'center',
@@ -367,7 +376,7 @@ export function SavedFactsScreen() {
             </Text>
             <Text style={{
               fontSize: 14,
-              fontFamily: 'Questrial-Regular-Regular',
+              fontFamily: 'Questrial',
               color: isDark ? '#9CA3AF' : '#6B7280',
               textAlign: 'center',
             }}>

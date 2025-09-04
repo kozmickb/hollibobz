@@ -29,7 +29,8 @@ export function TeaserCard({ title, body, onMore }: TeaserCardProps) {
         />
         <Text style={{
           fontSize: 16,
-          fontFamily: 'Questrial-Regular-SemiBold',
+          fontFamily: 'Questrial',
+          fontWeight: '600',
           color: isDark ? '#FFFFFF' : '#1F2937',
           flex: 1,
         }}>
@@ -39,7 +40,7 @@ export function TeaserCard({ title, body, onMore }: TeaserCardProps) {
       
       <Text style={{
         fontSize: 14,
-        fontFamily: 'Questrial-Regular-Regular',
+        fontFamily: 'Questrial',
         color: isDark ? '#D1D5DB' : '#4B5563',
         lineHeight: 20,
         marginBottom: 16,
@@ -67,7 +68,8 @@ export function TeaserCard({ title, body, onMore }: TeaserCardProps) {
         <Text style={{
           color: '#FFFFFF',
           fontSize: 14,
-          fontFamily: 'Questrial-Regular-SemiBold',
+          fontFamily: 'Questrial',
+          fontWeight: '600',
           marginRight: 6,
         }}>
           Tell me more

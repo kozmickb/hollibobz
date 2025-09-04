@@ -16,6 +16,9 @@
     "nativewind-env.d.ts"
   ],
   "exclude": [
+    "server",
+    "prisma", 
+    "migrations",
     "node_modules",
     "ios",
     "android",

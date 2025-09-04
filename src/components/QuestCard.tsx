@@ -38,7 +38,8 @@ export function QuestCard({ quest, isCompleted, onPress }: QuestCardProps) {
         <View style={{ flex: 1 }}>
           <Text style={{
             fontSize: 16,
-            fontFamily: 'Questrial-Regular-SemiBold',
+            fontFamily: 'Questrial',
+            fontWeight: '600',
             color: isDark ? '#FFFFFF' : '#333333',
             marginBottom: 4,
           }}>
@@ -46,7 +47,7 @@ export function QuestCard({ quest, isCompleted, onPress }: QuestCardProps) {
           </Text>
           <Text style={{
             fontSize: 14,
-            fontFamily: 'Questrial-Regular-Regular',
+            fontFamily: 'Questrial',
             color: isDark ? '#CCCCCC' : '#666666',
             lineHeight: 20,
           }}>
@@ -84,7 +85,8 @@ export function QuestCard({ quest, isCompleted, onPress }: QuestCardProps) {
         }}>
           <Text style={{
             fontSize: 12,
-            fontFamily: 'Questrial-Regular-SemiBold',
+            fontFamily: 'Questrial',
+            fontWeight: '600',
             color: isCompleted 
               ? (isDark ? '#CCCCCC' : '#666666')
               : '#333333',
@@ -95,7 +97,8 @@ export function QuestCard({ quest, isCompleted, onPress }: QuestCardProps) {
 
         <Text style={{
           fontSize: 12,
-          fontFamily: 'Questrial-Regular-Medium',
+          fontFamily: 'Questrial',
+          fontWeight: '500',
           color: isCompleted 
             ? (isDark ? '#666666' : '#999999')
             : (isDark ? '#4ECDC4' : '#4ECDC4'),

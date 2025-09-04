@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../config/env";
+import api from "./client";
 
 export async function fetchAirportSchedule(
   iata: string,
@@ -8,19 +8,7 @@ export async function fetchAirportSchedule(
     direction?: "Arrival" | "Departure" | "Both";
   }
 ) {
-  const response = await fetch(`${API_BASE_URL}/api/airports/${encodeURIComponent(iata)}/schedule`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(errorData.error || `Airport schedule error: ${response.status}`);
-  }
-
-  return await response.json();
+  return api.get(`/api/airports/${encodeURIComponent(iata)}/schedule`, { params }).then(r => r.data);
 }
 
 export interface FlightSearchParams {
@@ -44,29 +32,5 @@ export interface FlightSearchResult {
 export async function searchFlights(
   params: FlightSearchParams
 ): Promise<FlightSearchResult> {
-  const { origin, destination, date, limit = 10 } = params;
-
-  const queryParams = new URLSearchParams({
-    origin,
-    destination,
-    limit: limit.toString()
-  });
-
-  if (date) {
-    queryParams.append('date', date);
-  }
-
-  const response = await fetch(`${API_BASE_URL}/api/airports/search?${queryParams.toString()}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(errorData.error || `Flight search error: ${response.status}`);
-  }
-
-  return await response.json();
+  return api.get("/api/airports/search", { params }).then(r => r.data);
 }

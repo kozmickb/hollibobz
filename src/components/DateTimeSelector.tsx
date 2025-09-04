@@ -3,6 +3,7 @@ import { View, Text, Pressable, Platform, Modal, ScrollView } from 'react-native
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeStore } from '../store/useThemeStore';
+import { useFonts } from '../hooks/useFonts';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addDays, subDays } from 'date-fns';
 
 interface DateTimeSelectorProps {
@@ -96,13 +97,14 @@ function DesktopDatePicker({
               <Ionicons name="chevron-back" size={24} color={isDark ? '#FFFFFF' : '#333333'} />
             </Pressable>
             
-            <Text style={{
-              fontSize: 18,
-              fontFamily: 'Questrial-Regular-SemiBold',
-              color: isDark ? '#FFFFFF' : '#333333',
-            }}>
-              {format(currentMonth, 'MMMM yyyy')}
-            </Text>
+                         <Text style={{
+               fontSize: 18,
+               fontFamily: 'Questrial',
+               color: isDark ? '#FFFFFF' : '#333333',
+               fontWeight: '600',
+             }}>
+               {format(currentMonth, 'MMMM yyyy')}
+             </Text>
             
             <Pressable onPress={nextMonth} style={{ padding: 8 }}>
               <Ionicons name="chevron-forward" size={24} color={isDark ? '#FFFFFF' : '#333333'} />
@@ -116,13 +118,14 @@ function DesktopDatePicker({
           }}>
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
               <View key={day} style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{
-                  fontSize: 12,
-                  fontFamily: 'Questrial-Regular-Medium',
-                  color: isDark ? '#CCCCCC' : '#666666',
-                }}>
-                  {day}
-                </Text>
+                                 <Text style={{
+                   fontSize: 12,
+                   fontFamily: 'Questrial',
+                   color: isDark ? '#CCCCCC' : '#666666',
+                   fontWeight: '500',
+                 }}>
+                   {day}
+                 </Text>
               </View>
             ))}
           </View>
@@ -160,7 +163,7 @@ function DesktopDatePicker({
                 >
                   <Text style={{
                     fontSize: 14,
-                    fontFamily: 'Questrial-Regular-Regular',
+                    fontFamily: 'Questrial',
                     color: isSelected 
                       ? '#FFFFFF'
                       : isCurrentMonth 
@@ -195,8 +198,9 @@ function DesktopDatePicker({
             >
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Questrial-Regular-Medium',
+                fontFamily: 'Questrial',
                 color: isDark ? '#FFFFFF' : '#333333',
+                fontWeight: '500',
               }}>
                 Cancel
               </Text>
@@ -213,8 +217,9 @@ function DesktopDatePicker({
             >
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Questrial-Regular-Medium',
+                fontFamily: 'Questrial',
                 color: '#FFFFFF',
+                fontWeight: '500',
               }}>
                 OK
               </Text>
@@ -278,10 +283,11 @@ function DesktopTimePicker({
         }}>
           <Text style={{
             fontSize: 18,
-            fontFamily: 'Questrial-Regular-SemiBold',
+            fontFamily: 'Questrial',
             color: isDark ? '#FFFFFF' : '#333333',
             textAlign: 'center',
             marginBottom: 20,
+            fontWeight: '600',
           }}>
             Select Time
           </Text>
@@ -308,7 +314,7 @@ function DesktopTimePicker({
                 >
                   <Text style={{
                     fontSize: 16,
-                    fontFamily: 'Questrial-Regular-Regular',
+                    fontFamily: 'Questrial',
                     color: hours === i ? '#FFFFFF' : (isDark ? '#FFFFFF' : '#333333'),
                     textAlign: 'center',
                   }}>
@@ -320,9 +326,10 @@ function DesktopTimePicker({
 
             <Text style={{
               fontSize: 24,
-              fontFamily: 'Questrial-Regular-Bold',
+              fontFamily: 'Questrial',
               color: isDark ? '#FFFFFF' : '#333333',
               marginHorizontal: 16,
+              fontWeight: '700',
             }}>
               :
             </Text>
@@ -343,7 +350,7 @@ function DesktopTimePicker({
                 >
                   <Text style={{
                     fontSize: 16,
-                    fontFamily: 'Questrial-Regular-Regular',
+                    fontFamily: 'Questrial',
                     color: minutes === i ? '#FFFFFF' : (isDark ? '#FFFFFF' : '#333333'),
                     textAlign: 'center',
                   }}>
@@ -373,8 +380,9 @@ function DesktopTimePicker({
             >
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Questrial-Regular-Medium',
+                fontFamily: 'Questrial',
                 color: isDark ? '#FFFFFF' : '#333333',
+                fontWeight: '500',
               }}>
                 Cancel
               </Text>
@@ -391,8 +399,9 @@ function DesktopTimePicker({
             >
               <Text style={{
                 fontSize: 14,
-                fontFamily: 'Questrial-Regular-Medium',
+                fontFamily: 'Questrial',
                 color: '#FFFFFF',
+                fontWeight: '500',
               }}>
                 OK
               </Text>
@@ -414,6 +423,11 @@ export function DateTimeSelector({
   const { isDark } = useThemeStore();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  
+  // Import and use fonts hook to ensure fonts are loaded
+  const { fontsLoaded } = useFonts();
+  
+
 
   const formatDisplayDate = (date: Date) => {
     return date.toLocaleDateString('en-GB', {
@@ -449,18 +463,32 @@ export function DateTimeSelector({
     }
   };
 
+  // Don't render until fonts are loaded
+  if (!fontsLoaded) {
+    return (
+      <View>
+        <Text style={{ color: isDark ? '#FFFFFF' : '#333333' }}>
+          Loading fonts...
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View>
       <Text
         style={{
           fontSize: 18,
-          fontFamily: 'Questrial-Regular-SemiBold',
+          fontFamily: 'Questrial',
           color: isDark ? '#FFFFFF' : '#333333',
           marginBottom: 8,
+          fontWeight: '600',
         }}
       >
         📅 {label}
       </Text>
+      
+
       
       {/* Date Selector */}
       <Pressable
@@ -486,7 +514,7 @@ export function DateTimeSelector({
         <Text
           style={{
             fontSize: 16,
-            fontFamily: 'Questrial-Regular-Regular',
+            fontFamily: 'Questrial',
             color: isDark ? '#FFFFFF' : '#333333',
           }}
         >
@@ -523,7 +551,7 @@ export function DateTimeSelector({
           <Text
             style={{
               fontSize: 16,
-              fontFamily: 'Questrial-Regular-Regular',
+              fontFamily: 'Questrial',
               color: isDark ? '#FFFFFF' : '#333333',
             }}
           >
@@ -540,7 +568,7 @@ export function DateTimeSelector({
       <Text
         style={{
           fontSize: 14,
-          fontFamily: 'Questrial-Regular-Regular',
+          fontFamily: 'Questrial',
           color: isDark ? '#B0B0B0' : '#666666',
           marginTop: 8,
         }}

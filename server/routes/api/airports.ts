@@ -1,8 +1,24 @@
 import { Router } from "express";
 import { getAirportScheduleByIATA } from "../../providers/aerodatabox";
 import { searchFlightsAviationStack, isAviationStackAvailable } from "../../providers/aviationstack";
+import { 
+  incrUsage, 
+  recordProviderUsage 
+} from "../../db";
+import { 
+  attachSubjectId,
+  getSubjectId 
+} from "../../middleware/subject";
+import { 
+  getPlan,
+  checkMonthlyUsageLimit,
+  LIMIT_RULES
+} from "../../middleware/entitlement";
 
 export const airportsRouter = Router();
+
+// Apply subject ID middleware
+airportsRouter.use(attachSubjectId);
 
 /**
  * GET /api/airports/:iata/schedule
@@ -13,7 +29,10 @@ export const airportsRouter = Router();
  */
 airportsRouter.get("/:iata/schedule", async (req, res, next) => {
   try {
+    const subjectId = getSubjectId(req);
+    const plan = await getPlan(req);
     const iata = String(req.params.iata || "").toUpperCase();
+    
     if (!iata || iata.length !== 3) {
       return res.status(400).json({ error: "IATA code required" });
     }
@@ -22,10 +41,33 @@ airportsRouter.get("/:iata/schedule", async (req, res, next) => {
     const durationMinutes = req.query.durationMinutes ? Number(req.query.durationMinutes) : undefined;
     const direction = req.query.direction as "Arrival" | "Departure" | "Both" | undefined;
 
-    // Light usage gate - for now, allow full access
-    // TODO: Implement proper paywall integration when middleware is available
-    const isPaid = true; // Default to paid for now
-    const safeDuration = Math.min(Number(durationMinutes ?? (isPaid ? 720 : 240)), isPaid ? 720 : 240);
+    // Check monthly usage limits
+    const usageCheck = await checkMonthlyUsageLimit(req, 'airportQueries');
+    if (!usageCheck.allowed) {
+      return res.status(429).json({
+        error: "Monthly limit exceeded",
+        message: `You have reached your monthly limit of ${usageCheck.limit} airport queries. Current usage: ${usageCheck.current}`,
+        usage: {
+          current: usageCheck.current,
+          limit: usageCheck.limit,
+          plan
+        }
+      });
+    }
+
+    // Apply entitlement-based gating
+    const maxDuration = LIMIT_RULES.airportWindow(plan);
+    const safeDuration = Math.min(Number(durationMinutes ?? maxDuration), maxDuration);
+
+    console.log('🔍 Airport schedule request:', {
+      iata,
+      offsetMinutes,
+      requestedDuration: durationMinutes,
+      safeDuration,
+      direction: direction ?? "Both",
+      subjectId,
+      plan
+    });
 
     const result = await getAirportScheduleByIATA({
       iata,
@@ -34,8 +76,44 @@ airportsRouter.get("/:iata/schedule", async (req, res, next) => {
       direction: direction ?? "Both",
     });
 
-    res.json({ iata, ...result, paid: isPaid });
+    // Update usage metrics
+    try {
+      // Increment airport queries count
+      await incrUsage(subjectId, {
+        airportQueries: 1
+      });
+
+      // Record provider usage (AeroDataBox)
+      await recordProviderUsage({
+        provider: 'aerodatabox',
+        endpoint: 'flights/airports/iata',
+        units: 1,
+        costCents: 0, // AeroDataBox costs are typically per API call, not per unit
+        subjectId
+      });
+
+      console.log('✅ Usage metrics updated for subject:', subjectId);
+    } catch (usageError) {
+      console.error('❌ Error updating usage metrics:', usageError);
+      // Continue with the response even if usage tracking fails
+    }
+
+    res.json({ 
+      iata, 
+      ...result, 
+      entitlements: {
+        plan,
+        maxDuration,
+        actualDuration: safeDuration
+      },
+      usage: {
+        subjectId,
+        plan,
+        airportQueries: 1
+      }
+    });
   } catch (err) {
+    console.error('❌ Airport schedule error:', err);
     next(err);
   }
 });

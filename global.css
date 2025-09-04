@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom font declarations - Simplified to Questrial only */
+@font-face {
+  font-family: 'Questrial';
+  src: url('/assets/fonts/Questrial/Questrial-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Questrial with different weights using CSS font-weight */
+@font-face {
+  font-family: 'Questrial';
+  src: url('/assets/fonts/Questrial/Questrial-Regular.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}

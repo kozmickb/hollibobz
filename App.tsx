@@ -21,7 +21,8 @@ import { ErrorBoundary } from "./src/components/ErrorBoundary";
 // New imports for production hardening
 import { initPurchases } from "./src/api/purchases";
 import { Analytics, initSentry } from "./src/lib/monitoring";
-import { runRuntimeGuards } from "./src/config/env";
+import { runRuntimeGuards, APP_ENV, API_BASE_URL, AI_PROXY_URL, POSTHOG_KEY, SENTRY_DSN } from "./src/config/env";
+import { initTelemetry, trackScreen } from "./src/lib/telemetry";
 
 /*
 IMPORTANT NOTICE: DO NOT REMOVE
@@ -137,12 +138,21 @@ export default function App() {
       // Initialize all services
       const initializeServices = async () => {
         try {
-          // Initialize Sentry for error tracking
-          initSentry();
+          // Initialize new telemetry system
+          initTelemetry({ 
+            dsn: SENTRY_DSN, 
+            posthogKey: POSTHOG_KEY, 
+            appEnv: APP_ENV,
+            debug: __DEV__
+          });
 
-          // Initialize Analytics
+          // Initialize legacy monitoring (keep for compatibility)
+          initSentry();
           Analytics.init();
           Analytics.appOpen();
+
+          // Track app launch
+          trackScreen("AppLaunched", { api: API_BASE_URL });
 
           // Initialize RevenueCat for payments
           await initPurchases();

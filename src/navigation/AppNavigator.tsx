@@ -171,6 +171,7 @@ export function AppNavigator() {
           bottom: 0,
           left: 0,
           right: 0,
+          fontFamily: 'Questrial',
           ...Platform.select({
             ios: {
               shadowColor: '#000',
@@ -185,7 +186,9 @@ export function AppNavigator() {
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontFamily: 'Questrial-Regular',
+          fontFamily: 'Questrial',
+          fontWeight: '400',
+          fontStyle: 'normal',
         },
         headerShown: false,
       })}
