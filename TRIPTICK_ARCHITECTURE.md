@@ -25,7 +25,7 @@
 
 ## 🔄 Recent Updates (Jan 2025)
 
-- **Production-Ready Server Architecture**: Transformed the server into a production-ready Railway deployment with automatic Prisma migrations, DB-aware health checks, environment-based CORS configuration, and security hardening with Helmet and Morgan. Added Railway boot script that runs migrations before starting the server, with fallback to `db push` for one-time setup.
+- **Production-Ready Server Architecture**: Transformed the server into a production-ready Railway deployment with automatic Prisma migrations, DB-aware health checks, environment-based CORS configuration, and security hardening with Helmet and Morgan. Added Railway boot script that runs migrations before starting the server, with fallback to `db push` for one-time setup. Prisma schema properly configured under `server/prisma/` with exact version dependencies and proper TypeScript build configuration.
 - **Production Security & Telemetry**: Implemented comprehensive production safety with runtime guards that block HTTP connections in production builds. Added environment-driven telemetry initialization for Sentry and PostHog that only activates in production when proper keys are provided. Created centralized API client with automatic authentication and error handling.
 - **Client API Helpers & UI Integration**: Added comprehensive client-side API helpers for flight resolution, airport schedules, and itinerary ingestion. Implemented anonymous user ID system with persistent storage. Added Trip Actions card to TimerDrilldownScreen with premium-gated buttons for Add Flight, Upload Itinerary, and Airport Schedule features.
 - **Build Environment Documentation**: Added comprehensive README section with Railway server deployment and EAS mobile build setup instructions. Includes environment variable checklists, CLI commands, and quick deployment workflows for both server and mobile app builds.
@@ -1301,6 +1301,9 @@ npm run start
 
 # Railway deployment (runs migrations then starts server)
 npm run start:railway
+
+# Test Prisma generation
+npm run postinstall
 ```
 
 #### Environment Setup
@@ -1348,15 +1351,18 @@ railway up
 
 # Verify deployment
 curl https://your-app.railway.app/api/health
-# Returns: {"ok":true,"time":"...","env":"production","db":"ok"}
+# Returns: {"ok":true,"db":"ok","env":"production"}
 ```
 
 #### Server Production Features
 - **Automatic Migrations**: Boot script runs `prisma migrate deploy` before starting
+- **Fallback Migration**: If migrations fail, falls back to `prisma db push --accept-data-loss`
 - **Health Monitoring**: `/api/health` endpoint with database connectivity check
 - **Security Hardening**: Helmet, Morgan logging, CORS allowlist
 - **Environment-Based Config**: Development vs production CORS and security settings
 - **Railway Integration**: Optimized for Railway's deployment pipeline
+- **Prisma Configuration**: Proper schema location and exact version dependencies
+- **TypeScript Build**: ESM modules with proper build configuration
 
 ### Build Process
 
