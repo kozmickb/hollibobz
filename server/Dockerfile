@@ -1,52 +1,58 @@
-# ---------- build stage ----------
+# syntax=docker/dockerfile:1
+
+########## BUILD STAGE ##########
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# base OS deps used by Prisma engine & OpenSSL
+# Minimal OS deps that Prisma often wants
 RUN apk add --no-cache libc6-compat openssl
 
-# npm configuration to avoid peer resolution failures
+# Make npm deterministic and quiet
 RUN npm config set legacy-peer-deps true \
  && npm config set fund false \
  && npm config set audit false
 
-# copy only manifests first for better caching
-COPY package*.json ./
-COPY .npmrc ./.npmrc
-COPY scripts ./scripts
+# Copy manifest + lock first for reproducible install
+COPY server/package.json ./package.json
+COPY server/package-lock.json ./package-lock.json
 
-# IMPORTANT: do not run prisma generate during npm ci (schema not yet in image)
-ENV PRISMA_SKIP_POSTINSTALL_GENERATE=1
+# Do not run install-time scripts yet (schema isn't copied)
+RUN npm ci --ignore-scripts
 
-# install with dev deps for TypeScript build
-RUN npm ci
+# Now bring in Prisma schema and source
+COPY server/prisma ./prisma
+COPY server/tsconfig*.json ./
+COPY server/src ./src
 
-# now bring in prisma schema and source (postinstall still skipped)
-COPY prisma ./prisma
-COPY tsconfig*.json ./
-COPY src ./src
-
-# generate Prisma client explicitly (schema now exists)
+# Generate Prisma client after schema is present
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
-# build TS
+# Build TS -> dist
 RUN npm run build
 
-# remove dev deps for runtime
+# Trim dev deps
 RUN npm prune --omit=dev
 
-# ---------- runtime stage ----------
+
+########## RUNTIME STAGE ##########
 FROM node:20-alpine AS runner
 WORKDIR /app
+ENV NODE_ENV=production
 
-# copy artifacts from build
+# Copy runtime artifacts
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
-COPY package*.json ./
+COPY server/package*.json ./
 
-# prisma CLI (optional but nice for debugging)
+# Prisma CLI available at runtime for migrations (pin exact)
 RUN npm i -g prisma@6.15.0
 
-# default start is the Railway boot sequence
-CMD ["node", "dist/boot.js"]
+# Run as non-root
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+USER node
+
+EXPOSE 3000
+
+# Prefer boot.js if present, fallback to index.js
+CMD ["sh", "-lc", "node dist/boot.js || node dist/index.js"]
