@@ -6,6 +6,7 @@
 
 - `DATABASE_URL` - PostgreSQL connection string (use Railway's private variable reference to the Postgres service)
 - `NODE_ENV` - Set to `production` for production deployments
+- `PORT` - Server port (default: 3000)
 - `CORS_ORIGINS` - Comma-separated list of allowed CORS origins (e.g., `https://hollibobz-production.up.railway.app,https://expo.dev`)
 
 ### Optional Environment Variables
@@ -15,6 +16,21 @@
 - `METRICS_TOKEN` - Bearer token for metrics endpoint authentication
 - `DB_WAIT_RETRIES` - Number of DB connection retries (default: 20)
 - `DB_WAIT_DELAY_MS` - Delay between DB retries in ms (default: 1500)
+
+### API Keys (Optional)
+
+- `AVIATIONSTACK_API_KEY` - AviationStack API key for flight data
+- `AERODATABOX_RAPIDAPI_KEY` - AeroDataBox RapidAPI key
+- `AERODATABOX_RAPIDAPI_HOST` - AeroDataBox RapidAPI host
+- `OPENAI_API_KEY` - OpenAI API key for AI features
+- `DEEPSEEK_API_KEY` - DeepSeek API key for AI features
+- `XAI_API_KEY` - xAI API key for AI features
+
+### Environment Configuration
+
+The application uses `envalid` for environment variable validation. All environment variables are validated at startup with appropriate defaults. See `server/.env.example` for a complete list of all environment variables.
+
+**Environment Validator**: `server/src/config/env.ts` - validates all environment variables and provides type-safe access.
 
 ### Railway Configuration
 
@@ -26,14 +42,20 @@
 
 ### Railway (Dockerfile) Deploy
 
-Railway will automatically detect the `server/Dockerfile` and use it for building and deploying the service. This approach uses a multi-stage Docker build with Node 20, ensuring:
+Railway will automatically detect the root `Dockerfile` and use it for building and deploying the service. This approach uses a two-stage Docker build with Node 20, ensuring:
 
-- **Build Stage**: Installs all dependencies (including dev dependencies) and compiles TypeScript to `dist/`
-- **Runtime Stage**: Uses only production dependencies and includes the Prisma CLI for migrations
-- **Prisma Schema**: Located at `prisma/schema.prisma` and used consistently across all Prisma commands
-- **Start Command**: Runs the resilient boot sequence that executes `prisma migrate deploy` with fallback to `prisma db push --accept-data-loss` before starting the server
+- **Build Stage**: 
+  - Installs dependencies with `PRISMA_SKIP_POSTINSTALL_GENERATE=1` to avoid schema errors
+  - Copies Prisma schema and source code
+  - Generates Prisma client explicitly with `npx prisma generate --schema=./prisma/schema.prisma`
+  - Builds TypeScript to `dist/`
+  - Prunes dev dependencies for smaller runtime image
+- **Runtime Stage**: 
+  - Uses only production dependencies and includes the Prisma CLI for migrations
+  - Runs as non-root user for security
+  - **Start Command**: `node dist/boot.js` - runs migrations then starts server
 
-The Dockerfile approach provides deterministic builds and eliminates Nixpacks-related issues.
+The Dockerfile approach provides deterministic builds and eliminates Prisma schema-not-found errors during `npm ci`.
 
 ### Railway Deployment Commands
 
@@ -111,20 +133,19 @@ curl -H "Authorization: Bearer your-metrics-token" https://hollibobz-production.
 ### Prisma Configuration
 
 - **Schema Location**: `prisma/schema.prisma`
-- **Client Generation**: Automatic via `postinstall` script
+- **Client Generation**: Explicit via `npx prisma generate --schema=./prisma/schema.prisma` in Dockerfile
 - **Dependencies**: Exact versions `@prisma/client: "6.15.0"` and `prisma: "6.15.0"`
-- **Migrations**: Automatic deployment on Railway startup
+- **Migrations**: Automatic deployment on Railway startup via `dist/boot.js`
+- **No Postinstall**: Removed `postinstall` script to prevent schema-not-found errors during `npm ci`
 
 ## Railway production notes
 
-- Root Directory: `server`
-- Install: `npm ci`
-- Build: `npm run build`
-- Start: `npm run start:railway`
-- Health Check Path: `/api/health`
+- **Root Directory**: `server` (for Railway service configuration)
+- **Dockerfile**: Located at repository root (Railway will auto-detect)
+- **Health Check Path**: `/api/health`
 
 On boot, the service runs:
-1) `prisma migrate deploy --schema prisma/schema.prisma`
+1) `prisma migrate deploy --schema=./prisma/schema.prisma`
 2) falls back to `prisma db push --accept-data-loss` if needed
 3) starts `dist/index.js` via `dist/boot.js`
 

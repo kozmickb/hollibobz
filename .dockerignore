@@ -1,8 +1,11 @@
-.git
 **/node_modules
-**/.cache
 **/dist
+**/.turbo
+**/.next
+**/.cache
+**/.git
+**/.github
 **/.DS_Store
-
-# Ensure server/prisma is not excluded
-!server/prisma/**
+**/*.log
+**/.env
+**/.env.*

@@ -7,15 +7,16 @@ import { PrismaClient } from "@prisma/client";
 import { requestIdMiddleware } from "./src/middleware/requestId";
 import { register, httpRequestDuration } from "./src/metrics";
 import { Logger } from "./src/logger";
+import { env } from "./src/config/env";
 
 const app = express();
 const prisma = new PrismaClient();
 
-const PORT = Number(process.env.PORT ?? 3000);
-const SERVICE_NAME = process.env.SERVICE_NAME ?? "odysync";
-const CORS_ORIGINS = (process.env.CORS_ORIGINS ?? "").split(",").map(s => s.trim()).filter(Boolean);
-const METRICS_TOKEN = process.env.METRICS_TOKEN;
-const GIT_COMMIT = process.env.GIT_COMMIT;
+const PORT = env.PORT;
+const SERVICE_NAME = env.SERVICE_NAME;
+const CORS_ORIGINS = env.CORS_ORIGINS.split(",").map(s => s.trim()).filter(Boolean);
+const METRICS_TOKEN = env.METRICS_TOKEN;
+const GIT_COMMIT = env.GIT_COMMIT;
 
 // Request ID middleware (must be first)
 app.use(requestIdMiddleware);
@@ -28,7 +29,7 @@ app.disable("x-powered-by");
 app.use(express.json({ limit: "1mb" }));
 
 // Logging
-app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
 
 // Rate limiting with custom response
 const limiter = rateLimit({ 
@@ -47,7 +48,7 @@ app.use(cors({
   origin: (origin, cb) => {
     if (!origin || CORS_ORIGINS.length === 0) {
       // In production, default to no CORS if no origins specified
-      if (process.env.NODE_ENV === "production") {
+      if (env.NODE_ENV === "production") {
         return cb(new Error("CORS blocked"), false);
       }
       return cb(null, true);
@@ -120,7 +121,7 @@ app.listen(PORT, () => {
   Logger.info("Server started", { 
     port: PORT, 
     service: SERVICE_NAME,
-    nodeEnv: process.env.NODE_ENV,
+    nodeEnv: env.NODE_ENV,
     gitCommit: GIT_COMMIT 
   });
 });
