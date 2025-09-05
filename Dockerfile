@@ -10,7 +10,8 @@ RUN npm config set legacy-peer-deps true \
     && npm config set audit false
 
 # Install only backend deps first for better caching
-COPY server/package*.json ./
+COPY server/package.json ./ 
+COPY server/package-lock.json ./   # MUST exist; build should fail if absent
 
 # Avoid running prisma generate during install (schema not present yet)
 ENV PRISMA_SKIP_POSTINSTALL_GENERATE=1
