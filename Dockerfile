@@ -15,11 +15,11 @@ COPY server/package*.json ./
 # Include .npmrc if present
 COPY server/.npmrc . 2>/dev/null || true
 
-# Copy Prisma BEFORE install so schema exists during install steps
-COPY server/prisma ./prisma
-
 # Install deps WITHOUT running scripts (skips postinstall)
 RUN npm ci --ignore-scripts
+
+# Copy Prisma schema AFTER install
+COPY server/prisma ./prisma
 
 # Now copy the rest of the backend source
 COPY server/ ./
