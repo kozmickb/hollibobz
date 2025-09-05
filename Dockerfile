@@ -1,65 +1,62 @@
-# Multi-stage Docker build for Node.js/TypeScript/Prisma API
-# Build stage
+# ---- Build stage ----
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Install system dependencies for Prisma
+# Needed by Prisma engine
 RUN apk add --no-cache libc6-compat openssl
 
-# Configure npm for stable builds
-RUN npm config set legacy-peer-deps true && \
-    npm config set fund false && \
-    npm config set audit false
+# Make npm deterministic and avoid peer-dep churn in CI
+RUN npm config set legacy-peer-deps true \
+ && npm config set fund false \
+ && npm config set audit false
 
-# Copy package files first for better caching
+# 1) Copy only backend manifests first
 COPY server/package*.json ./
+# Optional, if present
 COPY server/.npmrc . 2>/dev/null || true
 
-# CRITICAL: Copy Prisma schema before npm ci
-# This ensures postinstall can find the schema file
+# 2) CRITICAL: copy Prisma BEFORE install so postinstall/generate can see it
 COPY server/prisma ./prisma
 
-# Install dependencies (postinstall will now find prisma/schema.prisma)
-RUN npm ci
+# 3) Install deps WITHOUT scripts; we'll run generate explicitly later
+RUN npm ci --ignore-scripts
 
-# Copy remaining source code
+# 4) Now copy the rest of the backend source
 COPY server/ ./
 
-# Generate Prisma client (redundant but safe)
+# 5) Generate Prisma client with explicit schema path
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
-# Build TypeScript to dist/
+# 6) Build TS -> dist
 RUN npm run build
 
-# Remove dev dependencies for lean runtime
+# 7) Trim dev deps for runtime
 RUN npm prune --omit=dev
 
-# Runtime stage
+
+# ---- Runtime stage ----
 FROM node:20-alpine
 WORKDIR /app
-
-# Install system dependencies
 RUN apk add --no-cache libc6-compat openssl
 
-# Set production environment
 ENV NODE_ENV=production \
     PORT=8080 \
     PRISMA_HIDE_UPDATE_MESSAGE=true
 
-# Copy build artifacts from build stage
+# Runtime artifacts
 COPY --from=build /app/package*.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 
-# Install Prisma CLI globally for migrations
+# Prisma CLI for migrate deploy at container start
 RUN npm i -g prisma@6.15.0
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+# Non-root user
+RUN addgroup -g 1001 -S nodejs \
+ && adduser -S nodejs -u 1001 \
+ && chown -R nodejs:nodejs /app
 USER nodejs
 
-# Start the application
+# Must point to your boot script (migrate deploy + start server)
 CMD ["npm", "run", "start:railway"]
