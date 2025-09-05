@@ -13,6 +13,7 @@ RUN npm config set legacy-peer-deps true \
 # copy only manifests first for better caching
 COPY package*.json ./
 COPY .npmrc ./.npmrc
+COPY scripts ./scripts
 
 # IMPORTANT: do not run prisma generate during npm ci (schema not yet in image)
 ENV PRISMA_SKIP_POSTINSTALL_GENERATE=1
@@ -24,7 +25,6 @@ RUN npm ci
 COPY prisma ./prisma
 COPY tsconfig*.json ./
 COPY src ./src
-COPY scripts ./scripts
 
 # generate Prisma client explicitly (schema now exists)
 RUN npx prisma generate --schema=./prisma/schema.prisma
