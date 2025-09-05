@@ -8,9 +8,19 @@ router.get("/health", async (_req, res) => {
   try {
     // Simple DB round-trip
     await prisma.$queryRaw`SELECT 1`;
-    res.json({ ok: true, db: "ok", env: process.env.NODE_ENV || "development" });
+    res.json({
+      ok: true,
+      uptime: process.uptime(),
+      db: { connected: true },
+      version: "1.0.0",
+      env: process.env.NODE_ENV || "development"
+    });
   } catch (e: any) {
-    res.status(500).json({ ok: false, error: e?.message ?? "db error" });
+    res.status(500).json({
+      ok: false,
+      error: e?.message ?? "db error",
+      db: { connected: false }
+    });
   }
 });
 
