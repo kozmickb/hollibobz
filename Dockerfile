@@ -12,8 +12,8 @@ RUN npm config set legacy-peer-deps true \
 
 # Copy ONLY backend manifests first
 COPY server/package*.json ./
-# Include .npmrc if present
-COPY server/.npmrc . 2>/dev/null || true
+# Include .npmrc if present (optional)
+COPY server/.npmrc* ./
 
 # Install deps WITHOUT running scripts (skips postinstall)
 RUN npm ci --ignore-scripts
